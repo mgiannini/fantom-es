@@ -20,16 +20,22 @@ class CompileJs  : CompilerStep
     // short circuit if no types define the @Js facet
     if (!needCompileJs) return
 
-    // try to resolve plugin type
-    t := Type.find("compilerJs::CompileJsPlugin", false)
+    log.info("CompileJs")
+    compile("compilerJs::CompileJsPlugin")
+    compile("compilerEs::CompileEsPlugin")
+  }
+
+  private Void compile(Str qname)
+  {
+    // tyr to resolve plugin
+    t := Type.find(qname, false)
     if (t == null)
     {
-      log.info("WARN: compilerJs not installed!")
+      log.info("WARN: ${qname} not installed")
       return
     }
 
     // do it!
-    log.info("CompileJs")
     t.make([compiler])->run
   }
 

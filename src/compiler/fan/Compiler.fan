@@ -148,6 +148,8 @@ class Compiler
   Obj? jsPod                // CompileJs (JavaScript AST)
   Str? js                   // CompileJs (JavaScript code)
   Str? jsSourceMap          // CompileJs (JavaScript sourcemap)
+  Str? es                   // CompileJs (JavaScript code)
+  Str? esSourceMap          // CompileJs (JavaScript sourcemap)
   LocaleLiteralExpr[] localeDefs  // ResolveExpr.resolveLocaleLiteral
   Str? localeProps          // LocaleProps
   FPod? fpod                // Assemble
