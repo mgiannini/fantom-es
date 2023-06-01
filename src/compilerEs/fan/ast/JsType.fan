@@ -166,8 +166,8 @@ class JsType : JsNode
     // write synthetic public API for reading/writing the field
     if (f.isPrivate) return
 
-    // skip fields with no getter or setter
-    if (!f.hasGet && !f.hasSet) return
+    // skip fields with no public getter or setter
+    if ((f.getter?.isPrivate ?: true) && (f.setter?.isPrivate ?: true)) return
 
     // use actual field name for public api
     allowSet := f.setter != null && !f.setter.isPrivate
