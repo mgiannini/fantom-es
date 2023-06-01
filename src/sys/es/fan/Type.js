@@ -173,22 +173,17 @@ class Type extends Obj {
       return new MapType(k, v);
     }
 
-
-    // TODO:FIXIT - what do for Func types since we are using native javascript
-    // closures now???
-    // if (this === fan.sys.Func.type$) {
-
-    //   var r = params.get("R");
-    //   if (r == null) throw fan.sys.ArgErr.make("Func.parameterize - R undefined");
-    //   var p = [];
-    //   for (var i=65; i<=72; ++i)
-    //   {
-    //     var x = params.get(String.fromCharCode(i));
-    //     if (x == null) break;
-    //     p.push(x);
-    //   }
-    //   return new fan.sys.FuncType(p, r);
-    // }
+    if (this === Func.type$) {
+      let r = params.get("R");
+      if (r == null) throw ArgErr.make("Func.parameterize - R undefined");
+      let p = [];
+      for (let i=65; i<=72; ++i) {
+        let x = params.get(String.fromCharCode(i));
+        if (x == null) break;
+        p.push(x);
+      }
+      return new FuncType(p, r);
+    }
 
     throw UnsupportedErr.make(`not generic: ${this}`);
   }

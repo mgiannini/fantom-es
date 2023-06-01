@@ -277,15 +277,14 @@ class TypeTest : Test
     verifyErr(ArgErr#) { Map#.parameterize(["V":Bool[]#]) }
     verifyErr(ArgErr#) { Map#.parameterize(["K":Bool[]#]) }
 
-    throw Err("TODO:FIXIT Func# type")
-    // verifyEq(Func#.parameterize(["R":Void#]), |->|#)
-    // verifyEq(Func#.parameterize(["A":Str#, "R":Int#]), |Str a->Int|#)
-    // verifyEq(Func#.parameterize(["A":Str#, "B":Bool#, "C":Int#, "R":Float#]),
-    //   |Str a, Bool b, Int c->Float|#)
-    // verifyErr(ArgErr#) { Func#.parameterize(["A":Bool[]#]) }
+    verifyEq(Func#.parameterize(["R":Void#]), |->|#)
+    verifyEq(Func#.parameterize(["A":Str#, "R":Int#]), |Str a->Int|#)
+    verifyEq(Func#.parameterize(["A":Str#, "B":Bool#, "C":Int#, "R":Float#]),
+      |Str a, Bool b, Int c->Float|#)
+    verifyErr(ArgErr#) { Func#.parameterize(["A":Bool[]#]) }
 
-    // verifyErr(UnsupportedErr#) { Str#.parameterize(["X":Void#]) }
-    // verifyErr(UnsupportedErr#) { Str[]#.parameterize(["X":Void#]) }
+    verifyErr(UnsupportedErr#) { Str#.parameterize(["X":Void#]) }
+    verifyErr(UnsupportedErr#) { Str[]#.parameterize(["X":Void#]) }
   }
 
   Void testToListOf()
