@@ -39,6 +39,7 @@ class NodeRunner
       if (hasArg("help") || hasArg("h")) { help(); return 0 }
       if (hasArg("test")) doTest
       else if (hasArg("run")) doRun
+      else if (hasArg("ts")) doTypeScript
       else if (isInit) doJsBootStrap
       else throw ArgErr("Invalid options")
 
@@ -115,6 +116,19 @@ class NodeRunner
         val = envArgs[i+1]
       this.argsMap[name] = val
     }
+  }
+
+//////////////////////////////////////////////////////////////////////////
+// TypeScript
+//////////////////////////////////////////////////////////////////////////
+
+  private Void doTypeScript()
+  {
+    pod := Pod.find(arg("ts"))
+    buf := Buf()
+    TsDeclFile(buf.out).writePod(pod)
+// TODO: where to write this?
+echo(buf.flip.readAllStr)
   }
 
 //////////////////////////////////////////////////////////////////////////

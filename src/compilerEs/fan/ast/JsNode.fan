@@ -35,6 +35,22 @@ abstract class JsNode
 // Type Utils
 //////////////////////////////////////////////////////////////////////////
 
+  Bool isJsType(TypeDef def)
+  {
+    // we inline closures directly, so no need to generate anonymous types
+    if (def.isClosure) return false
+
+    // TODO:FIXIT: do we still need this?
+    if (def.qname.contains("\$Cvars"))
+    {
+      echo("WARN: Cvar class: ${def.qname}")
+      return false
+    }
+
+    // check for @Js facet or if forced generation
+    return def.hasFacet("sys::Js") || c.input.forceJs
+  }
+
   Bool checkJsSafety(CType ctype, Loc? loc)
   {
     if (ctype is TypeRef) return checkJsSafety(ctype->t, loc)
@@ -97,10 +113,11 @@ abstract class JsNode
   }
 
   ** Get the name that should be used for the generated field in JS code
-  Str fieldJs(Obj name)
+  static Str fieldJs(Obj name)
   {
     // if (name is Str) return "_${name}\$"
     if (name is Str) return "#${name}"
+    if (name is Field) return fieldJs(((Field)name).name)
     if (name is FieldDef) return fieldJs(((FieldDef)name).name)
     throw ArgErr("${name} [${name.typeof}]")
   }
@@ -109,7 +126,7 @@ abstract class JsNode
   **
   ** Note - use fieldJs for generating field names since we have a lot of special
   ** handling for fields
-  Str nameToJs(Str name)
+  static Str nameToJs(Str name)
   {
     namePickles.get(name, name)
   }

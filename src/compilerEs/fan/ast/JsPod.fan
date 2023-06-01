@@ -26,23 +26,7 @@ class JsPod : JsNode
     c.jsFiles?.each |f| { natives[f.name] = f }
 
     // find types to emit
-    c.types.each |TypeDef def|
-    {
-      // we inline closures directly, so no need to generate
-      // anonymous types
-      if (def.isClosure) return
-
-      // TODO:FIXIT: do we still need this?
-      if (def.qname.contains("\$Cvars"))
-      {
-        echo("WARN: Cvar class: ${def.qname}")
-        return
-      }
-
-      // check for @Js facet
-      if (def.hasFacet("sys::Js") || c.input.forceJs)
-        types.add(JsType(plugin, def))
-    }
+    c.types.findAll { isJsType(it) }.each { types.add(JsType(plugin, it)) }
   }
 
   private PodDef pod
