@@ -62,7 +62,6 @@ class Field extends Slot {
 // Internal Access
 //////////////////////////////////////////////////////////////////////////
 
-  name$() { return this.#name$; }
   qname$() { return this.#qname$; }
 
 //////////////////////////////////////////////////////////////////////////
@@ -84,16 +83,9 @@ class Field extends Slot {
   type() { return this.#type; }
 
   get(instance=null) {
-    console.log("TODO:FIXIT slot.get");
-    console.log(`  qname=${this.qname$()}`);
-    console.log(`  parent=${this.parent().name$()}`);
-    console.log(`  name=${this.name$()}`);
-    console.log(`  static=${this.isStatic()}`);
-    console.log(`  enum=${this.isEnum()}`);
     if (this.isStatic()) {
       if (this.isEnum()) {
         const e = `${this.parent().name$()}.${this.name$()}()`;
-        console.log(`  Eval this: ${e}`);
         return eval(`${this.parent.name$()}.${this.name$()}()`);
       }
       else
