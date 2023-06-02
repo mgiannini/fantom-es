@@ -58,7 +58,7 @@ class Foo extends sys.Obj {
   
   // has public getter/setter
   a(it=undefined) {
-    if (it==undefined) return this.#a;
+    if (it===undefined) return this.#a;
     else this.#a = it;
   }
   
