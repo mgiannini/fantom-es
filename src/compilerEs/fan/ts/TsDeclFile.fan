@@ -103,7 +103,8 @@ class TsDeclFile
       }
 
       // Write static type slot, e.g. Str#
-      out.print("  static type\$: Type\n")
+      typeStr := getNamespacedType("Type", "sys", pod)
+      out.print("  static type\$: $typeStr\n")
 
       out.print("}\n")
     }
