@@ -44,8 +44,8 @@ class Type extends Obj {
 
     // add type to registry
     if (jsRef != null) {
-      let ns = Type.$registry[this.#pod];
-      if (ns == null) Type.$registry[this.#pod] = ns = {};
+      let ns = Type.$registry[this.#pod.name$()];
+      if (ns == null) Type.$registry[this.#pod.name$()] = ns = {};
       ns[jsRef.name] = jsRef;
     }
   }

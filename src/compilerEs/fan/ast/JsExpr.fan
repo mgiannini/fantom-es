@@ -45,7 +45,11 @@ class JsExpr : JsNode
       case ExprId.cmpNull:         writeUnaryExpr(expr)
       case ExprId.cmpNotNull:      writeUnaryExpr(expr)
 
+      // elvis
       case ExprId.assign:          writeBinaryExpr(expr)
+      case ExprId.same:            writeBinaryExpr(expr)
+      case ExprId.notSame:         writeBinaryExpr(expr)
+      // ternary
 
       case ExprId.boolOr:          writeCondExpr(expr)
       case ExprId.boolAnd:         writeCondExpr(expr)
@@ -383,6 +387,7 @@ class JsExpr : JsNode
     isJs := sigTypes.all { !it.isForeign && checkJsSafety(it, loc) }
     if (isJs)
     {
+      js.w("sys.Func.r\$(")
       js.w("${methodParams(ce.doCall.params)}", loc).wl(" => {")
       js.indent
       old := plugin.thisName
@@ -390,7 +395,9 @@ class JsExpr : JsNode
       writeBlock(ce.doCall.code)
       plugin.thisName = old
       js.unindent
-      js.w("}")
+      js.w("}, ")
+      writeType(ce.doCall.returnType)
+      js.w(")")
     }
     else
     {
@@ -546,7 +553,7 @@ internal class JsCallExpr : JsExpr
     if (ce.isDynamic)
     {
       if (hasFirstArg) js.w(",")
-      js.w("${ce.name}, sys.List.make(sys.Obj.type\$.toNullable(), [", loc)
+      js.w("\"${ce.name}\", sys.List.make(sys.Obj.type\$.toNullable(), [", loc)
       hasFirstArg = false
     }
 

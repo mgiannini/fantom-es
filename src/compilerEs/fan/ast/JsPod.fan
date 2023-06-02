@@ -115,7 +115,7 @@ class JsPod : JsNode
       mixins := t.mixins.join(",") |m| { "'${m.pod}::${m.name}'" }
       facets := toFacets(t.facets)
       flags  := t.def.flags
-      js.wl("${t.name}.type\$ = ${adder}('${t.name}','${base}',[${mixins}],{${facets}},${flags});")
+      js.wl("${t.name}.type\$ = ${adder}('${t.name}','${base}',[${mixins}],{${facets}},${flags},${t.name});")
     }
 
     // then write slot info

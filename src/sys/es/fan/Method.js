@@ -64,7 +64,7 @@ class Method extends Slot {
   invoke(instance=null, args=null) {
     let func = null;
     if (this.isCtor() || this.isStatic()) {
-      const ns = Type.$registry[this.parent().pod()];
+      const ns = Type.$registry[this.parent().pod().name$()];
       const js = ns != null ? ns[this.parent().name$()] : null;
       if (js != null) func = js[this.#name$];
     } 

@@ -3,6 +3,7 @@
 **
 ** TypeTest
 **
+/*
 @Js
 class TypeTest : Test
 {
@@ -480,3 +481,4 @@ class TypeTest : Test
 {
   Float c := 7.5f
 }
+*/

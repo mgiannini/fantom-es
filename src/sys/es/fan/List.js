@@ -500,10 +500,8 @@ push(obj) {
   }
 
   map(f) {
-    // TODO:FIXIT - how to handle f return type?
-    // var r = f.returns();
-    // if (r == fan.sys.Void.type$) r = fan.sys.Obj.type$.toNullable();
-    let r = Obj.type$.toNullable();
+    let r = f.__returns;
+    if (r == null || r == Void.type$) r = Obj.type$.toNullable();
 
     const acc = List.make(r);
     for (let i=0; i<this.#size; ++i)
@@ -512,10 +510,8 @@ push(obj) {
   }
 
   mapNotNull(f) {
-    // TODO:FIXIT - how to handle f return type?
-    // var r = f.returns();
-    // if (r == fan.sys.Void.type$) r = fan.sys.Obj.type$.toNullable();
-    let r = Obj.type$.toNullable();
+    let r = f.__returns;
+    if (r == null || r == Void.type$) r = Obj.type$.toNullable();
 
     const acc = List.make(r.toNonNullable());
     for (let i=0; i<this.#size; ++i)
@@ -524,10 +520,9 @@ push(obj) {
   }
 
   flatMap(f) {
-    // TODO:FIXIT - how to handle f return type
-    // var of = f.returns().v;
-    // if (of === undefined || of == null) of = fan.sys.Obj.type$.toNullable();
-    let of = Obj.type$.toNullable();
+    const r = f.__returns;
+    let of = r == null ? null : r.v;
+    if (of == null) of = Obj.type$.toNullable();
 
     const acc = List.make(of);
     for (let i=0; i<this.#size; ++i)
@@ -536,10 +531,8 @@ push(obj) {
   }
 
   groupBy(f) {
-    // TODO:FIXIT - how to handle f return type
-    // var r = f.returns();
-    // if (r == fan.sys.Void.type$) r = fan.sys.Obj.type$;
-    let r = Obj.type$;
+    let r = f.__returns;
+    if (r == null || r == Void.type$) r = Obj.type$.toNullable();
     const acc = Map.make(r, this.typeof$());
     return this.groupByInto(acc, f);
   }

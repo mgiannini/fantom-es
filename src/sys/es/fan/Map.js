@@ -377,10 +377,8 @@ class Map extends Obj {
   }
 
   map(f) {
-    // TODO:FIXIT how to handle f return type
-    // var r = f.returns();
-    // if (r == fan.sys.Void.type$) r = fan.sys.Obj.type$.toNullable();
-    let r = Obj.type$.toNullable();
+    let r = f.__returns;
+    if (r == null || r == Void.type$) r = Obj.type$.toNullable();
 
     const acc = Map.make(this.#type.k, r);
     if (this.#ordered) acc.ordered(true);
@@ -390,10 +388,8 @@ class Map extends Obj {
   }
 
   mapNotNull(f) {
-    // TODO:FIXIT how to handle f return type
-    // var r = f.returns();
-    // if (r == fan.sys.Void.type$) r = fan.sys.Obj.type$;
-    let r = Obj.type$;
+    let r = f.__returns;
+    if (r == null || r == Void.type$) r = Obj.type$.toNullable();
 
     const acc = Map.make(this.#type.k, r.toNonNullable());
     if (this.#ordered) acc.ordered(true);
