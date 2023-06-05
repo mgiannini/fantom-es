@@ -33,7 +33,7 @@ class TsDeclFile
       // TODO: correct file locations/module system?
       out.print("import * as ${pod2.name} from './${pod2.name}.js';\n")
     }
-    if (pod.name == "sys") out.print("export type JsObj = Obj | number | string | boolean\n")
+    if (pod.name == "sys") out.print("export type JsObj = Obj | number | string | boolean | $anyFunc\n")
     out.write('\n')
 
     // Write declaration for each type
@@ -44,10 +44,8 @@ class TsDeclFile
       // if (!type.hasFacet(jsFacet)) return
       if (type.isInternal) return
 
-      // Parameterization of Func, List, & Map
+      // Parameterization of List, & Map
       classParams := ""
-      if (type.signature == "sys::Func")
-        classParams = "<R = unknown, A = unknown, B = unknown, C = unknown, D = unknown, E = unknown, F = unknown, G = unknown, H = unknown>"
       if (type.signature == "sys::List")
         classParams = "<V = unknown>"
       if (type.signature == "sys::Map")
@@ -145,15 +143,29 @@ class TsDeclFile
     else if (thisPod.name == "sys" && type.name == "M")
       return "Map<K,V>"
 
-    // List/map/func types
+    // List/map types
     if (type.fits(List#))
       return getGenericType(type, thisPod, ["V"], thisType)
     
     if (type.fits(Map#))
       return getGenericType(type, thisPod, ["K", "V"], thisType)
     
+    // Function types
     if (type.fits(Func#))
-      return getGenericType(type, thisPod, ["R", "A", "B", "C", "D", "E", "F", "G", "H"], thisType)
+    {
+      // TODO: have unknown instead of any when used as function output
+      if (type.isGeneric)
+        return anyFunc
+      
+      args   := type.params.dup
+      args.remove("R")
+      inputs := args.map |Type p, Str name->Str| { "arg$name: ${getJsType(p, thisPod, thisType)}" }
+                    .vals
+                    .sort
+                    .join(", ")
+      output := getJsType(type.params["R"], thisPod, thisType)
+      return "(($inputs) => $output)"
+    }
     
     // Obj
     if (type.signature == "sys::Obj")
@@ -177,7 +189,7 @@ class TsDeclFile
           argStr := getJsType(type.params[argName], thisPod, thisType)
           return argStr
         }
-        .removeAll(["", "", "", "", "", "", "", "", ""])
+        .removeAll(["", ""])
         .join(", ")
       res += "<$paramStr>"
     }
@@ -203,6 +215,8 @@ class TsDeclFile
     "sys::Str":     "string",
     "sys::Void":    "void"
   ]
+
+  private const Str anyFunc := "((...args: any) => any)"
 
 }
 
