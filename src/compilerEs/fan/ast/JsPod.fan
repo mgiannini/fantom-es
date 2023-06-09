@@ -23,7 +23,10 @@ class JsPod : JsNode
     this.pod = plugin.pod
 
     // map native files by name
-    c.jsFiles?.each |f| { natives[f.name] = f }
+    c.jsFiles?.each |f| {
+      // we expect ES javascript files in es/ directory
+      natives[f.name] = f.parent.parent.plus(`es/${f.name}`)
+    }
 
     // find types to emit
     c.types.findAll { isJsType(it) }.each { types.add(JsType(plugin, it)) }

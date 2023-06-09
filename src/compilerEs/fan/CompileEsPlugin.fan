@@ -42,7 +42,6 @@ class CompileEsPlugin : CompilerStep
 
   override Void run()
   {
-    if (pod.name != "testEs") return
     log.info("CompileES: ${pod.name}")
     log.info("${compiler.pod.depends}")
 
