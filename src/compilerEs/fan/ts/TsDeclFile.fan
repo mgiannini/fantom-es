@@ -33,7 +33,7 @@ class TsDeclFile
       // TODO: correct file locations/module system?
       out.print("import * as ${pod2.name} from './${pod2.name}.js';\n")
     }
-    if (pod.name == "sys") out.print("export type JsObj = Obj | number | string | boolean | $anyFunc\n")
+    if (pod.name == "sys") out.print("export type JsObj = Obj | number | string | boolean | Function\n")
     out.write('\n')
 
     // Write declaration for each type
@@ -43,6 +43,7 @@ class TsDeclFile
       // they have the @Js facet or not
       // if (!type.hasFacet(jsFacet)) return
       if (type.isInternal) return
+      if (type.signature == "sys::Func") return
 
       // Parameterization of List, & Map
       classParams := ""
@@ -50,7 +51,7 @@ class TsDeclFile
         classParams = "<V = unknown>"
       if (type.signature == "sys::Map")
         classParams = "<K = unknown, V = unknown>"
-      
+
       extends := ""
       if (type.base != null)
         extends = "extends ${getNamespacedType(type.base.name, type.base.pod.name, pod)} "
@@ -100,10 +101,6 @@ class TsDeclFile
         out.print("  $staticStr$name($inputs): $output\n")
       }
 
-      // Write static type slot, e.g. Str#
-      typeStr := getNamespacedType("Type", "sys", pod)
-      out.print("  static type\$: $typeStr\n")
-
       out.print("}\n")
     }
   }
@@ -128,11 +125,11 @@ class TsDeclFile
     // Built-in type
     if (pmap.containsKey(type.signature))
       return pmap[type.signature]
-    
+
     // Nullable type
     if (type.isNullable)
       return "${getJsType(type.toNonNullable, thisPod, thisType)} | null"
-    
+
     // This
     if (type.signature == "sys::This")
       return thisType == null ? "this" : thisType.name
@@ -146,17 +143,16 @@ class TsDeclFile
     // List/map types
     if (type.fits(List#))
       return getGenericType(type, thisPod, ["V"], thisType)
-    
+
     if (type.fits(Map#))
       return getGenericType(type, thisPod, ["K", "V"], thisType)
-    
+
     // Function types
     if (type.fits(Func#))
     {
-      // TODO: have unknown instead of any when used as function output
       if (type.isGeneric)
-        return anyFunc
-      
+        return "Function"
+
       args   := type.params.dup
       args.remove("R")
       inputs := args.map |Type p, Str name->Str| { "arg$name: ${getJsType(p, thisPod, thisType)}" }
@@ -166,11 +162,11 @@ class TsDeclFile
       output := getJsType(type.params["R"], thisPod, thisType)
       return "(($inputs) => $output)"
     }
-    
+
     // Obj
     if (type.signature == "sys::Obj")
       return getNamespacedType("JsObj", "sys", thisPod)
-    
+
     // Regular types
     return getNamespacedType(type.name, type.pod.name, thisPod)
   }
@@ -215,8 +211,6 @@ class TsDeclFile
     "sys::Str":     "string",
     "sys::Void":    "void"
   ]
-
-  private const Str anyFunc := "((...args: any) => any)"
 
 }
 
