@@ -274,7 +274,7 @@ class JsType : JsNode
       }
       else
       {
-        pars := [SyntheticParam("this")].addAll(methParams)
+        pars := CParam[SyntheticParam("this")].addAll(methParams)
         js.wl("return this.peer.${methName}${methodParams(pars)};", m.loc)
       }
     }
