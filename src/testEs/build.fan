@@ -37,8 +37,8 @@ class Build : BuildPod
       //"sys.envProps": "testSys",
     ]
     srcDirs = [
-               `fan/`,
-               // `fan/debug/`,
+               // `fan/`,
+               `fan/debug/`,
               ]
     // resDirs = [`res/`, `locale/`, `concurrent/locale/`]
     resDirs = [`res/`, `locale/`,]

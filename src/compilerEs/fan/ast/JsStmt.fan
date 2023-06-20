@@ -30,7 +30,12 @@ class JsStmt : JsNode
       case StmtId.ifStmt:       writeIfStmt(stmt)
       case StmtId.returnStmt:   writeReturnStmt(stmt)
       case StmtId.throwStmt:    writeThrowStmt(stmt)
+      // case StmtId.forStmt:
+      // case StmtId.whileStmt:
+      // case StmtId.breakStmt:
       // case StmtId.continueStmt:
+      case StmtId.tryStmt:      writeTryStmt(stmt)
+      // case StmtId.switchStmt:
       default:
         stmt.print(AstWriter())
         throw err("Unknown StmtId: ${stmt.id} ${stmt.typeof}", stmt.loc)
@@ -52,6 +57,9 @@ class JsStmt : JsNode
 
   private Void writeLocalDefStmt(LocalDefStmt stmt)
   {
+    // don't write def for catch vars since we handle that ourselves in writeCatches()
+    if (stmt.isCatchVar) return
+
     js.w("let ", loc)
     if (stmt.init == null) js.w(stmt.name, loc)
     else
@@ -101,5 +109,70 @@ class JsStmt : JsNode
   {
     js.w("throw ")
     writeExpr(ts.exception)
+  }
+
+//////////////////////////////////////////////////////////////////////////
+// Try
+//////////////////////////////////////////////////////////////////////////
+
+  private Void writeTryStmt(TryStmt ts)
+  {
+    js.wl("try {").indent
+    writeBlock(ts.block)
+    js.unindent.wl("}")
+
+    writeCatches(ts.catches)
+
+    if (ts.finallyBlock != null)
+    {
+      js.wl("finally {").indent
+      writeBlock(ts.finallyBlock)
+      js.unindent.wl("}")
+    }
+  }
+
+  private Void writeCatches(Catch[] catches)
+  {
+    if (catches.isEmpty) return
+
+    var := uniqName
+    hasTyped    := catches.any |c| { c.errType != null }
+    hasCatchAll := catches.any |c| { c.errType == null }
+
+    js.wl("catch (${var}) {").indent
+    if (hasTyped) js.wl("${var} = sys.Err.make(${var});")
+
+    doElse := false
+    catches.each |c|
+    {
+      if (c.errType != null)
+      {
+        qname := qnameToJs(c.errType)
+        cVar  := c.errVariable ?: uniqName
+        if (doElse) js.w("else ")
+        else doElse = true
+
+        js.wl("if (${var} instanceof ${qname}) {").indent
+        js.wl("let ${cVar} = ${var};")
+        writeBlock(c.block)
+        js.unindent.wl("}")
+      }
+      else
+      {
+        hasElse := catches.size > 1
+        if (hasElse) js.wl("else {").indent
+        writeBlock(c.block)
+        if (hasElse) js.unindent.wl("}")
+      }
+    }
+
+    if (!hasCatchAll)
+    {
+      js.wl("else {").indent
+      js.wl("throw ${var};")
+      js.unindent.wl("}")
+    }
+
+    js.unindent.wl("}")
   }
 }

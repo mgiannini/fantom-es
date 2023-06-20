@@ -2,21 +2,47 @@
 
 @Js class DebugTest : Test
 {
-  Void testSynthetic()
+  Void testTryCatch()
   {
-    Pod.of(this).types.each |Type t|
+    try
     {
-      verifyEq(t.isSynthetic, t.name.index("\$") != null, t.toStr)
-      verifySlotsSynthetic(t)
+      throw ArgErr("uh-oh")
     }
-  }
+    catch (TimeoutErr timeout)
+    {
+      verify(false)
+    }
+    catch (ArgErr x)
+    {
+      x.trace
+      verify(true)
+    }
+    // catch
+    // {
+    //   verify(false)
+    // }
+    finally
+    {
+      echo("done!")
+      verify(true)
+    }
 
-  Void verifySlotsSynthetic(Type t)
-  {
-    t.slots.each |Slot slot|
-    {
-      if (slot.parent.isSynthetic || slot.name.index("\$") != null)
-        verify(slot.isSynthetic, slot.toStr)
-    }
   }
+  // Void testSynthetic()
+  // {
+  //   Pod.of(this).types.each |Type t|
+  //   {
+  //     verifyEq(t.isSynthetic, t.name.index("\$") != null, t.toStr)
+  //     verifySlotsSynthetic(t)
+  //   }
+  // }
+
+  // Void verifySlotsSynthetic(Type t)
+  // {
+  //   t.slots.each |Slot slot|
+  //   {
+  //     if (slot.parent.isSynthetic || slot.name.index("\$") != null)
+  //       verify(slot.isSynthetic, slot.toStr)
+  //   }
+  // }
 }
