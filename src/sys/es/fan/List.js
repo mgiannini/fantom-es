@@ -209,7 +209,7 @@ class List extends Obj {
     if (that instanceof List) {
       if (!this.#of.equals(that.#of)) return false;
       if (this.#size != that.#size) return false;
-      for (let i=0; i<this.m_size; ++i)
+      for (let i=0; i<this.#size; ++i)
         if (!ObjUtil.equals(this.#values[i], that.#values[i]))
           return false;
       return true;
