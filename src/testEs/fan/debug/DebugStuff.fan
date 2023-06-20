@@ -1,30 +1,47 @@
 
+@Js mixin Mix {
+  virtual Str bar() { "xxxbar" }
+  virtual Str mix() { "mix${bar}" }
 
+}
+@Js class Foo : Mix {
+  override Str bar() { "bar" }
+}
+@Js class Bar : Foo {
+  override Str bar() { "override ${super.bar}" }
+  override Str mix() { "override ${super.mix}" }
+}
 @Js class DebugTest : Test
 {
 
-  Void testTernary()
+  Void testSuper()
   {
-    x := 1 > 0 ? 100 : 200
-    verifyEq(x, 100)
-
-    x = 1 < 0 ? 100 : 200
-    verifyEq(x, 200)
-
-    try
-    {
-      x = 1 == 1 ? throw Err("nope") : 100
-      verify(false)
-    }
-    catch (Err err) verify(true)
-
-    try
-    {
-      x = 1 == 2 ? 200 : throw Err("nope")
-      verify(false)
-    }
-    catch (Err err) verify(true)
+    verifyEq(Bar().bar, "override bar")
+    verifyEq(Bar().mix, "override mixoverride bar")
   }
+
+  // Void testTernary()
+  // {
+  //   x := 1 > 0 ? 100 : 200
+  //   verifyEq(x, 100)
+
+  //   x = 1 < 0 ? 100 : 200
+  //   verifyEq(x, 200)
+
+  //   try
+  //   {
+  //     x = 1 == 1 ? throw Err("nope") : 100
+  //     verify(false)
+  //   }
+  //   catch (Err err) verify(true)
+
+  //   try
+  //   {
+  //     x = 1 == 2 ? 200 : throw Err("nope")
+  //     verify(false)
+  //   }
+  //   catch (Err err) verify(true)
+  // }
 
   // Void testElvis()
   // {

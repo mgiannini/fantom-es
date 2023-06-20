@@ -120,7 +120,7 @@ class JsType : JsNode
 
       // use mixin implementation (hijack it from the parent type's prototype)
       slotName := nameToJs(slot.name)
-      js.wl("${slotName} = ${qnameToJs(slot.parent)}.prototype.${slotName};").nl
+      js.wl("${slotName}() { return ${qnameToJs(slot.parent)}.prototype.${slotName}.apply(this, arguments); }").nl
     }
   }
 

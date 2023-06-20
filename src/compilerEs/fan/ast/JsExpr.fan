@@ -67,7 +67,7 @@ class JsExpr : JsNode
 
       case ExprId.localVar:        writeLocalVarExpr(expr)
       case ExprId.thisExpr:        writeThisExpr
-      //super
+      case ExprId.superExpr:       writeSuperExpr(expr)
       case ExprId.itExpr:          writeItExpr(expr)
       case ExprId.staticTarget:    writeStaticTargetExpr(expr)
       case ExprId.throwExpr:       writeThrowExpr(expr)
@@ -464,6 +464,12 @@ class JsExpr : JsNode
   private Void writeThisExpr() { js.w(plugin.thisName, loc) }
 
 //////////////////////////////////////////////////////////////////////////
+// Super
+//////////////////////////////////////////////////////////////////////////
+
+  private Void writeSuperExpr(SuperExpr se) { js.w("super", loc) }
+
+//////////////////////////////////////////////////////////////////////////
 // It
 //////////////////////////////////////////////////////////////////////////
 
@@ -577,7 +583,7 @@ internal class JsCallExpr : JsExpr
     }
     else if (ce.target is SuperExpr)
     {
-      throw Err("TODO:FIXIT: SuperExpr")
+      writeSuper
     }
     else
     {
@@ -586,6 +592,14 @@ internal class JsCallExpr : JsExpr
       writeArgs
       js.w(")")
     }
+  }
+
+  protected Void writeSuper()
+  {
+    writeExpr(ce.target)
+    js.w(".${name}(", loc)
+    writeArgs
+    js.w(")")
   }
 
   protected Void writeTarget()
