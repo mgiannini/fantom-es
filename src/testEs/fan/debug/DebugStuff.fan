@@ -13,11 +13,38 @@
 }
 @Js class DebugTest : Test
 {
-
+  Int f1 := 0
   Void testSuper()
   {
     verifyEq(Bar().bar, "override bar")
     verifyEq(Bar().mix, "override mixoverride bar")
+  }
+
+  Void testAssign()
+  {
+    x := 0
+    ++x
+    verifyEq(x, 1)
+    x += 1
+    verifyEq(x, 2)
+    x++
+    verifyEq(x, 3)
+    verifyEq(x++, 3)
+    verifyEq(x, 4)
+
+    ++f1
+    verifyEq(f1, 1)
+
+    f1++
+    verifyEq(f1, 2)
+
+    arr := [1,2,3]
+    arr[1] += 100
+    verifyEq(arr, [1,102,3])
+    verifyEq(arr[0]++, 1)
+    verifyEq(arr[0], 2)
+    verifyEq(++arr[0], 3)
+
   }
 
   // Void testTernary()

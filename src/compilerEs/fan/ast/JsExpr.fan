@@ -270,12 +270,18 @@ class JsExpr : JsNode
       fe := (FieldExpr)lhs.expr
       if (leave)
       {
+        throw Err("TODO:THIS IS DONE BUT HOW DID I GET HERE???")
         var := uniqName
         old := plugin.thisName
         plugin.thisName = "this\$"
-        js.w("(this\$) => {", loc)
-        // TODO:FIXIT handle leave exprs
-        throw Err("TODO:FIXIT leave field expr")
+        js.w("((this\$) => { ", loc)
+        js.w("let ${var} = ", loc); rhs.write; js.w("; ")
+
+        // hack: use UnknownVarExpr so we can write this synthetic var
+        lhs.writeSetter(JsExpr(plugin, UnknownVarExpr(loc, null, var))); js.w(";")
+        js.w(" return ${var}; })(${old})", loc)
+
+        plugin.thisName = old
       }
       else { lhs.writeSetter(rhs) }
     }
@@ -639,6 +645,7 @@ internal class JsShortcutExpr : JsCallExpr
   {
     this.se = se
     this.isIndexedAssign = se is IndexedAssignExpr
+    this.isPostfixLeave  = se.isPostfixLeave
 
     switch (se.opToken.symbol)
     {
@@ -649,33 +656,55 @@ internal class JsShortcutExpr : JsCallExpr
       case ">":  this.name = "compareGT"
     }
 
-    if (se.isAssign) throw Err("TODO:FIXIT isAssign")
-    if (isIndexedAssign) throw Err("TODO:FIXIT indexedAssign")
+    if (se.isAssign)     assignTarget = findAssignTarget(se.target)
+    if (isIndexedAssign) assignIndex  = findIndexedAssign(se.target).args[0]
   }
 
   ShortcutExpr se { private set }
   // Bool isAssign        := false    // does this expr assign
   Bool isIndexedAssign := false    // is indexed assign
-  // Bool isPostfixLeave  := false    // is postfix expr
+  Bool isPostfixLeave  := false    // is postfix expr
   // Bool leave           := false    // leave result of expr on "stack"
   Bool fieldSet        := false    // transiently used for field sets
   Expr? assignTarget   := null     // target of assignment
   Expr? assignIndex    := null     // indexed assign: index
 
+  private Expr findAssignTarget(Expr expr)
+  {
+    if (expr is LocalVarExpr || expr is FieldExpr) return expr
+    t := Type.of(expr).field("target", false)
+    if (t != null) return findAssignTarget(t.get(expr))
+    throw err("No base Expr found", loc)
+  }
+
+  private ShortcutExpr findIndexedAssign(Expr expr)
+  {
+    if (expr is ShortcutExpr) return expr
+    t := Type.of(expr).field("target", false)
+    if (t != null) return findIndexedAssign(t.get(expr))
+    throw err("No base Expr found", loc)
+  }
+
   override Void write()
   {
     if (fieldSet)
     {
-      throw Err("TODO:FIXIT fieldSet")
-      // return super.write
+      return super.write
     }
     if (isIndexedAssign)
     {
-      throw Err("TODO:FIXIT indexed assign")
+      return doWriteIndexedAssign
     }
     if (se.isPostfixLeave)
     {
-      throw Err("TODO:FIXIT: postfix leave")
+      var := uniqName
+      old := plugin.thisName
+      plugin.thisName = "this\$"
+      js.w("((this\$) => { let ${var} = ", loc)
+      writeExpr(assignTarget); js.w(";")
+      doWrite
+      js.w("; return ${var}; })(${old})", loc)
+      plugin.thisName = old
     }
     else doWrite
   }
@@ -684,8 +713,39 @@ internal class JsShortcutExpr : JsCallExpr
   {
     if (se.isAssign)
     {
-      throw Err("TODO:FIXIT assignTarget")
+      if (assignTarget is FieldExpr)
+      {
+        fieldSet = true
+        fe := (FieldExpr)assignTarget
+        JsExpr(plugin, fe).writeSetter(this)
+        fieldSet = false
+        return
+      }
+      else
+      {
+        writeExpr(assignTarget)
+        js.w(" = ", loc)
+      }
     }
     super.write
+  }
+
+  private Void doWriteIndexedAssign()
+  {
+    newVal := uniqName
+    oldVal := uniqName
+    ref    := uniqName
+    index  := uniqName
+    old    := plugin.thisName
+    retVal := isPostfixLeave ? oldVal : newVal
+    plugin.thisName = "this\$"
+    js.w("((this\$) => { ", loc)
+    js.w("let ${ref} = ", loc); writeExpr(assignTarget); js.w("; ")
+    js.w("let ${index} = ", loc); writeExpr(assignIndex); js.w("; ")
+    js.w("let ${newVal} = ", loc); super.write; js.w("; ")
+    if (isPostfixLeave) js.w("let ${oldVal} = ${ref}.get(${index}); ", loc)
+    js.w("${ref}.set(${index},${newVal}); ", loc)
+    js.w(" return ${retVal}; })(${old})", loc)
+    plugin.thisName = old
   }
 }
