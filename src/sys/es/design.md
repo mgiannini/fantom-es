@@ -70,4 +70,59 @@ class Foo extends sys.Obj {
   #c = 0;
   // no method generated for #c since it has private getter/setter
 }
+
+let f = new Foo();
+f.a(100);
+console.log(`The value of a is now ${f.a()}`);
 ```
+
+# Fields - Alternate Proposal
+
+Another option is to treat no-arg methods as special. In the case of a no-arg method/field we would an ES6 getter/setter. 
+This has a few benefits:
+
+1. It allows you to access the field/method without having to use `()`. The resutling code is more readable; especially when chaining
+no arg method calls. `foo.bar.baz`
+2. When the code is used in TypeScript, it will adhere more closely to TS conventions.
+3. It mimics how Fantom works with no-arg methods
+
+Some potential drawbacks:
+
+1. It breaks the uniformity of having *every* method/field treated the same.
+2. If a no-arg method ever gets modified to add a parameter (e.g. a single parameter with a default value), it will break existing
+code since it *must* be generated as a normal method instead of a getter.
+
+Here is an example of what this code might look like. 
+
+```
+# Fantom
+mixin Foo {
+  virtual Str baz() { "foo" }
+  virtual Str qaz() { "qaz" }
+}
+
+class Bar : Foo {
+  override Str baz := "bar"
+} 
+
+# JavaScript
+class Foo {
+  get baz() { return "baz"; }
+  get qaz() { return "qaz"; }
+}
+
+class Bar extends Obj {
+  #baz = "bar"; // this would actually get initialized in the generated constructor
+  get baz() { return this.#baz; }
+  set baz(it) { this.#baz = it; }
+
+  qaz = Foo.prototype.qaz; // this is how mixins are handled (no change)
+}
+
+let b = new Bar();
+# access baz as getter/setter now
+b.baz = "abc123";
+console.log(`The new value of baz is ${b.baz}`);
+```
+
+
