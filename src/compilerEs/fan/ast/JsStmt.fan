@@ -31,11 +31,11 @@ class JsStmt : JsNode
       case StmtId.returnStmt:   writeReturnStmt(stmt)
       case StmtId.throwStmt:    writeThrowStmt(stmt)
       case StmtId.forStmt:      writeForStmt(stmt)
-      // case StmtId.whileStmt:
+      case StmtId.whileStmt:    writeWhileStmt(stmt)
       case StmtId.breakStmt:    js.w("break")
       case StmtId.continueStmt: js.w("continue")
       case StmtId.tryStmt:      writeTryStmt(stmt)
-      // case StmtId.switchStmt:
+      case StmtId.switchStmt:   writeSwitchStmt(stmt)
       default:
         stmt.print(AstWriter())
         throw err("Unknown StmtId: ${stmt.id} ${stmt.typeof}", stmt.loc)
@@ -125,6 +125,17 @@ class JsStmt : JsNode
   }
 
 //////////////////////////////////////////////////////////////////////////
+// While
+//////////////////////////////////////////////////////////////////////////
+
+  private Void writeWhileStmt(WhileStmt ws)
+  {
+    js.w("while ("); writeExpr(ws.condition); js.wl(") {").indent
+    writeBlock(ws.block)
+    js.unindent.wl("}")
+  }
+
+//////////////////////////////////////////////////////////////////////////
 // Try
 //////////////////////////////////////////////////////////////////////////
 
@@ -187,5 +198,41 @@ class JsStmt : JsNode
     }
 
     js.unindent.wl("}")
+  }
+
+//////////////////////////////////////////////////////////////////////////
+// Switch
+//////////////////////////////////////////////////////////////////////////
+
+  private Void writeSwitchStmt(SwitchStmt ss)
+  {
+    var := uniqName
+    js.w("let ${var} = "); writeExpr(ss.condition); js.wl(";")
+
+    ss.cases.each |c, i|
+    {
+      if (i > 0) js.w("else ")
+      js.w("if (")
+      c.cases.each |e, j|
+      {
+        if (j > 0) js.w(" || ")
+        js.w("sys.ObjUtil.equals(${var}, "); writeExpr(e); js.w(")")
+      }
+      js.wl(") {").indent
+      writeBlock(c.block)
+      js.unindent.wl("}")
+    }
+
+    if (ss.defaultBlock != null)
+    {
+      if (!ss.cases.isEmpty)
+      {
+        js.wl("else {").indent
+        writeBlock(ss.defaultBlock)
+        js.unindent.wl("}")
+
+      }
+      else writeBlock(ss.defaultBlock)
+    }
   }
 }
