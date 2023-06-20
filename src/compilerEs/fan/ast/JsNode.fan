@@ -176,13 +176,20 @@ abstract class JsNode
   {
     if (block == null) return
     block.stmts.each |stmt| {
-      JsStmt(plugin, stmt).write
+      writeStmt(stmt)
       js.wl(";")
     }
   }
 
-  Void writeExpr(Expr expr)
+  Void writeStmt(Stmt? stmt)
   {
+    if (stmt == null) return
+    JsStmt(plugin, stmt).write
+  }
+
+  Void writeExpr(Expr? expr)
+  {
+    if (expr == null) return
     switch (expr.id)
     {
       // case ExprId.call:     JsCallExpr(plugin, expr).write

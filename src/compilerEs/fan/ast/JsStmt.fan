@@ -30,10 +30,10 @@ class JsStmt : JsNode
       case StmtId.ifStmt:       writeIfStmt(stmt)
       case StmtId.returnStmt:   writeReturnStmt(stmt)
       case StmtId.throwStmt:    writeThrowStmt(stmt)
-      // case StmtId.forStmt:
+      case StmtId.forStmt:      writeForStmt(stmt)
       // case StmtId.whileStmt:
-      // case StmtId.breakStmt:
-      // case StmtId.continueStmt:
+      case StmtId.breakStmt:    js.w("break")
+      case StmtId.continueStmt: js.w("continue")
       case StmtId.tryStmt:      writeTryStmt(stmt)
       // case StmtId.switchStmt:
       default:
@@ -109,6 +109,19 @@ class JsStmt : JsNode
   {
     js.w("throw ")
     writeExpr(ts.exception)
+  }
+
+//////////////////////////////////////////////////////////////////////////
+// For
+//////////////////////////////////////////////////////////////////////////
+
+  private Void writeForStmt(ForStmt fs)
+  {
+    js.w("for ("); writeStmt(fs.init); js.w("; ")
+      writeExpr(fs.condition); js.w("; ")
+      writeExpr(fs.update); js.wl(") {").indent
+    writeBlock(fs.block)
+    js.unindent.wl("}")
   }
 
 //////////////////////////////////////////////////////////////////////////
