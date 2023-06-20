@@ -45,11 +45,11 @@ class JsExpr : JsNode
       case ExprId.cmpNull:         writeUnaryExpr(expr)
       case ExprId.cmpNotNull:      writeUnaryExpr(expr)
 
-      // elvis
+      case ExprId.elvis:           writeElvisExpr(expr)
       case ExprId.assign:          writeBinaryExpr(expr)
       case ExprId.same:            writeBinaryExpr(expr)
       case ExprId.notSame:         writeBinaryExpr(expr)
-      // ternary
+      case ExprId.ternary:         writeTernaryExpr(expr)
 
       case ExprId.boolOr:          writeCondExpr(expr)
       case ExprId.boolAnd:         writeCondExpr(expr)
@@ -70,7 +70,7 @@ class JsExpr : JsNode
       //super
       case ExprId.itExpr:          writeItExpr(expr)
       case ExprId.staticTarget:    writeStaticTargetExpr(expr)
-      //throw
+      case ExprId.throwExpr:       writeThrowExpr(expr)
 
       default:
         Err().trace
@@ -195,6 +195,44 @@ class JsExpr : JsNode
     js.w(", sys.Type.find(\"${t.k.signature}\")")
     js.w(", sys.Type.find(\"${t.v.signature}\")")
     js.w(")")
+  }
+
+//////////////////////////////////////////////////////////////////////////
+// Elvis
+//////////////////////////////////////////////////////////////////////////
+
+  private Void writeElvisExpr(BinaryExpr be)
+  {
+    var := uniqName
+    old := plugin.thisName
+    plugin.thisName = "this\$"
+
+    js.w("((this\$) => { let ${var} = ", loc)
+    writeExpr(be.lhs)
+    js.w("; if (${var} != null) return ${var}; ", loc)
+    if (be.rhs isnot ThrowExpr) js.w("return ", loc)
+    writeExpr(be.rhs)
+    js.w("; })(${old})", loc)
+    plugin.thisName = old
+  }
+
+//////////////////////////////////////////////////////////////////////////
+// Ternary
+//////////////////////////////////////////////////////////////////////////
+
+  private Void writeTernaryExpr(TernaryExpr te)
+  {
+    var := uniqName
+    old := plugin.thisName
+    plugin.thisName = "this\$"
+    js.w("((this\$) => { ", loc)
+    js.w("if ("); writeExpr(te.condition); js.w(") ")
+    if (te.trueExpr isnot ThrowExpr) js.w("return ", loc)
+    writeExpr(te.trueExpr); js.w("; ")
+    if (te.falseExpr isnot ThrowExpr) js.w("return ", loc)
+    writeExpr(te.falseExpr); js.w("; ")
+    js.w("})(${old})", loc)
+    plugin.thisName = old
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -407,6 +445,16 @@ class JsExpr : JsNode
       js.wl("  throw sys.UnsupportedErr.make('Closure uses non-JS types: ' + ${ce.signature.toStr.toCode});")
       js.w("}")
     }
+  }
+
+//////////////////////////////////////////////////////////////////////////
+// Throw
+//////////////////////////////////////////////////////////////////////////
+
+  private Void writeThrowExpr(ThrowExpr te)
+  {
+    js.w("throw ", loc)
+    writeExpr(te.exception)
   }
 
 //////////////////////////////////////////////////////////////////////////

@@ -3,29 +3,69 @@
 @Js class DebugTest : Test
 {
 
-  Void testSwitch()
+  Void testTernary()
   {
-    x := 0
-    v := 0
-    d := 0
-    for (i := 0; i < 10; i = i + 1)
-    {
-      switch (i)
-      {
-        case 0:
-          x = 100
-        case 1:
-        case 2:
-        case 3:
-          v = v + 1
-        default:
-          d = d + 1
-      }
-    }
-    verifyEq(v, 3)
+    x := 1 > 0 ? 100 : 200
     verifyEq(x, 100)
-    verifyEq(d, 6)
+
+    x = 1 < 0 ? 100 : 200
+    verifyEq(x, 200)
+
+    try
+    {
+      x = 1 == 1 ? throw Err("nope") : 100
+      verify(false)
+    }
+    catch (Err err) verify(true)
+
+    try
+    {
+      x = 1 == 2 ? 200 : throw Err("nope")
+      verify(false)
+    }
+    catch (Err err) verify(true)
   }
+
+  // Void testElvis()
+  // {
+  //   Int? x := null ?: 100
+  //   verifyEq(x, 100)
+  //   x = (x ?: 200) + 1
+  //   verifyEq(x, 101)
+
+  //   try
+  //   {
+  //     y := null ?: throw Err("nope")
+  //   }
+  //   catch (Err err)
+  //   {
+  //     verifyEq(err.msg, "nope")
+  //   }
+  // }
+
+  // Void testSwitch()
+  // {
+  //   x := 0
+  //   v := 0
+  //   d := 0
+  //   for (i := 0; i < 10; i = i + 1)
+  //   {
+  //     switch (i)
+  //     {
+  //       case 0:
+  //         x = 100
+  //       case 1:
+  //       case 2:
+  //       case 3:
+  //         v = v + 1
+  //       default:
+  //         d = d + 1
+  //     }
+  //   }
+  //   verifyEq(v, 3)
+  //   verifyEq(x, 100)
+  //   verifyEq(d, 6)
+  // }
 
   // Void testWhile()
   // {
