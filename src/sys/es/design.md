@@ -125,4 +125,46 @@ b.baz = "abc123";
 console.log(`The new value of baz is ${b.baz}`);
 ```
 
+This would also impact how we generate fields for Enums
+
+```
+# Here is the current pattern for Enums using LogLevel as an example
+class LogLevel extends Enum {
+  constructor(ordinal, name) {
+    super();
+    Enum.make$(this, ordinal, name);
+  }
+
+  static debug() { return LogLevel.vals().get(0); }
+  static info() { return LogLevel.vals().get(1); }
+  static warn() { return LogLevel.vals().get(2); }
+  static err() { return LogLevel.vals().get(3); }
+  static silent() { return LogLevel.vals().get(4); }
+
+  static #vals = undefined;
+  static vals() {
+    if (LogLevel.#vals === undefined) {
+      LogLevel.#vals = List.make(LogLevel.type$,
+        [new LogLevel(0, "debug"), new LogLevel(1, "info"),
+         new LogLevel(2, "warn"), new LogLevel(3, "err"),
+         new LogLevel(4, "silent")]).toImmutable();
+    }
+    return LogLevel.#vals;
+  }
+}
+
+# We would turn these into static getters:
+class LogLevel extends Enum {
+  ...
+
+  static get debug() { return LogLevel.vals().get(0); }
+  static get info() { return LogLevel.vals().get(1); }
+  static get warn() { return LogLevel.vals().get(2); }
+  static get err() { return LogLevel.vals().get(3); }
+  static get silent() { return LogLevel.vals().get(4); }
+
+  ...
+}
+
+```
 
