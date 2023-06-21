@@ -333,16 +333,6 @@ class JsExpr : JsNode
   }
 
 //////////////////////////////////////////////////////////////////////////
-// Construction
-//////////////////////////////////////////////////////////////////////////
-
-  private Void writeShortcutExpr(ShortcutExpr se)
-  {
-    se.print(AstWriter())
-    throw Err("TODO:FIXIT writeShortcutExpr")
-  }
-
-//////////////////////////////////////////////////////////////////////////
 // Field
 //////////////////////////////////////////////////////////////////////////
 
@@ -360,8 +350,26 @@ class JsExpr : JsNode
 
   private Void writeFieldExpr(FieldExpr fe)
   {
-    if (fe.target is SuperExpr) throw Err("TODO: SuperExpr")
+    if (fe.target is SuperExpr) writeSuperField(fe)
     else writeNormField(fe)
+  }
+
+  private Void writeSuperField(FieldExpr fe)
+  {
+    name := nameToJs(fe.field.name)
+
+    // TODO: do we need anything special here for setArg != null ?
+    // possibly if we change to getter/setter design
+    // if (setArg != null) throw Err("TODO: setArg = ${setArg} name=${name}")
+
+    writeExpr(fe.target)
+    js.w(".${name}.call(${plugin.thisName}", loc)
+    if (setArg != null)
+    {
+      js.w(", ")
+      writeSetArg
+    }
+    js.w(")")
   }
 
   private Void writeNormField(FieldExpr fe)
@@ -379,13 +387,6 @@ class JsExpr : JsNode
     writeTarget := |->| {
       if (fe.target == null) js.w(qnameToJs(parent), fe.loc)
       else JsExpr(plugin, fe.target).write
-    }
-
-    writeSetArg := |->| {
-      arg := this.setArg
-      this.setArg = null
-      arg.write
-      this.setArg = arg
     }
 
     if (fe.isSafe)
@@ -419,6 +420,14 @@ class JsExpr : JsNode
     }
 
     if (fe.isSafe) throw Err("TODO: finish safe access")
+  }
+
+  private Void writeSetArg()
+  {
+    arg := this.setArg
+    this.setArg = null
+    arg.write
+    this.setArg = arg
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -473,6 +482,8 @@ class JsExpr : JsNode
 // Super
 //////////////////////////////////////////////////////////////////////////
 
+  // TODO:FIXIT:MAYBE - this might need to reference the prototype
+  // See compilerJs implementation
   private Void writeSuperExpr(SuperExpr se) { js.w("super", loc) }
 
 //////////////////////////////////////////////////////////////////////////

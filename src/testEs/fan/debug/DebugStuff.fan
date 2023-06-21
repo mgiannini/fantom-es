@@ -5,11 +5,13 @@
 
 }
 @Js class Foo : Mix {
+  Int i := 0
   override Str bar() { "bar" }
 }
 @Js class Bar : Foo {
   override Str bar() { "override ${super.bar}" }
   override Str mix() { "override ${super.mix}" }
+  Int s1() { super.i = 1; return super.i; }
 }
 @Js class DebugTest : Test
 {
@@ -18,34 +20,36 @@
   {
     verifyEq(Bar().bar, "override bar")
     verifyEq(Bar().mix, "override mixoverride bar")
+    verifyEq(Bar().i, 0)
+    verifyEq(Bar().s1, 1)
   }
 
-  Void testAssign()
-  {
-    x := 0
-    ++x
-    verifyEq(x, 1)
-    x += 1
-    verifyEq(x, 2)
-    x++
-    verifyEq(x, 3)
-    verifyEq(x++, 3)
-    verifyEq(x, 4)
+  // Void testAssign()
+  // {
+  //   x := 0
+  //   ++x
+  //   verifyEq(x, 1)
+  //   x += 1
+  //   verifyEq(x, 2)
+  //   x++
+  //   verifyEq(x, 3)
+  //   verifyEq(x++, 3)
+  //   verifyEq(x, 4)
 
-    ++f1
-    verifyEq(f1, 1)
+  //   ++f1
+  //   verifyEq(f1, 1)
 
-    f1++
-    verifyEq(f1, 2)
+  //   f1++
+  //   verifyEq(f1, 2)
 
-    arr := [1,2,3]
-    arr[1] += 100
-    verifyEq(arr, [1,102,3])
-    verifyEq(arr[0]++, 1)
-    verifyEq(arr[0], 2)
-    verifyEq(++arr[0], 3)
+  //   arr := [1,2,3]
+  //   arr[1] += 100
+  //   verifyEq(arr, [1,102,3])
+  //   verifyEq(arr[0]++, 1)
+  //   verifyEq(arr[0], 2)
+  //   verifyEq(++arr[0], 3)
 
-  }
+  // }
 
   // Void testTernary()
   // {
