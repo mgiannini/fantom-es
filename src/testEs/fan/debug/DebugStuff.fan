@@ -6,6 +6,7 @@
 }
 @Js class Foo : Mix {
   Int i := 0
+  const Int c := 0
   override Str bar() { "bar" }
 }
 @Js class Bar : Foo {
@@ -16,12 +17,23 @@
 @Js class DebugTest : Test
 {
   Int f1 := 0
+  Str? x := null
   Void testSuper()
   {
     verifyEq(Bar().bar, "override bar")
     verifyEq(Bar().mix, "override mixoverride bar")
     verifyEq(Bar().i, 0)
     verifyEq(Bar().s1, 1)
+  }
+
+  Void testSafe()
+  {
+    Int? a := null
+    verifyNull(a?.toStr)
+    a = 1
+    verifyEq(a?.toStr, "1")
+    verifyNull(this.x?.toInt)
+    // verifyEq(Bar().c, 0)
   }
 
   // Void testAssign()

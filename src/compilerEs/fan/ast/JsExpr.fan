@@ -391,7 +391,7 @@ class JsExpr : JsNode
 
     if (fe.isSafe)
     {
-      throw Err("TODO: safe access")
+      throw Err("TODO:FIXIT safe access - i have no idea how this code path triggers")
     }
     else
     {
@@ -419,7 +419,7 @@ class JsExpr : JsNode
       }
     }
 
-    if (fe.isSafe) throw Err("TODO: finish safe access")
+    if (fe.isSafe) throw Err("TODO:FIXIT finish safe access")
   }
 
   private Void writeSetArg()
@@ -560,7 +560,17 @@ internal class JsCallExpr : JsExpr
 
     if (ce.isSafe)
     {
-      throw Err("TODO:FIXIT safe calls")
+      // wrap if safe-nav
+      safeVar := uniqName
+      old := plugin.thisName
+      plugin.thisName = "this\$"
+      js.w("((this\$) => { let ${safeVar} = ", loc)
+      if (ce.target == null) js.w(plugin.thisName, loc)
+      else writeExpr(ce.target)
+      js.w("; if (${safeVar} == null) return null; return ", loc)
+      writeCall
+      js.w("; })(${old})", loc)
+      plugin.thisName = old
     }
     else
     {
