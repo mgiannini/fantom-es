@@ -1,3 +1,17 @@
+// @Js class Consty
+// {
+//   const Int x := 0
+//   static const Int y := 1
+// }
+@Js enum class TestEnum
+{
+  a(1),
+  b(2)
+
+  private new make(Int code) { this.code = code }
+
+  const Int code
+}
 
 @Js mixin Mix {
   virtual Str bar() { "xxxbar" }
@@ -6,18 +20,33 @@
 }
 @Js class Foo : Mix {
   Int i := 0
-  const Int c := 0
+  const Int c := 10
+  static const Int xxx
+  static const Int cc := 100
   override Str bar() { "bar" }
+
+  static
+  {
+    Foo.xxx = 123
+  }
 }
 @Js class Bar : Foo {
   override Str bar() { "override ${super.bar}" }
   override Str mix() { "override ${super.mix}" }
   Int s1() { super.i = 1; return super.i; }
 }
+
 @Js class DebugTest : Test
 {
   Int f1 := 0
   Str? x := null
+
+  Void testEnum()
+  {
+    verifyEq(TestEnum.a.code, 1)
+    verifyEq(TestEnum.b.code, 2)
+  }
+
   Void testSuper()
   {
     verifyEq(Bar().bar, "override bar")
@@ -33,7 +62,13 @@
     a = 1
     verifyEq(a?.toStr, "1")
     verifyNull(this.x?.toInt)
-    // verifyEq(Bar().c, 0)
+  }
+
+  Void testStaticAndConst()
+  {
+    verifyEq(Bar().c, 10)
+    verifyEq(Bar.cc, 100)
+    verifyEq(Bar.xxx, 123)
   }
 
   // Void testAssign()

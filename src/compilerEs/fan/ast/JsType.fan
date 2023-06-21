@@ -22,7 +22,6 @@ class JsType : JsNode
   {
     this.hasNatives = null != def.slots.find |n| { n.isNative && n.parent.qname == def.qname }
     this.peer = findPeer(plugin, def)
-    // TODO: other things like static init, instance init, methods
   }
 
   static CType? findPeer(CompileEsPlugin plugin, CType def)
@@ -143,35 +142,36 @@ class JsType : JsNode
   private Void writeField(FieldDef f)
   {
     if (f.isNative) return
-    if (f.isEnum)   return writeEnumField(f)
 
-    fieldType := f.fieldType
-    name      := fieldJs(f.name)
-    defVal    := "null"
-    if (!fieldType.isNullable)
-    {
-      switch (fieldType.signature)
-      {
-        case "sys::Bool":    defVal = "false"
-        case "sys::Int":     defVal = "0"
-        case "sys::Float":   defVal = "sys.Float.make(0)"
-        case "sys::Decimal": defVal = "sys.Decimal.make(0)"
-      }
-    }
+    privName   := fieldJs(f.name)
+    accessName := nameToJs(f.name)
+
+    if (f.isEnum)   return writeEnumField(f, accessName)
+    if (f.isStatic) return writeStaticField(f, privName, accessName)
+
+    // write "normal" field
 
     // write field storage
-    if (f.isStatic) js.w("static ")
-    js.wl("${name} = ${defVal};", f.loc).nl
+    js.wl("${privName} = ${fieldDefVal(f)};", f.loc).nl
 
     // write synthetic public API for reading/writing the field
+
+    // but not for private fields
     if (f.isPrivate) return
+
+    // const fields only have a public getter
+    if (f.isConst)
+    {
+      js.wl("${accessName}() { return this.${privName}; }", f.loc).nl
+      return
+    }
 
     // skip fields with no public getter or setter
     if ((f.getter?.isPrivate ?: true) && (f.setter?.isPrivate ?: true)) return
 
     // use actual field name for public api
     allowSet := f.setter != null && !f.setter.isPrivate
-    js.w("${nameToJs(f.name)}(", f.loc)
+    js.w("${accessName}(", f.loc)
     if (allowSet) js.w("it=undefined")
     js.wl(") {")
     js.indent
@@ -188,11 +188,54 @@ class JsType : JsNode
     js.unindent.wl("}").nl
   }
 
-  private Void writeEnumField(FieldDef f)
+  private static Str fieldDefVal(FieldDef f)
   {
-    name := nameToJs(f.name)
-    ord  := f.enumDef.ordinal
-    js.wl("static ${name}() { return ${qnameToJs(f.parent)}.vals().get(${ord}); }").nl
+    defVal    := "null"
+    fieldType := f.fieldType
+    if (!fieldType.isNullable)
+    {
+      switch (fieldType.signature)
+      {
+        case "sys::Bool":    defVal = "false"
+        case "sys::Int":     defVal = "0"
+        case "sys::Float":   defVal = "sys.Float.make(0)"
+        case "sys::Decimal": defVal = "sys.Decimal.make(0)"
+      }
+    }
+    return defVal
+  }
+
+  private Void writeStaticField(FieldDef f, Str privName, Str accessName)
+  {
+    target := f.parent.name
+    js.wl("static ${privName} = undefined;", f.loc).nl
+
+    js.wl("static ${accessName}() {").indent
+
+    fieldAccess := "${target}.${privName}"
+    js.wl("if (${fieldAccess} === undefined) {").indent
+    // call the static initializer
+    // if the value is still not initialized, then set it to its default value
+    js.wl("${target}.${curType.staticInit.name}();")
+    js.wl("if (${fieldAccess} === undefined) ${fieldAccess} = ${fieldDefVal(f)};")
+    js.unindent.wl("}")
+
+    // we can't do it this way because if a static field is initialized in an
+    // actual static block, then we f.init will be null, and the the static init
+    // block might not have initialized the field
+    // js.w("if (${target}.${privName} === undefined) ${target}.${privName} = ")
+    //   if (f.init == null) js.w(fieldDefVal(f))
+    //   else writeExpr(f.init)
+    //   js.wl(";")
+
+    js.wl("return ${target}.${privName};")
+    js.unindent.wl("}").nl
+  }
+
+  private Void writeEnumField(FieldDef f, Str accessName)
+  {
+    ord := f.enumDef.ordinal
+    js.wl("static ${accessName}() { return ${qnameToJs(f.parent)}.vals().get(${ord}); }").nl
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -206,7 +249,6 @@ class JsType : JsNode
       if (m.isStaticInit) return writeEnumStaticInit(m)
       else if (m.isStatic && m.name == "fromStr") return writeEnumFromStr(m)
     }
-    if (m.isStaticInit && curType.isEnum) return writeEnumStaticInit(m)
 
     selfJs := nameToJs("self")
     nameJs := nameToJs(m.name)
@@ -309,13 +351,12 @@ class JsType : JsNode
     js.wl("${valsField} = sys.List.make(${enumName}.type\$, [").indent
     enumFields.each |FieldDef f, Int i| {
       def := f.enumDef
-      if (def.ctorArgs.size > 0) throw Err("TODO:FIXIT - ctorArgs for enum")
-      js.wl("${enumName}.make(${def.ordinal},${def.name.toCode}),")
-      // def.ctorArgs.each |Expr arg, Int j| {
-      //   if (j > 0) js.w(", ")
-      //   writeExpr(arg)
-      // }
-      // js.wl("),")
+      js.w("${enumName}.make(${def.ordinal}, ${def.name.toCode}, ")
+      def.ctorArgs.each |Expr arg, Int j| {
+        if (j > 0) js.w(", ")
+        writeExpr(arg)
+      }
+      js.wl("),")
     }
     js.unindent.wl("]).toImmutable();")
 
