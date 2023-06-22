@@ -209,6 +209,9 @@ class JsType : JsNode
 
   private Void writeStaticField(FieldDef f, Str privName, Str accessName)
   {
+    // we generate our own special version of this
+    if (f.parent.isEnum && accessName == "vals") return
+
     target := f.parent.name
     js.wl("static ${privName} = undefined;", f.loc).nl
 

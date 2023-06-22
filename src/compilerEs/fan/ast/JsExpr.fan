@@ -379,6 +379,9 @@ class JsExpr : JsNode
     parent      := fe.field.parent
     useAccessor := fe.useAccessor
 
+    // use accessor if referring to an enum field
+    if (fe.field.isEnum) useAccessor = true
+
     // force use of the accessor methods if we are accessing the
     // field outside its type since we declare all fields as private
     // in the generated js code

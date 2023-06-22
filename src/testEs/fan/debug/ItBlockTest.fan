@@ -1,5 +1,6 @@
 
 
+/*
 @Js class ItBlockTest : Test
 {
   Void test()
@@ -32,3 +33,14 @@
   const |->Int| func := |->Int| { 2 }
 }
 
+
+*/
+
+@Js
+enum class FutureState
+{
+  pending
+
+  ** Return if pending state
+  Bool isPending() { this === pending }
+}
