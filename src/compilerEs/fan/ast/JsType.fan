@@ -156,13 +156,15 @@ class JsType : JsNode
 
     // write synthetic public API for reading/writing the field
 
-    // but not for private fields
+    // generate internal setter for use by the compiler
     if (f.isPrivate) return
 
     // const fields only have a public getter
+    // but we generate a synthetic setter for use by the compiler
     if (f.isConst)
     {
       js.wl("${accessName}() { return this.${privName}; }", f.loc).nl
+      js.wl("__${accessName}(it) { this.${privName} = it; }", f.loc).nl
       return
     }
 
@@ -306,7 +308,7 @@ class JsType : JsNode
     // closure support
     // TODO:TEST - need to make sure that code using "this$" works
     hasClosure := ClosureFinder(m).exists
-    if (hasClosure) js.wl("const this\$ = ${plugin.thisName}")
+    if (hasClosure) js.wl("const this\$ = ${plugin.thisName};")
 
     if (m.isNative)
     {

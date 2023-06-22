@@ -74,6 +74,11 @@ class ObjUtil {
   static as(obj, type) {
     if (obj == null) return null;
     type = type.toNonNullable();
+    // TODO: not sure if this is best way to handle native closures
+    if (obj instanceof Function) {
+      obj.fanType$ = type;
+      return obj;
+    }
     const t = ObjUtil.typeof$(obj);
     if (t.is(Func.type$)) return t.as(obj, type);
     if (t.is(List.type$)) return t.as(obj, type);
@@ -137,11 +142,11 @@ class ObjUtil {
   static isImmutable(obj) {
     if (obj instanceof Obj) return obj.isImmutable();
     else if (obj == null) return true;
-    else
-    {
+    else {
       if ((typeof obj) == "boolean" || obj instanceof Boolean) return true;
       if ((typeof obj) == "number"  || obj instanceof Number) return true;
       if ((typeof obj) == "string"  || obj instanceof String) return true;
+      if ((typeof obj) == "function" || obj instanceof Function) return true;
       if (obj.fanType$ != null) return true;
     }
     throw UnknownTypeErr.make("Not a Fantom type: " + obj);
@@ -150,11 +155,11 @@ class ObjUtil {
   static toImmutable(obj) {
     if (obj instanceof Obj) return obj.toImmutable();
     else if (obj == null) return null;
-    else
-    {
+    else {
       if ((typeof obj) == "boolean" || obj instanceof Boolean) return obj;
       if ((typeof obj) == "number"  || obj instanceof Number) return obj;
       if ((typeof obj) == "string"  || obj instanceof String) return obj;
+      if ((typeof obj) == "function" || obj instanceof Function) return obj;
       if (obj.fanType$ != null) return obj;
     }
     throw UnknownTypeErr.make("Not a Fantom type: " + obj);

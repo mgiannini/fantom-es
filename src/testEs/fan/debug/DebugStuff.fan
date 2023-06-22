@@ -3,6 +3,8 @@
 //   const Int x := 0
 //   static const Int y := 1
 // }
+
+/*
 @Js enum class TestEnum
 {
   a(1),
@@ -246,3 +248,4 @@
   //   }
   // }
 }
+*/

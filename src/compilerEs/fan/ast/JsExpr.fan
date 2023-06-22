@@ -404,6 +404,7 @@ class JsExpr : JsNode
       if (setArg==null) js.w("${name}()", fe.loc)
       else
       {
+        if (fe.field.isConst) name = "__${name}"
         js.w("${name}(")
         writeSetArg()
         js.w(")")
@@ -533,7 +534,9 @@ internal class JsCallExpr : JsExpr
 
     if (ce.target != null)
     {
+      resolveType := |CType ctype->CType| { ctype is TypeRef ? ctype->t : ctype }
       this.targetType = ce.target.ctype == null ? this.parent : ce.target.ctype
+      isFunc = resolveType(ce.target.ctype) is FuncType
     }
 
     // force these methods to route thru ObjUtil if not a super.xxx expr
@@ -546,6 +549,7 @@ internal class JsCallExpr : JsExpr
   Bool isPrim       := false          // is target a primitive type (Int,Bool,etc.)
   Bool isCtor       := false          // is this a ctor call
   Bool isStatic     := false          // is this a static method
+  Bool isFunc       := false          // is this a Func/Closure call
   CType? parent     := null           // method parent type
   CType? targetType := null           // call target type
   Str? safeVar      := null           // var that target expr is held in for safe-nav
@@ -615,7 +619,9 @@ internal class JsCallExpr : JsExpr
     else
     {
       writeTarget
-      js.w(".${name}(", loc)
+      // if native closure, we invoke the func directly (don't do Func.call())
+      if (isFunc) js.w("(")
+      else js.w(".${name}(", loc)
       writeArgs
       js.w(")")
     }

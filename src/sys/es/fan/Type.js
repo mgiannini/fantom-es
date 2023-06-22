@@ -543,7 +543,7 @@ class Type extends Obj {
     if ((typeof obj) == "boolean" || obj instanceof Boolean) return Bool.type$;
     if ((typeof obj) == "number"  || obj instanceof Number)  return Int.type$;
     if ((typeof obj) == "string"  || obj instanceof String)  return Str.type$;
-    throw fan.sys.Err.make(`sys::Type.toFanType: Not a Fantom type: ${obj}`);
+    throw Err.make(`sys::Type.toFanType: Not a Fantom type: ${obj}`);
   }
 
   static common$(objs) {
