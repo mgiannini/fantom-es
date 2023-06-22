@@ -12,6 +12,9 @@
  */
 class CanvasGraphics extends sys.Obj {
 
+  constructor() { super(); }
+  typeof$() { return CanvasGraphics.type$; }
+
   cx;
 
   // render

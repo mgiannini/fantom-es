@@ -12,6 +12,9 @@
  */
 class CanvasGraphicsPath extends sys.Obj {
 
+  constructor() { super(); }
+  typeof$() { return CanvasGraphicsPath.type$; }
+
   // canvas context
   cx = null;
 
