@@ -9,7 +9,7 @@
 
 class DomCoordPeer extends sys.Obj {
 
-  constructor() { super(); }
+  constructor(self) { super(); }
 
   static wrap(pos)
   {
@@ -22,12 +22,12 @@ class DomCoordPeer extends sys.Obj {
   coords;
   ts;
 
-  lat()              { return this.coords.latitude;  }
-  lng()              { return this.coords.longitude; }
-  accuracy()         { return this.coords.accuracy;  }
-  altitude()         { return this.coords.altitude; }
-  altitudeAccuracy() { return this.coords.altitudeAccuracy; }
-  heading()          { return this.coords.heading; }
-  speed()            { return this.coords.speed; }
-  ts()               { return this.ts; }
+  lat(self)              { return this.coords.latitude;  }
+  lng(self)              { return this.coords.longitude; }
+  accuracy(self)         { return this.coords.accuracy;  }
+  altitude(self)         { return this.coords.altitude; }
+  altitudeAccuracy(self) { return this.coords.altitudeAccuracy; }
+  heading(self)          { return this.coords.heading; }
+  speed(self)            { return this.coords.speed; }
+  ts(self)               { return this.ts; }
 }
