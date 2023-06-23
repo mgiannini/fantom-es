@@ -21,11 +21,9 @@ class Locale extends Obj {
     this.#str = str;
     this.#lang = lang;
     this.#country = country;
-    this.#strProps = Uri.fromStr(`locale/${str}.props`);
-    this.#langProps = Uri.fromStr(`locale/${lange}.props`);
+    this.__strProps = Uri.fromStr(`locale/${str}.props`);
+    this.__langProps = Uri.fromStr(`locale/${lang}.props`);
   }
-
-  
 
   static #cur = undefined;
   static #en = undefined;
@@ -33,8 +31,8 @@ class Locale extends Obj {
   #str;
   #lang;
   #country;
-  #strProps;
-  #langProps;
+  __strProps;
+  __langProps;
 
   static fromStr(s, checked=true)
   {

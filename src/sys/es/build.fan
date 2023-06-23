@@ -105,7 +105,7 @@ class Build : BuildScript
       writeFanx
       writeTypeInfo
       writeSysSupport
-      log.warn("TODO: SysProps")
+      writeSysProps
       log.warn("TODO: PodMeta")
       writeExports
       finish
@@ -140,7 +140,7 @@ class Build : BuildScript
     }
     append(sys + `Sys.js`, out)
     append(sys + `Facets.js`, out)
-    log.warn("TODO: append MethodFunc.js")
+    // log.warn("TODO: append MethodFunc.js")
     // append(sys + `MethodFunc.js`, out)
   }
 
@@ -148,6 +148,26 @@ class Build : BuildScript
   {
     log.debug("fanx/")
     fanx.listFiles.each |f| { append(f, out) }
+  }
+
+  private Void writeSysProps()
+  {
+    log.debug("Props")
+    out.printLine("let m = Map.make(Str.type\$, Str.type\$);")
+    writeProps(`locale/en.props`)
+    writeProps(`locale/en-US.props`)
+  }
+
+  private Void writeProps(Uri uri)
+  {
+    log.indent
+    log.debug("$uri")
+    key   := "sys:${uri}"
+    file  := build.devHomeDir.plus(`src/sys/${uri}`)
+    out.printLine("m.clear();")
+    file.in.readProps.each |v,k| { out.printLine("m.set(${k.toCode},${v.toCode});") }
+    out.printLine("Env.cur().__props(${key.toCode}, m);")
+    log.unindent
   }
 
   private Void writeTypeInfo()
