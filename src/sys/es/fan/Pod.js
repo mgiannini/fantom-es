@@ -71,9 +71,13 @@ class Pod extends Obj {
   name$() { return this.#name; }  
 
   meta() { return this.#meta; }
+  // compiler support for setting pod meta
+  __meta(it) { 
+    this.#meta = it.toImmutable(); 
 
-  // TODO:FIXIT - need a way to set meta (compiler generated code)
-  // Could just make #meta $meta instead so it can be accessed
+    // set the version from metadata
+    this.#version = Version.fromStr(this.#meta.get("pod.version"));
+  }
 
   version() { return this.#version; }
 

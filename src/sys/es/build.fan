@@ -106,7 +106,7 @@ class Build : BuildScript
       writeTypeInfo
       writeSysSupport
       writeSysProps
-      log.warn("TODO: PodMeta")
+      writePodMeta
       writeExports
       finish
     }
@@ -148,26 +148,6 @@ class Build : BuildScript
   {
     log.debug("fanx/")
     fanx.listFiles.each |f| { append(f, out) }
-  }
-
-  private Void writeSysProps()
-  {
-    log.debug("Props")
-    out.printLine("let m = Map.make(Str.type\$, Str.type\$);")
-    writeProps(`locale/en.props`)
-    writeProps(`locale/en-US.props`)
-  }
-
-  private Void writeProps(Uri uri)
-  {
-    log.indent
-    log.debug("$uri")
-    key   := "sys:${uri}"
-    file  := build.devHomeDir.plus(`src/sys/${uri}`)
-    out.printLine("m.clear();")
-    file.in.readProps.each |v,k| { out.printLine("m.set(${k.toCode},${v.toCode});") }
-    out.printLine("Env.cur().__props(${key.toCode}, m);")
-    log.unindent
   }
 
   private Void writeTypeInfo()
@@ -271,6 +251,36 @@ class Build : BuildScript
     // // use expclit ; to avoid parser bugs with tz func wrapper
     // out.print(";"); (etc + `sys/tz.js`).in.pipe(out)
     append(sys + `staticInit.js`, out)
+  }
+
+  private Void writeSysProps()
+  {
+    log.debug("Props")
+    out.printLine("let m;")
+    writeProps(`locale/en.props`)
+    writeProps(`locale/en-US.props`)
+  }
+
+  private Void writeProps(Uri uri)
+  {
+    log.indent
+    log.debug("$uri")
+    key   := "sys:${uri}"
+    file  := build.devHomeDir.plus(`src/sys/${uri}`)
+    out.printLine("m=Map.make(Str.type\$,Str.type\$);")
+    file.in.readProps.each |v,k| { out.printLine("m.set(${k.toCode},${v.toCode});") }
+    out.printLine("Env.cur().__props(${key.toCode}, m);")
+    log.unindent
+  }
+
+  private Void writePodMeta()
+  {
+    log.debug("Pod Meta")
+    version := build.configs["buildVersion"] ?: "0"
+    out.printLine("m=Map.make(Str.type\$,Str.type\$);")
+    out.printLine("m.set(\"pod.version\", ${version.toCode});")
+    out.printLine("m.set(\"pod.depends\", \"\");")
+    out.printLine("p.__meta(m);")
   }
 
   private Void writeExports()
