@@ -88,12 +88,12 @@ class AtomicTest : Test
     // val field
     a := AtomicRef("foo")
     verifySame(a.val, "foo")
-    dt := DateTime.now
+    dt := Date.fromStr("2023-06-01")
     a.val = dt
     verifySame(a.val, dt)
     a.val = null
     verifyEq(a.val, null)
-    verifyErr(NotImmutableErr#) { a.val = Env.cur.out }
+    verifyErr(NotImmutableErr#) { a.val = this }
     verifyEq(a.val, null)
 
     // getAndSet

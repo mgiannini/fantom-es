@@ -59,7 +59,7 @@ class ConcurrentMapTest : Test
 
     mut := ConcurrentMap()
     verifyErr(NotImmutableErr#) { mut["foo"] = this }
-    verifyErr(NotImmutableErr#) { mut.add("foo", Buf()) }
+    verifyErr(NotImmutableErr#) { mut.add("foo", this) }
     verifyErr(NotImmutableErr#) { mut.set("foo", Str[,]) }
     verifyErr(NotImmutableErr#) { mut.add("foo", Str[,]) }
     verifyErr(NotImmutableErr#) { mut.getAndSet("foo", Str[,]) }

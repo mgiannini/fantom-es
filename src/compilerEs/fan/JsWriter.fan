@@ -117,7 +117,7 @@ class JsWriter
       // trim and print
       s = s.trimEnd
       if (inBlock) return
-      if (s.size == 0) return
+      // if (s.size == 0) return
       w(s).nl
     }
     if (close) in.close

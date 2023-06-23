@@ -71,7 +71,7 @@ class DateTime extends Obj {
   }
 
   static nowTicks() {
-    return (new JsDate().getTime() - DateTime.diffJs$) * Duration.nsPerMilli$;
+    return (new es6.JsDate().getTime() - DateTime.diffJs$) * Duration.nsPerMilli$;
   }
 
   // TODO:FIXIT - make sure it is set somewhere in bootstrap or staticinit

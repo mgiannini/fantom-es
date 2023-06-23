@@ -141,11 +141,10 @@ class JsType : JsNode
 
   private Void writeField(FieldDef f)
   {
-    if (f.isNative) return
-
     privName   := fieldJs(f.name)
     accessName := nameToJs(f.name)
 
+    if (f.isNative) return writeNativeField(f, accessName)
     if (f.isEnum)   return writeEnumField(f, accessName)
     if (f.isStatic) return writeStaticField(f, privName, accessName)
 
@@ -174,7 +173,7 @@ class JsType : JsNode
     // use actual field name for public api
     allowSet := f.setter != null && !f.setter.isPrivate
     js.w("${accessName}(", f.loc)
-    if (allowSet) js.w("it=undefined")
+    if (allowSet) js.w("it")
     js.wl(") {")
     js.indent
     if (!allowSet) writeBlock(f.getter->code)
@@ -207,13 +206,24 @@ class JsType : JsNode
     return defVal
   }
 
+  private Void writeNativeField(FieldDef f, Str accessName)
+  {
+    if (f.isStatic) throw Err("TODO:FIXIT static native field")
+    if (f.isPrivate) throw Err("TODO:FIXIT private native field?")
+
+    js.wl("$accessName(it) {").indent
+    js.wl("if (it === undefined) return this.peer.${accessName}(this);")
+    js.wl("this.peer.${accessName}(this, it);")
+    js.unindent.wl("}").nl
+  }
+
   private Void writeStaticField(FieldDef f, Str privName, Str accessName)
   {
-    // we generate our own special version of this
-    if (f.parent.isEnum && accessName == "vals") return
-
     target := f.parent.name
     js.wl("static ${privName} = undefined;", f.loc).nl
+
+    // we generate our own special version of this
+    if (f.parent.isEnum && accessName == "vals") return
 
     js.wl("static ${accessName}() {").indent
 

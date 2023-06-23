@@ -42,6 +42,7 @@ class Build : BuildPod
               ]
     // resDirs = [`res/`, `locale/`, `concurrent/locale/`]
     resDirs = [`res/`, `locale/`,]
+    jsDirs = [`js/`]
     docApi  = false
   }
 }

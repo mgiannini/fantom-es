@@ -57,7 +57,7 @@ class TimeZone extends Obj {
 
     // check aliases
     let target = TimeZone.#aliases[name];
-    tz = fan.sys.TimeZone.fromCache$(target);
+    tz = TimeZone.#fromCache(target);
     if (tz != null) return tz;
 
     // not found
