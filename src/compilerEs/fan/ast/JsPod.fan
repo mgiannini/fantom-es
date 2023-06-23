@@ -46,9 +46,8 @@ class JsPod : JsNode
     writeImports
     writeTypes
     writeTypeInfo
+    writeProps
     // TODO:FIXIT
-    // writePodMeta
-    // write properties
     // write closures?
     // write static init?
     writeNatives
@@ -106,6 +105,8 @@ class JsPod : JsNode
     // add the pod to the type system
     js.wl("const p = sys.Pod.add\$('${pod.name}');")
     js.wl("const xp = sys.Param.noParams\$();")
+    // general use map variable
+    js.wl("let m;")
 
     // filter out synthetic types from reflection
     reflect := types.findAll |t| { !t.def.isSynthetic }
@@ -147,11 +148,37 @@ class JsPod : JsNode
       }
       js.wl(";")
     }
+
+    // pod meta
+    js.nl.wl("m=sys.Map.make(sys.Str.type\$,sys.Str.type\$);")
+    pod.meta.each |v, k|
+    {
+      js.wl("m.set(${k.toCode}, ${v.toCode});")
+    }
+    js.wl("p.__meta(m);").nl
   }
 
   private static Str toFacets(FacetDef[]? facets)
   {
     facets == null ? "" : facets.join(",") |f| { "'${f.type.qname}':${f.serialize.toCode}" }
+  }
+
+  private Void writeProps()
+  {
+    baseDir := c.input.baseDir
+    if (baseDir != null)
+    {
+      c.resFiles.each |file|
+      {
+        if (file.ext != "props") return
+        uri := file.uri.relTo(baseDir.uri)
+        key := "${pod.name}:${uri}"
+        js.wl("m=sys.Map.make(sys.Str.type\$, sys.Str.type\$);")
+        file.in.readProps.each |v,k| { js.wl("m.set(${k.toCode},${v.toCode});") }
+        js.wl("sys.Env.cur().__props(${key.toCode}, m);").nl
+      }
+      js.nl
+    }
   }
 
   private Void writeNatives()
