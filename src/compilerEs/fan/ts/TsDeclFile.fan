@@ -45,7 +45,7 @@ class TsDeclFile
       if (type.isInternal) return
       if (type.signature == "sys::Func") return
 
-      // Parameterization of List, & Map
+      // Parameterization of List & Map
       classParams := ""
       if (type.signature == "sys::List")
         classParams = "<V = unknown>"
@@ -55,7 +55,9 @@ class TsDeclFile
       extends := ""
       if (type.base != null)
         extends = "extends ${getNamespacedType(type.base.name, type.base.pod.name, pod)} "
-
+      
+      // Write class documentation & header
+      out.print(formatDoc(type.doc, 0))
       out.print("export class $type.name$classParams $extends{\n")
 
       // Write fields
@@ -68,6 +70,7 @@ class TsDeclFile
         staticStr := field.isStatic ? "static " : ""
         typeStr := getJsType(field.type, pod)
 
+        out.print(formatDoc(field.doc, 2))
         out.print("  $staticStr$name(): $typeStr\n")
         if (!field.isConst)
           out.print("  $staticStr$name(it: $typeStr): void\n")
@@ -98,6 +101,7 @@ class TsDeclFile
 
         output := method.isCtor ? type.name : getJsType(method.returns, pod, pmap.containsKey(type.signature) ? type : null)
 
+        out.print(formatDoc(method.doc, 2))
         out.print("  $staticStr$name($inputs): $output\n")
       }
 
@@ -199,6 +203,18 @@ class TsDeclFile
     if (typePod == currentPod.name)
       return typeName
     return "${typePod}.${typeName}"
+  }
+
+  private Str formatDoc(Str? rawDoc, Int indent)
+  {
+    if (rawDoc == null) return ""
+    indStr := " " * indent
+    return rawDoc.trim
+                 .splitLines
+                 .map |Str s->Str| { "$indStr * $s" }
+                 .insert(0, "$indStr/**")
+                 .add("$indStr */\n")
+                 .join("\n")
   }
 
   private const Str:Str pmap :=
