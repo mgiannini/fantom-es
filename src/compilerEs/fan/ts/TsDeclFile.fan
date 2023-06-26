@@ -108,6 +108,10 @@ class TsDeclFile
         }
 
         output := method.isCtor ? type.name : getJsType(method.returns, pod, pmap.containsKey(type.signature) ? type : null)
+        if (method.qname == "sys::Obj.toImmutable" ||
+            method.qname == "sys::List.ro" ||
+            method.qname == "sys::Map.ro")
+              output = "Readonly<$output>"
 
         printDoc(method.doc, 2)
         out.print("  $staticStr$name($inputs): $output\n")
