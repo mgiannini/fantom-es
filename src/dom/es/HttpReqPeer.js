@@ -26,34 +26,34 @@ class HttpReqPeer extends sys.Obj {
       const _m = method.toUpperCase();
       if (_m == "POST" || _m == "PUT") _p = xhr.upload
       _p.addEventListener("progress", function(e) {
-        if (e.lengthComputable) self.m_cbProgress.call(e.loaded, e.total);
+        if (e.lengthComputable) self.m_cbProgress(e.loaded, e.total);
       });
     }
 
     // open request
-    xhr.open(method.toUpperCase(), self.m_uri.encode(), self.m_async);
-    if (self.m_async)
+    xhr.open(method.toUpperCase(), self.uri().encode(), self.async());
+    if (self.async())
     {
       xhr.onreadystatechange = function ()
       {
         if (xhr.readyState == 4)
-          f.call(HttpReqPeer.makeRes(xhr));
+          f(HttpReqPeer.makeRes(xhr));
       }
     }
 
     // set response type
-    xhr.responseType = self.m_resType;
+    xhr.responseType = self.resType();
 
     // setup headers
     let ct = false;
-    const k = self.m_headers.keys();
+    const k = self.headers().keys();
     for (let i=0; i<k.size(); i++)
     {
       const key = k.get(i);
-      if (fan.sys.Str.lower(key) == "content-type") ct = true;
-      xhr.setRequestHeader(key, self.m_headers.get(key));
+      if (sys.Str.lower(key) == "content-type") ct = true;
+      xhr.setRequestHeader(key, self.headers().get(key));
     }
-    xhr.withCredentials = self.m_withCredentials;
+    xhr.withCredentials = self.withCredentials();
 
     // send request based on content type
     if (content == null)
@@ -65,19 +65,19 @@ class HttpReqPeer extends sys.Obj {
       // send FormData (implicity adds Content-Type header)
       xhr.send(content);
     }
-    else if (fan.sys.ObjUtil.$typeof(content) === fan.sys.Str.$type)
+    else if (sys.ObjUtil.$typeof(content) === sys.Str.$type)
     {
       // send text
       if (!ct) xhr.setRequestHeader("Content-Type", "text/plain");
       xhr.send(content);
     }
-    else if (content instanceof fan.sys.Buf)
+    else if (content instanceof sys.Buf)
     {
       // send binary
       if (!ct) xhr.setRequestHeader("Content-Type", "application/octet-stream");
       buf = new ArrayBuffer(content.size());
       view = new Uint8Array(buf);
-      view.set(content.m_buf.slice(0, content.size()));
+      view.set(content.buf().slice(0, content.size()));
       xhr.send(view);
     }
     else if (content instanceof DomFile)
@@ -87,11 +87,11 @@ class HttpReqPeer extends sys.Obj {
     }
     else
     {
-      throw fan.sys.Err.make("Can only send Str or Buf: " + content);
+      throw sys.Err.make("Can only send Str or Buf: " + content);
     }
 
     // for sync requests; directly invoke response handler
-    if (!self.m_async) f.call(HttpReqPeer.makeRes(xhr));
+    if (!self.async()) f(HttpReqPeer.makeRes(xhr));
   }
 
   static makeRes(xhr)
@@ -99,18 +99,18 @@ class HttpReqPeer extends sys.Obj {
     const isText = xhr.responseType == "" || xhr.responseType == "text";
 
     const res = HttpRes.make();
-    res.m_$xhr    = xhr;
-    res.m_status  = xhr.status;
-    res.m_content = isText ? xhr.responseText : "";
+    res.$xhr      = xhr;
+    res.status     (xhr.status);
+    res.content    (isText ? xhr.responseText : "");
 
     const all = xhr.getAllResponseHeaders().split("\n");
     for (const i=0; i<all.length; i++)
     {
       if (all[i].length == 0) continue;
       const j = all[i].indexOf(":");
-      const k = fan.sys.Str.trim(all[i].substr(0, j));
-      const v = fan.sys.Str.trim(all[i].substr(j+1));
-      res.m_headers.set(k, v);
+      const k = sys.Str.trim(all[i].substring(0, j));
+      const v = sys.Str.trim(all[i].substring(j+1));
+      res.headers().set(k, v);
     }
 
     return res;
@@ -128,7 +128,7 @@ class HttpReqPeer extends sys.Obj {
                  encodeURIComponent(form.get(k.get(i)));
     }
     // send POST request
-    self.m_headers.set("Content-Type", "application/x-www-form-urlencoded");
+    self.headers().set("Content-Type", "application/x-www-form-urlencoded");
     self.send("POST", content, f);
   }
 
