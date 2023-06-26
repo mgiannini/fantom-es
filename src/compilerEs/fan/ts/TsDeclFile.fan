@@ -7,6 +7,7 @@
 //
 
 using compiler
+using fandoc
 
 **
 ** Generate the TypeScript declaration file for a pod
@@ -16,9 +17,13 @@ class TsDeclFile
   new make(OutStream out)
   {
     this.out = out
+    docParser = FandocParser()
+    docWriter = TsDocWriter(out)
   }
 
   private OutStream out
+  private FandocParser docParser
+  private TsDocWriter docWriter
   private Type jsFacet := Type.find("sys::Js")
 
 //////////////////////////////////////////////////////////////////////////
@@ -45,6 +50,8 @@ class TsDeclFile
       if (type.isInternal) return
       if (type.signature == "sys::Func") return
 
+      setupDoc(pod.name, type.name)
+
       // Parameterization of List & Map
       classParams := ""
       if (type.signature == "sys::List")
@@ -57,7 +64,7 @@ class TsDeclFile
         extends = "extends ${getNamespacedType(type.base.name, type.base.pod.name, pod)} "
       
       // Write class documentation & header
-      out.print(formatDoc(type.doc, 0))
+      printDoc(type.doc, 0)
       out.print("export class $type.name$classParams $extends{\n")
 
       // Write fields
@@ -68,9 +75,9 @@ class TsDeclFile
 
         name := JsNode.nameToJs(field.name)
         staticStr := field.isStatic ? "static " : ""
-        typeStr := getJsType(field.type, pod)
+        typeStr := getJsType(field.type, pod, field.isStatic ? type : null)
 
-        out.print(formatDoc(field.doc, 2))
+        printDoc(field.doc, 2)
         out.print("  $staticStr$name(): $typeStr\n")
         if (!field.isConst)
           out.print("  $staticStr$name(it: $typeStr): void\n")
@@ -82,14 +89,15 @@ class TsDeclFile
         if (!method.isPublic) return
         if (type.base?.slot(method.name, false) != null && type.base.slot(method.name).isPublic) return
 
-        staticStr := method.isStatic || method.isCtor || pmap.containsKey(type.signature) ? "static " : ""
+        isStatic := method.isStatic || method.isCtor || pmap.containsKey(type.signature)
+        staticStr := isStatic ? "static " : ""
         name := JsNode.nameToJs(method.name)
 
         inputs := method.params.map |Param p->Str| {
           paramName := JsNode.nameToJs(p.name)
           if (p.hasDefault)
             paramName += "?"
-          paramType := getJsType(p.type, pod, pmap.containsKey(type.signature) ? type : null)
+          paramType := getJsType(p.type, pod, isStatic ? type : null)
           return "$paramName: $paramType"
         }.join(", ")
         if (!method.isStatic && !method.isCtor && pmap.containsKey(type.signature))
@@ -101,7 +109,7 @@ class TsDeclFile
 
         output := method.isCtor ? type.name : getJsType(method.returns, pod, pmap.containsKey(type.signature) ? type : null)
 
-        out.print(formatDoc(method.doc, 2))
+        printDoc(method.doc, 2)
         out.print("  $staticStr$name($inputs): $output\n")
       }
 
@@ -205,16 +213,18 @@ class TsDeclFile
     return "${typePod}.${typeName}"
   }
 
-  private Str formatDoc(Str? rawDoc, Int indent)
+  private Void setupDoc(Str pod, Str type)
   {
-    if (rawDoc == null) return ""
-    indStr := " " * indent
-    return rawDoc.trim
-                 .splitLines
-                 .map |Str s->Str| { "$indStr * $s" }
-                 .insert(0, "$indStr/**")
-                 .add("$indStr */\n")
-                 .join("\n")
+    docWriter.pod = pod
+    docWriter.type = type
+  }
+
+  private Void printDoc(Str? doc, Int indent)
+  {
+    if (doc == null || doc == "") return
+
+    docWriter.indent = indent
+    docParser.parse("Doc", doc.in).write(docWriter)
   }
 
   private const Str:Str pmap :=

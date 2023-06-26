@@ -25,7 +25,7 @@ class Build : BuildPod
                "license.name": "Academic Free License 3.0",
                "vcs.name":     "Git",
                "vcs.uri":      "https://github.com/fantom-lang/fantom"]
-    depends = ["sys 1.0", "compiler 1.0"]
+    depends = ["sys 1.0", "compiler 1.0", "fandoc 1.0"]
     srcDirs = [`fan/`,
                `fan/ast/`,
                `fan/node/`,
