@@ -21,9 +21,13 @@ class TsDocWriter : DocWriter
   Str type := ""
 
   private OutStream out
-  private Bool started := false
+  private Bool started
   private ListIndex[] listIndexes := [,]
+  private Bool inPre
   private Bool inBlockquote
+
+  private Int lineWidth := 0
+  private const Int maxWidth := 60
 
   new make(OutStream out)
   {
@@ -76,7 +80,9 @@ class TsDocWriter : DocWriter
 
       case DocNodeId.image:
         img := (Image) elem
-        out.print("![${img.alt}")
+        str := "![${img.alt}"
+        lineWidth += str.size
+        out.print(str)
       
       case DocNodeId.heading:
         head := (Heading) elem
@@ -103,11 +109,13 @@ class TsDocWriter : DocWriter
           out.print("> ")
         if (para.admonition != null)
           out.print("${para.admonition}: ")
+        lineWidth = 0
 
       case DocNodeId.pre:
         printLine
         out.print("```")
         printLine
+        inPre = true
 
       case DocNodeId.blockQuote:
         inBlockquote = true
@@ -125,6 +133,7 @@ class TsDocWriter : DocWriter
         out.print(Str.defVal.padl(indent))
         out.print(listIndexes.peek)
         listIndexes.peek.increment
+        lineWidth = 0
 
       case DocNodeId.hr:
         printLine
@@ -153,17 +162,27 @@ class TsDocWriter : DocWriter
       case DocNodeId.link:
         link := (Link) elem
         if (link.isCode)
+        {
+          lineWidth += "{@link $link.uri | ".size
           out.writeChar('}')
+        }
         else
-          out.print("](${link.uri})")
+        {
+          str := "](${link.uri})"
+          lineWidth += str.size
+          out.print(str)
+        }
 
       case DocNodeId.image:
         img := (Image) elem
-        out.print("](${img.uri})")
+        str := "](${img.uri})"
+        lineWidth += str.size
+        out.print(str)
 
       case DocNodeId.pre:
         printLine
         out.print("```")
+        inPre = false
 
       case DocNodeId.blockQuote:
         inBlockquote = false
@@ -179,7 +198,49 @@ class TsDocWriter : DocWriter
   **
   override Void text(DocText text)
   {
-    out.print(text.toStr.replace("\n", "\n$ind * ").replace("*/", "*\\/"))
+    if (inPre)
+      // just print
+      return out.print(text.toStr.replace("\n", "\n$ind * ").replace("*/", "*\\/"))
+
+    // Otherwise, make line breaks
+    innerInd := ""
+    if (!listIndexes.isEmpty)
+      innerInd = " " * (listIndexes.size * 2)
+
+    str := (text.toStr
+                // Split into tokens by spaces
+                .split(' ')
+                // Collect tokens into lines
+                .reduce(Str[,]) |Str[] acc, Str s, Int i->Str[]|
+                {
+                  if (i == 0)
+                  {
+                    // Beginning of text
+                    lineWidth += s.size
+                    acc.add(s)
+                  }
+                  else if (lineWidth + s.size >= maxWidth)
+                  {
+                    if (s != "")
+                    {
+                      // New line in text block
+                      lineWidth = s.size
+                      acc.add(s)
+                    }
+                  }
+                  else
+                  {
+                    // Continue existing line
+                    lineWidth += s.size + 1
+                    acc[-1] += " $s"
+                  }
+                  return acc
+                } as Str[])
+                // Combine lines
+                .join("\n")
+                .replace("\n", "\n$ind * $innerInd")
+                .replace("*/", "*\\/")
+    out.print(str)
   }
 
   private Void printLine(Str line := "")
