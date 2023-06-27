@@ -108,8 +108,6 @@ class TimeZone extends Obj {
 
   toStr() { return this.#name; }
 
-  
-
 //////////////////////////////////////////////////////////////////////////
 // Methods
 //////////////////////////////////////////////////////////////////////////
@@ -294,7 +292,7 @@ fan.sys.TimeZone.compareAtTime = function(rule, x, time)
 // Cache
 //////////////////////////////////////////////////////////////////////////
 
-  static cache$(fullName, encoded) {
+  static __cache(fullName, encoded) {
     // this handles cases where full name has multiple slashses
     const city = fullName.split("/").reverse()[0];
     TimeZone.#cache[city] = encoded;
@@ -356,7 +354,7 @@ fan.sys.TimeZone.compareAtTime = function(rule, x, time)
     return tz;
   }
 
-  static alias$(alias, target) {
+  static __alias(alias, target) {
     const parts = alias.split("/");
     TimeZone.#aliases[alias] = target;
     // if alias contains slashses, also alias the city

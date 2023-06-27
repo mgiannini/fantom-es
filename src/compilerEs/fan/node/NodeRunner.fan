@@ -237,10 +237,10 @@ echo(buf.flip.readAllStr)
   {
     this.dependencies = [Pod.find("sys")]
     writeNodeModules
-    // writeTzJs
+    writeTzJs
 
     out := ms.file("fan").out
-    ["sys", "fan_mime",].each |m| { ms.writeInclude(out, "${m}.ext") }
+    ["sys", "fan_mime", "fan_tz"].each |m| { ms.writeInclude(out, "${m}.ext") }
     out.printLine("export { sys };").flush.close
 
     // f := moduleDir.plus(`fan.js`)
@@ -395,14 +395,6 @@ echo(buf.flip.readAllStr)
     }
   }
 
-  // private Void writeMimeJs()
-  // {
-  //   // mime.js
-  //   out := (moduleDir + `mime.js`).out
-  //   JsExtToMime().write(out)
-  //   out.flush.close
-  // }
-
   // private Void writeUnitsJs()
   // {
   //   // units.js
@@ -411,11 +403,11 @@ echo(buf.flip.readAllStr)
   //   out.flush.close
   // }
 
-  // private Void writeTzJs()
-  // {
-  //   // tz.js
-  //   TzTool(["-silent", "-gen", "-outDir", moduleDir.toStr]).run
-  // }
+  private Void writeTzJs()
+  {
+    // tz.js
+    TzTool(["-silent", "-gen", "-outDir", ms.moduleDir.toStr]).run
+  }
 
   private Str includeStatements()
   {
