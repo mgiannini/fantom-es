@@ -91,7 +91,7 @@ class NodeRunner
     nodeDir = nodeDir.normalize
 
     // initialize module type
-    this.ms = hasArg("cjs") ? CommonJs(this) : Esm(this)
+    this.ms = hasArg("cjs") ? CommonJs(nodeDir) : Esm(nodeDir)
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -239,6 +239,10 @@ echo(buf.flip.readAllStr)
     writeNodeModules
     // writeTzJs
 
+    out := ms.file("fan").out
+    ["sys", "fan_mime",].each |m| { ms.writeInclude(out, "${m}.ext") }
+    out.printLine("export { sys };").flush.close
+
     // f := moduleDir.plus(`fan.js`)
     // f.out.writeChars(
     //   """let fan = require('sys.js');
@@ -326,7 +330,7 @@ echo(buf.flip.readAllStr)
     // if (tempPod != null)
     //   (moduleDir + `${tempPod}.${ext}`).out.writeChars(js).flush.close
 
-    // writeMimeJs
+    writeMimeJs
     // writeUnitsJs
 
     // // indexed-props
@@ -344,6 +348,19 @@ echo(buf.flip.readAllStr)
     out.printLine("const JsDate = Date;")
     out.printLine("const JsMap = Map;")
     ms.writeExports(out, ["JsDate", "JsMap"]).flush.close
+  }
+
+  private Void writeMimeJs()
+  {
+    props := Env.cur.findFile(`etc/sys/ext2mime.props`).readProps
+    out   := ms.file("fan_mime").out
+    ms.writeInclude(out, "sys.ext")
+    out.printLine("const c=sys.MimeType.__cache;")
+    props.each |mime, ext|
+    {
+      out.printLine("c(${ext.toCode},${mime.toCode});")
+    }
+    out.flush.close
   }
 
   private Void writeNode()
@@ -408,6 +425,7 @@ echo(buf.flip.readAllStr)
       buf.add("import * as ${pod.name} from './${ms.moduleType}/${pod.name}.js';\n")
       if ("sys" == pod.name)
       {
+        buf.add("import './${ms.moduleType}/fan_mime.js';\n")
       }
     }
     // TODO:FIXIT: tempPod???

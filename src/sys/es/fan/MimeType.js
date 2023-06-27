@@ -16,289 +16,256 @@ class MimeType extends Obj {
     super();
   }
 
-  
+  static #byExt  = {};
+  static #byMime = {};
+  static #emptyQuery;
+
+  #str;
+  #mediaType;
+  #subType;
+  #params;
 
 //////////////////////////////////////////////////////////////////////////
 // fromStr
 //////////////////////////////////////////////////////////////////////////
-/*
-// TODO:FIXIT implement this
 
-fan.sys.MimeType.fromStr = function(s, checked)
-{
-  if (checked === undefined) checked = true;
-  try
-  {
-    // check interned mime types
-    var mime = fan.sys.MimeType.byMime[s];
-    if (mime != null) return mime;
+  static fromStr(s, checked=true) {
+    try {
+      // check interned mime types
+      const mime = MimeType.#byMime[s];
+      if (mime != null) return mime;
 
-    return fan.sys.MimeType.parseStr(s);
-  }
-  catch (err)
-  {
-    if (!checked) return null;
-    throw fan.sys.ParseErr.makeStr("MimeType",  s);
-  }
-}
-
-fan.sys.MimeType.parseStr = function(s)
-{
-  var slash = s.indexOf('/');
-  if (slash < 0) throw ParseErr.make(s);
-  var media = s.substring(0, slash);
-  var sub = s.substring(slash+1, s.length);
-  var params = fan.sys.MimeType.emptyParams();
-
-  var semi = sub.indexOf(';');
-  if (semi > 0)
-  {
-    params = fan.sys.MimeType.doParseParams(sub, semi+1);
-    sub = fan.sys.Str.trim(sub.substring(0, semi));
-  }
-
-  var r = new fan.sys.MimeType();
-  r.m_str = s;
-  r.m_mediaType = fan.sys.Str.lower(media);
-  r.m_subType   = fan.sys.Str.lower(sub);
-  r.m_params    = params.ro();
-  return r;
-}
-
-fan.sys.MimeType.parseParams = function(s, checked)
-{
-  if (checked === undefined) checked = true;
-  try
-  {
-    // use local var to trap exception
-    var v = fan.sys.MimeType.doParseParams(s, 0);
-    return v;
-  }
-  catch (err)
-  {
-    if (!checked) return null;
-    if (err instanceof fan.sys.ParseErr) throw err;
-    throw fan.sys.ParseErr.makeStr("MimeType params",  s);
-  }
-}
-
-fan.sys.MimeType.doParseParams = function(s, offset)
-{
-  var params = fan.sys.Map.make(fan.sys.Str.type$, fan.sys.Str.type$);
-  params.caseInsensitive$(true);
-  var inQuotes = false;
-  var keyStart = offset;
-  var valStart = -1;
-  var valEnd   = -1;
-  var eq       = -1;
-  var hasEsc   = false;
-  for (var i=keyStart; i<s.length; ++i)
-  {
-    var c = s.charAt(i);
-
-    // let parens slide since sometimes they occur in cookies
-    // if (c == '(' && !inQuotes)
-    //   throw fan.sys.ParseErr.makeStr("MimeType", s, "comments not supported");
-
-    if (c == '=' && eq < 0 && !inQuotes)
-    {
-      eq = i++;
-      while (fan.sys.MimeType.isSpace(s, i)) ++i;
-      if (s.charAt(i) == '"') { inQuotes = true; ++i; c = s.charAt(i); }
-      else inQuotes = false;
-      valStart = i;
+      return MimeType.#parseStr(s);
     }
-
-    if (c == ';' && eq < 0 && !inQuotes)
+    catch (err)
     {
-      // key with no =val
-      var key = fan.sys.Str.trim(s.substring(keyStart, i));
-      params.set(key, "");
-      keyStart = i+1;
-      eq = valStart = valEnd = -1;
-      hasEsc = false;
-      continue;
-    }
-
-    if (eq < 0) continue;
-
-    if (c == '\\' && inQuotes)
-    {
-      ++i;
-      hasEsc = true;
-      continue;
-    }
-
-    if (c == '"' && inQuotes)
-    {
-      valEnd = i-1;
-      inQuotes = false;
-    }
-
-    if (c == ';' && !inQuotes)
-    {
-      if (valEnd < 0) valEnd = i-1;
-      var key = fan.sys.Str.trim(s.substring(keyStart, eq));
-      var val = fan.sys.Str.trim(s.substring(valStart, valEnd+1));
-      if (hasEsc) val = fan.sys.MimeType.unescape(val);
-      params.set(key, val);
-      keyStart = i+1;
-      eq = valStart = valEnd = -1;
-      hasEsc = false;
+      if (!checked) return null;
+      throw ParseErr.makeStr("MimeType",  s);
     }
   }
 
-  if (keyStart < s.length)
-  {
-    if (valEnd < 0) valEnd = s.length-1;
-    if (eq < 0)
-    {
-      var key = fan.sys.Str.trim(s.substring(keyStart, s.length));
-      params.set(key, "");
+  static #parseStr(s) {
+    const slash = s.indexOf('/');
+    if (slash < 0) throw ParseErr.make(s);
+    const media = s.slice(0, slash);
+    let sub = s.slice(slash+1, s.length);
+    let params = MimeType.#emptyParams();
+
+    const semi = sub.indexOf(';');
+    if (semi > 0) {
+      params = MimeType.#doParseParams(sub, semi+1);
+      sub = Str.trim(sub.slice(0, semi));
     }
-    else
-    {
-      var key = fan.sys.Str.trim(s.substring(keyStart, eq));
-      var val = fan.sys.Str.trim(s.substring(valStart, valEnd+1));
-      if (hasEsc) val = fan.sys.MimeType.unscape(val);
-      params.set(key, val);
+
+    const r = new MimeType();
+    r.#str = s;
+    r.#mediaType = Str.lower(media);
+    r.#subType   = Str.lower(sub);
+    r.#params    = params.ro();
+    return r;
+  }
+
+  static parseParams(s, checked=true) {
+    try {
+      // use local var to trap exception
+      const v = MimeType.#doParseParams(s, 0);
+      return v;
+    }
+    catch (err) {
+      if (!checked) return null;
+      if (err instanceof ParseErr) throw err;
+      throw ParseErr.makeStr("MimeType params",  s);
     }
   }
 
-  return params;
-}
+  static #doParseParams(s, offset) {
+    const params = Map.make(Str.type$, Str.type$);
+    params.caseInsensitive(true);
+    let inQuotes = false;
+    let keyStart = offset;
+    let valStart = -1;
+    let valEnd   = -1;
+    let eq       = -1;
+    let hasEsc   = false;
+    for (let i=keyStart; i<s.length; ++i) {
+      let c = s.charAt(i);
 
-fan.sys.MimeType.isSpace = function(s, i)
-{
-  if (i >= s.length) throw fan.sys.IndexErr.make(i);
-  return fan.sys.Int.isSpace(s.charCodeAt(i));
-}
+      // let parens slide since sometimes they occur in cookies
+      // if (c == '(' && !inQuotes)
+      //   throw fan.sys.ParseErr.makeStr("MimeType", s, "comments not supported");
 
-fan.sys.MimeType.unescape = function(s)
-{
-  var buf = "";
-  for (var i=0; i<s.length; ++i)
-  {
-    var c = s.charAt(i);
-    if (c != '\\') buf += c;
-    else if (s.charAt(i+1) == '\\') { buf += '\\'; i++; }
+      if (c == '=' && eq < 0 && !inQuotes) {
+        eq = i++;
+        while (MimeType.#isSpace(s, i)) ++i;
+        if (s.charAt(i) == '"') { inQuotes = true; ++i; c = s.charAt(i); }
+        else inQuotes = false;
+        valStart = i;
+      }
+
+      if (c == ';' && eq < 0 && !inQuotes) {
+        // key with no =val
+        let key = Str.trim(s.slice(keyStart, i));
+        params.set(key, "");
+        keyStart = i+1;
+        eq = valStart = valEnd = -1;
+        hasEsc = false;
+        continue;
+      }
+
+      if (eq < 0) continue;
+
+      if (c == '\\' && inQuotes) {
+        ++i;
+        hasEsc = true;
+        continue;
+      }
+
+      if (c == '"' && inQuotes) {
+        valEnd = i-1;
+        inQuotes = false;
+      }
+
+      if (c == ';' && !inQuotes) {
+        if (valEnd < 0) valEnd = i-1;
+        var key = fan.sys.Str.trim(s.slice(keyStart, eq));
+        var val = fan.sys.Str.trim(s.slice(valStart, valEnd+1));
+        if (hasEsc) val = MimeType.#unescape(val);
+        params.set(key, val);
+        keyStart = i+1;
+        eq = valStart = valEnd = -1;
+        hasEsc = false;
+      }
+    }
+
+    if (keyStart < s.length) {
+      if (valEnd < 0) valEnd = s.length-1;
+      if (eq < 0) {
+        var key = Str.trim(s.slice(keyStart, s.length));
+        params.set(key, "");
+      }
+      else {
+        let key = Str.trim(s.slice(keyStart, eq));
+        let val = Str.trim(s.slice(valStart, valEnd+1));
+        if (hasEsc) val = MimeType.#unescape(val);
+        params.set(key, val);
+      }
+    }
+
+    return params;
   }
-  return buf;
-}
+
+  static #isSpace(s, i) {
+    if (i >= s.length) throw IndexErr.make(i);
+    return Int.isSpace(s.charCodeAt(i));
+  }
+
+  static #unescape(s) {
+    let buf = "";
+    for (let i=0; i<s.length; ++i) {
+      const c = s.charAt(i);
+      if (c != '\\') buf += c;
+      else if (s.charAt(i+1) == '\\') { buf += '\\'; i++; }
+    }
+    return buf;
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Extension
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.MimeType.forExt = function(ext)
-{
-  if (ext == null) return null;
-  try
-  {
-    ext = ext.toLowerCase();
-    return fan.sys.MimeType.byExt[ext];
+  static forExt(ext) {
+    if (ext == null) return null;
+    try {
+      ext = ext.toLowerCase();
+      return MimeType.#byExt[ext];
+    }
+    catch (err) {
+      ObjUtil.echo("MimeType.forExt: " + s);
+      ObjUtil.echo(err);
+      return null;
+    }
   }
-  catch (err)
-  {
-    fan.sys.ObjUtil.echo("MimeType.forExt: " + s);
-    fan.sys.ObjUtil.echo(err);
-    return null;
-  }
-}
 
 //////////////////////////////////////////////////////////////////////////
 // Identity
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.MimeType.prototype.equals = function(obj)
-{
-  if (obj instanceof fan.sys.MimeType)
-  {
-    return this.m_mediaType == obj.m_mediaType &&
-           this.m_subType == obj.m_subType &&
-           this.m_params.equals(obj.m_params);
+  equals(obj) {
+    if (obj instanceof MimeType) {
+      return this.#mediaType == obj.#mediaType &&
+            this.#subType == obj.#subType &&
+            this.#params.equals(obj.#params);
+    }
+    return false;
   }
-  return false;
-}
 
+  hash() {
+    return 0;
+    //return this.mediaType.hashCode() ^
+    //       this.subType.hashCode() ^
+    //       this.params.hashCode();
+  }
 
-fan.sys.MimeType.prototype.hash = function()
-{
-  return 0;
-  //return this.mediaType.hashCode() ^
-  //       this.subType.hashCode() ^
-  //       this.params.hashCode();
-}
-
-fan.sys.MimeType.prototype.toStr = function() { return this.m_str; }
-
-fan.sys.MimeType.prototype.$typeof = function() { return fan.sys.MimeType.type$; }
+  toStr() { return this.#str; }
 
 //////////////////////////////////////////////////////////////////////////
 // Methods
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.MimeType.prototype.mediaType = function() { return this.m_mediaType; }
-fan.sys.MimeType.prototype.subType = function() { return this.m_subType; }
-fan.sys.MimeType.prototype.params = function() { return this.m_params; }
+  mediaType() { return this.#mediaType; }
+  subType() { return this.#subType; }
+  params() { return this.#params; }
 
-fan.sys.MimeType.prototype.charset = function()
-{
-  var s = this.params().get("charset");
-  if (s == null) return fan.sys.Charset.utf8();
-  return fan.sys.Charset.fromStr(s);
-}
+  charset() {
+    const s = this.params().get("charset");
+    if (s == null) return Charset.utf8();
+    return Charset.fromStr(s);
+  }
 
-fan.sys.MimeType.prototype.noParams = function()
-{
-  if (this.params().isEmpty()) return this;
-  return fan.sys.MimeType.fromStr(this.mediaType() + "/" + this.subType());
-}
+  noParams() {
+    if (this.params().isEmpty()) return this;
+    return MimeType.fromStr(`${this.mediaType()}/${this.subType()}`);
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Lazy Load
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.MimeType.emptyParams = function()
-{
-  var q = fan.sys.MimeType.emptyQuery;
-  if (q == null)
-  {
-    q = fan.sys.Map.make(fan.sys.Str.type$, fan.sys.Str.type$);
-    q.caseInsensitive$(true);
-    //q = q.toImmutable();
-    fan.sys.MimeType.emptyQuery = q;
+  static #emptyParams() {
+    let q = MimeType.#emptyQuery;
+    if (!q)
+    {
+      q = Map.make(Str.type$, Str.type$);
+      q.caseInsensitive(true);
+      //q = q.toImmutable();
+      MimeType.#emptyQuery = q;
+    }
+    return q;
   }
-  return q;
-}
-fan.sys.MimeType.emptyQuery = null;
 
 //////////////////////////////////////////////////////////////////////////
 // Cache - Populated by mime.js generated by MimeTool
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.MimeType.cache$ = function(ext, s)
-{
-  var mime = fan.sys.MimeType.parseStr(s);
+  static __cache(ext, s) {
+    let mime = MimeType.#parseStr(s);
 
-  // map ext to mime
-  fan.sys.MimeType.byExt[ext] = mime;
+    // map ext to mime
+    MimeType.#byExt[ext] = mime;
 
-  // map mime to its string encoding
-  fan.sys.MimeType.byMime[mime.toStr()] = mime;
+    // map mime to its string encoding
+    MimeType.#byMime[mime.toStr()] = mime;
 
-  // also map the no-parameter mime type by its string encoding
-  mime = mime.noParams();
-  fan.sys.MimeType.byMime[mime.toStr()] = mime;
-}
-
-fan.sys.MimeType.byExt  = {}
-fan.sys.MimeType.byMime = {}
+    // also map the no-parameter mime type by its string encoding
+    mime = mime.noParams();
+    MimeType.#byMime[mime.toStr()] = mime;
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Predefined
 //////////////////////////////////////////////////////////////////////////
 
+/*
 fan.sys.MimeType.predefined = function(media, sub, params)
 {
   if (params === undefined) params = "";
@@ -309,12 +276,5 @@ fan.sys.MimeType.predefined = function(media, sub, params)
   t.m_str = media + "/" + sub;
   return t;
 }
-
-//////////////////////////////////////////////////////////////////////////
-// Static Fields
-//////////////////////////////////////////////////////////////////////////
-
-// see sysPod.js
 */
-
 }

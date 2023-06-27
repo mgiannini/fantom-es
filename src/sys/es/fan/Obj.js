@@ -12,9 +12,6 @@
  * Obj
  */
 class Obj {
-  constructor() {
-    this.#hash = undefined;
-  }
 
   /** Simple counter-based hash for object that do not override hash() */
   static #hashCounter = 0;
@@ -33,8 +30,8 @@ class Obj {
     return this.#hash;
   }
 
-  $with(f) {
-    f.call(this);
+  with$(f) {
+    f(this);
     return this;
   }
 
@@ -44,8 +41,6 @@ class Obj {
     if (this.isImmutable()) return this;
     throw NotImmutableErr.make(this.typeof$().toStr());
   }
-
-  
 
   toStr() { return `${this.typeof$()}@${this.hash()}`; }
 

@@ -65,8 +65,8 @@ class StrBuf extends Obj {
 
   getRange(range) {
     const size = this.#str.length;
-    const s = range.start$(size);
-    const e = range.end$(size);
+    const s = range.__start(size);
+    const e = range.__end(size);
     if (e+1 < s) throw IndexErr.make(range);
     return this.#str.substr(s, (e-s)+1);
   }
@@ -101,8 +101,8 @@ class StrBuf extends Obj {
   }
 
   removeRange(r) {
-    const s = r.start$(this.#str.length);
-    const e = r.end$(this.#str.length);
+    const s = r.__start(this.#str.length);
+    const e = r.__end(this.#str.length);
     const n = e - s + 1;
     if (s < 0 || n < 0) throw IndexErr.make(r);
     this.#str = this.#str.substring(0,s) + this.#str.substring(e+1);
@@ -110,8 +110,8 @@ class StrBuf extends Obj {
   }
 
   replaceRange(r, str) {
-    const s = r.start$(this.#str.length);
-    const e = r.end$(this.#str.length);
+    const s = r.__start(this.#str.length);
+    const e = r.__end(this.#str.length);
     const n = e - s + 1;
     if (s < 0 || n < 0) throw IndexErr.make(r);
     this.#str = this.#str.substr(0,s) + str + this.#str.substr(e+1);

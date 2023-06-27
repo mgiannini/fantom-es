@@ -49,7 +49,7 @@ class List extends Obj {
 // Internal Access
 //////////////////////////////////////////////////////////////////////////
 
-  values$() { return this.#values; }
+  __values() { return this.#values; }
 
 //////////////////////////////////////////////////////////////////////////
 // Identity
@@ -91,8 +91,8 @@ class List extends Obj {
   }
 
   getRange(range) {
-    const s = range.start$(this.#size);
-    const e = range.end$(this.#size);
+    const s = range.__start(this.#size);
+    const e = range.__end(this.#size);
     if (e+1 < s || s < 0) throw IndexErr.make(range);
     return List.make(this.#of, this.#values.slice(s, e+1));
   }
@@ -328,8 +328,8 @@ class List extends Obj {
 
   removeRange(r) {
     this.#modify();
-    const s = r.start$(this.#size);
-    const e = r.end$(this.#size);
+    const s = r.__start(this.#size);
+    const e = r.__end(this.#size);
     const n = e - s + 1;
     if (n < 0) throw IndexErr.make(r);
     this.#values.splice(s, n);
@@ -403,8 +403,8 @@ push(obj) {
   }
 
   eachRange(r, f) {
-    const s = r.start$(this.#size);
-    const e = r.end$(this.#size);
+    const s = r.__start(this.#size);
+    const e = r.__end(this.#size);
     const n = e - s + 1;
     if (n < 0) throw IndexErr.make(r);
 

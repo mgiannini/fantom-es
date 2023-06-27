@@ -49,8 +49,6 @@ class Range extends Obj {
     }
   }
 
-  
-
 //////////////////////////////////////////////////////////////////////////
 // Range
 //////////////////////////////////////////////////////////////////////////
@@ -194,7 +192,7 @@ class Range extends Obj {
       return this.#start + ".." + this.#end;
   }
 
-  start$(size) {
+  __start(size) {
     if (size == null) return this.#start;
 
     let x = this.#start;
@@ -203,7 +201,7 @@ class Range extends Obj {
     return x;
   }
 
-  end$(size) {
+  __end(size) {
     if (size == null) return this.#end;
 
     let x = this.#end;

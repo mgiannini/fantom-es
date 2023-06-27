@@ -26,7 +26,7 @@ class Param extends Obj {
 
   static #noParams = undefined
   static noParams$() {
-    if (Param.#noParams === undefined) Param.#noParams = List.make(Param.type$, []).toImmutable;
+    if (Param.#noParams === undefined) Param.#noParams = List.make(Param.type$, []).toImmutable();
     return Param.#noParams;
   }
 

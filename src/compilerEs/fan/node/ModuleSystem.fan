@@ -8,13 +8,12 @@
 
 abstract class ModuleSystem
 {
-  new make(NodeRunner runner)
+  new make(File nodeDir)
   {
-    this.runner = runner;
+    this.nodeDir = nodeDir
   }
 
-  protected NodeRunner runner { private set }
-  protected File nodeDir() { runner.nodeDir }
+  const File nodeDir
 
   abstract Str moduleType()
   abstract File moduleDir()
@@ -43,7 +42,7 @@ abstract class ModuleSystem
 
 class CommonJs : ModuleSystem
 {
-  new make(NodeRunner runner) : super(runner)
+  new make(File nodeDir) : super(nodeDir)
   {
   }
 
@@ -64,7 +63,7 @@ class CommonJs : ModuleSystem
 
 class Esm : ModuleSystem
 {
-  new make(NodeRunner runner) : super(runner)
+  new make(File nodeDir) : super(nodeDir)
   {
   }
 

@@ -68,8 +68,8 @@ class Str extends Obj {
 
   static getRange(self, range) {
     const size = self.length;
-    const s = range.start$(size);
-    const e = range.end$(size);
+    const s = range.__start(size);
+    const e = range.__end(size);
     if (e+1 < s) throw IndexErr.make(range);
     return self.substr(s, (e-s)+1);
   }

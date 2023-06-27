@@ -85,11 +85,11 @@ class Field extends Slot {
   get(instance=null) {
     if (this.isStatic()) {
       if (this.isEnum()) {
-        const e = `${this.parent().name$()}.${this.name$()}()`;
-        return eval(`${this.parent.name$()}.${this.name$()}()`);
+        // const e = `${this.parent().name$()}.${this.name$()}()`;
+        return eval(`${this.parent().name$()}.${this.name$()}()`);
       }
       else
-        return eval(`${this.parent.name$()}.${this.name$()}`);
+        return eval(`${this.parent().name$()}.${this.name$()}()`);
     }
     else {
       throw Err.make("TODO:FIXIT get this non-static slot")

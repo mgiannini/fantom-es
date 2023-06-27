@@ -169,14 +169,12 @@ class ObjUtil {
 // with
 //////////////////////////////////////////////////////////////////////////
 
-  static $with(self, f) {
-    if (self instanceof Obj)
-    {
-      return self.$with(f);
+  static with$(self, f) {
+    if (self instanceof Obj) {
+      return self.with$(f);
     }
-    else
-    {
-      f.call(self);
+    else {
+      f(self);
       return self;
     }
   }

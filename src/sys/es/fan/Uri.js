@@ -19,17 +19,17 @@ class Uri extends Obj {
 
   constructor(sections) {
     super();
-    this.#scheme = sections.scheme;
+    this.#scheme   = sections.scheme;
     this.#userInfo = sections.userInfo;
-    this.#host = sections.host;
-    this.#port = sections.port;
-    this.#pathStr = sections.pathStr;
-    this.#path = sections.path.ro();
+    this.#host     = sections.host;
+    this.#port     = sections.port;
+    this.#pathStr  = sections.pathStr;
+    this.#path     = sections.path.toImmutable();
     this.#queryStr = sections.queryStr;
-    this.#query = sections.query.ro();
-    this.frag = sections.frag;
-    this.#str = sections.str != null ? sections.str : new UriEncoder(this, false).encode();
-    this.#encoded = null;
+    this.#query    = sections.query.toImmutable();
+    this.#frag     = sections.frag;
+    this.#str      = sections.str != null ? sections.str : new UriEncoder(this, false).encode();
+    this.#encoded  = null;
   }
 
   #scheme;
@@ -44,15 +44,17 @@ class Uri extends Obj {
   #str;
   #encoded;
 
-  static #defVal = undefined
+  static #defVal;
   static defVal() { 
     if (Uri.#defVal === undefined) Uri.#defVal = Uri.fromStr(""); 
     return Uri.#defVal;
   }
 
+  static #parentRange = Range.make(0, -2, false);
+
   static fromStr(s, checked=true) {
     try {
-      return Uri.makeSections(new UriDecoder(s, false).decode());
+      return new Uri(new UriDecoder(s, false).decode());
     }
     catch (err) {
       if (!checked) return null;
@@ -62,152 +64,133 @@ class Uri extends Obj {
 
   static decode(s, checked=true) {
     try {
-      return new Uri.makeSections(new UriDecoder(s, true).decode());
+      return new Uri(new UriDecoder(s, true).decode());
     }
     catch (err) {
       if (!checked) return null;
       throw ParseErr.makeStr("Uri", s, null, err);
     }
   }
-/*
 
 //////////////////////////////////////////////////////////////////////////
 // Utils
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.Uri.decodeQuery = function(s)
-{
-  try
-  {
-    return new fan.sys.UriDecoder(s, true).decodeQuery();
-  }
-  catch (err)
-  {
-    if (err instanceof fan.sys.ArgErr)
-      throw fan.sys.ArgErr.make("Invalid Uri query: `" + s + "`: " + err.msg());
+  static decodeQuery(s) {
+    try {
+      return new UriDecoder(s, true).decodeQuery();
+    }
+    catch (err) {
+      if (err instanceof ArgErr)
+        throw ArgErr.make("Invalid Uri query: `" + s + "`: " + err.msg());
 
-    throw fan.sys.ArgErr.make("Invalid Uri query: `" + s + "`");
-  }
-}
-
-fan.sys.Uri.encodeQuery = function(map)
-{
-  var buf  = "";
-  var keys = map.keys();
-  var len  = keys.size();
-  for (var i=0; i<len; i++)
-  {
-    var key = keys.get(i);
-    var val = map.get(key);
-    if (buf.length > 0) buf += '&';
-    buf = fan.sys.Uri.encodeQueryStr(buf, key);
-    if (val != null)
-    {
-      buf += '=';
-      buf = fan.sys.Uri.encodeQueryStr(buf, val);
+      throw ArgErr.make("Invalid Uri query: `" + s + "`");
     }
   }
-  return buf;
-}
 
-fan.sys.Uri.encodeQueryStr = function(buf, str)
-{
-  var len = str.length;
-  for (var i=0; i<len; ++i)
-  {
-    var c = str.charCodeAt(i);
-    if (c < 128 && (fan.sys.Uri.charMap[c] & fan.sys.Uri.QUERY) != 0 && (fan.sys.Uri.delimEscMap[c] & fan.sys.Uri.QUERY) == 0)
-      buf += str.charAt(i);
-    else if (c == 32)
-      buf += "+"
-    else
-      buf = fan.sys.UriEncoder.percentEncodeChar(buf, c);
+  static encodeQuery(map) {
+    let buf  = "";
+    const keys = map.keys();
+    const len  = keys.size();
+    for (let i=0; i<len; i++) {
+      const key = keys.get(i);
+      const val = map.get(key);
+      if (buf.length > 0) buf += '&';
+      buf = Uri.#encodeQueryStr(buf, key);
+      if (val != null) {
+        buf += '=';
+        buf = Uri.#encodeQueryStr(buf, val);
+      }
+    }
+    return buf;
   }
-  return buf;
-}
+
+  static #encodeQueryStr(buf, str) {
+    const len = str.length;
+    for (let i=0; i<len; ++i) {
+      const c = str.charCodeAt(i);
+      if (c < 128 && (Uri.__charMap[c] & Uri.__QUERY) != 0 && (Uri.__delimEscMap[c] & Uri.__QUERY) == 0)
+        buf += str.charAt(i);
+      else if (c == 32)
+        buf += "+"
+      else
+        buf = UriEncoder.percentEncodeChar(buf, c);
+    }
+    return buf;
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Tokens
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.Uri.escapeToken = function(str, section)
-{
-  var mask = fan.sys.Uri.$sectionToMask(section);
-  var buf = [];
-  var delimEscMap = fan.sys.Uri.delimEscMap;
-  for (var i = 0; i< str.length; ++i)
+  static escapeToken(str, section)
   {
-    var c = str.charCodeAt(i);
-    if (c < delimEscMap.length && (delimEscMap[c] & mask) != 0)
-      buf.push('\\');
-    buf.push(String.fromCharCode(c));
-  }
-  return buf.join("");
-}
-
-fan.sys.Uri.encodeToken = function(str, section)
-{
-  var mask = fan.sys.Uri.$sectionToMask(section);
-  var buf = ""
-  var delimEscMap = fan.sys.Uri.delimEscMap;
-  var charMap = fan.sys.Uri.charMap;
-  for (var i = 0; i < str.length; ++i)
-  {
-    var c = str.charCodeAt(i);
-    if (c < 128 && (charMap[c] & mask) != 0 && (delimEscMap[c] & mask) == 0)
-      buf += String.fromCharCode(c);
-    else
-      buf = fan.sys.UriEncoder.percentEncodeChar(buf, c);
-  }
-  return buf;
-}
-
-fan.sys.Uri.decodeToken = function(str, section)
-{
-  var mask = fan.sys.Uri.$sectionToMask(section);
-  if (str.length == 0) return "";
-  return new fan.sys.UriDecoder(str, true).decodeToken(mask);
-}
-
-fan.sys.Uri.unescapeToken = function(str)
-{
-  var buf = "";
-  for (var i = 0; i < str.length; ++i)
-  {
-    var c = str.charAt(i);
-    if (c == '\\')
-    {
-      ++i;
-      if (i >= str.length) throw fan.sys.ArgErr.make("Invalid esc: " + str);
-      c = str.charAt(i);
+    const mask = Uri.#sectionToMask(section);
+    const buf = [];
+    const delimEscMap = Uri.__delimEscMap;
+    for (let i = 0; i< str.length; ++i) {
+      const c = str.charCodeAt(i);
+      if (c < delimEscMap.length && (delimEscMap[c] & mask) != 0)
+        buf.push('\\');
+      buf.push(String.fromCharCode(c));
     }
-    buf += c;
+    return buf.join("");
   }
-  return buf;
-}
 
-fan.sys.Uri.$sectionToMask = function(section)
-{
-  switch (section)
-  {
-    case 1: return fan.sys.Uri.PATH; break;
-    case 2: return fan.sys.Uri.QUERY; break;
-    case 3: return fan.sys.Uri.FRAG; break;
-    default: throw fan.sys.ArgErr.make("Invalid section flag: " + section);
+  static encodeToken(str, section) {
+    const mask = Uri.#sectionToMask(section);
+    let buf = ""
+    const delimEscMap = Uri.__delimEscMap;
+    const charMap = Uri.__charMap;
+    for (let i = 0; i < str.length; ++i) {
+      const c = str.charCodeAt(i);
+      if (c < 128 && (charMap[c] & mask) != 0 && (delimEscMap[c] & mask) == 0)
+        buf += String.fromCharCode(c);
+      else
+        buf = UriEncoder.percentEncodeChar(buf, c);
+    }
+    return buf;
   }
-}
 
-fan.sys.Uri.m_sectionPath  = 1;
-fan.sys.Uri.m_sectionQuery = 2;
-fan.sys.Uri.m_sectionFrag  = 3;
-*/
+  static decodeToken(str, section) {
+    const mask = Uri.#sectionToMask(section);
+    if (str.length == 0) return "";
+    return new UriDecoder(str, true).decodeToken(mask);
+  }
 
+  static unescapeToken(str) {
+    let buf = "";
+    for (let i = 0; i < str.length; ++i) {
+      let c = str.charAt(i);
+      if (c == '\\') {
+        ++i;
+        if (i >= str.length) throw ArgErr.make(`Invalid esc: ${str}`);
+        c = str.charAt(i);
+      }
+      buf += c;
+    }
+    return buf;
+  }
+
+  static #sectionToMask(section) {
+    switch (section) {
+      case 1: return Uri.__PATH; break;
+      case 2: return Uri.__QUERY; break;
+      case 3: return Uri.__FRAG; break;
+      default: throw ArgErr.make(`Invalid section flag: ${section}`);
+    }
+  }
+
+  static #sectionPath  = 1;
+  static sectionPath() { return Uri.#sectionPath; }
+  static #sectionQuery = 2;
+  static sectionQuery() { return Uri.#sectionQuery; }
+  static #sectionFrag  = 3;
+  static sectionFrag() { return Uri.#sectionFrag; }
 
 //////////////////////////////////////////////////////////////////////////
 // Identity
 //////////////////////////////////////////////////////////////////////////
-
-  
 
   equals(that) {
     if (that instanceof Uri)
@@ -259,611 +242,550 @@ fan.sys.Uri.m_sectionFrag  = 3;
     // TODO - TEMP FIX FOR GFX::IMAGE
     return File.make();
   }
-    /*
 
 //////////////////////////////////////////////////////////////////////////
 // Components
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.Uri.prototype.isAbs = function() { return this.m_scheme != null; }
-fan.sys.Uri.prototype.isRel = function() { return this.m_scheme == null; }
-fan.sys.Uri.prototype.isDir = function()
-{
-  if (this.m_pathStr != null)
-  {
-    var p = this.m_pathStr;
-    var len = p.length;
-      if (len > 0 && p.charAt(len-1) == '/')
-        return true;
-  }
-  return false;
-}
-
-fan.sys.Uri.prototype.scheme = function() { return this.m_scheme; }
-
-fan.sys.Uri.prototype.auth = function()
-{
-  if (this.m_host == null) return null;
-  if (this.m_port == null)
-  {
-    if (this.m_userInfo == null) return this.m_host;
-    else return this.m_userInfo + '@' + this.m_host;
-  }
-  else
-  {
-    if (this.m_userInfo == null) return this.m_host + ':' + this.m_port;
-    else return this.m_userInfo + '@' + this.m_host + ':' + this.m_port;
-  }
-}
-
-fan.sys.Uri.prototype.host = function() { return this.m_host; }
-fan.sys.Uri.prototype.userInfo = function() { return this.m_userInfo; }
-fan.sys.Uri.prototype.port = function() { return this.m_port; }
-fan.sys.Uri.prototype.path = function() { return this.m_path; }
-fan.sys.Uri.prototype.pathStr = function() { return this.m_pathStr; }
-
-fan.sys.Uri.prototype.isPathAbs = function()
-{
-  if (this.m_pathStr == null || this.m_pathStr.length == 0)
+  isAbs() { return this.#scheme != null; }
+  isRel() { return this.#scheme == null; }
+  isDir() {
+    if (this.#pathStr != null) {
+      const p = this.#pathStr;
+      const len = p.length;
+      if (len > 0 && p.charAt(len-1) == '/') return true;
+    }
     return false;
-  else
-    return this.m_pathStr.charAt(0) == '/';
-}
-
-fan.sys.Uri.prototype.isPathRel = function()
-{
-  return !this.isPathAbs();
-}
-
-fan.sys.Uri.prototype.isPathOnly = function()
-{
-  return this.m_scheme == null && this.m_host == null && this.m_port == null &&
-         this.m_userInfo == null && this.m_queryStr == null && this.m_frag == null;
-}
-
-fan.sys.Uri.prototype.$name = function()
-{
-  if (this.m_path.size() == 0) return "";
-  return this.m_path.last();
-}
-
-fan.sys.Uri.prototype.basename = function()
-{
-  var n = this.$name();
-  var dot = n.lastIndexOf('.');
-  if (dot < 2)
-  {
-    if (dot < 0) return n;
-    if (n == ".") return n;
-    if (n == "..") return n;
   }
-  return n.substring(0, dot);
-}
 
-fan.sys.Uri.prototype.ext = function()
-{
-  var n = this.$name();
-  var dot = n.lastIndexOf('.');
-  if (dot < 2)
-  {
-    if (dot < 0) return null;
-    if (n == ".") return null;
-    if (n == "..") return null;
+  scheme() { return this.#scheme; }
+
+  auth() {
+    if (this.#host == null) return null;
+    if (this.#port == null) {
+      if (this.#userInfo == null) return this.#host;
+      else return `${this.#userInfo}@${this.#host}`;
+    }
+    else {
+      if (this.#userInfo == null) return `${this.#host}:${this.#port}`;
+      else return `${this.#userInfo}@${this.#host}:${this.#port}`;
+    }
   }
-  return n.substring(dot+1);
-}
 
-fan.sys.Uri.prototype.mimeType = function()
-{
-  if (this.isDir()) return fan.sys.MimeType.m_dir;
-  return fan.sys.MimeType.forExt(this.ext());
-}
+  host()     { return this.#host; }
+  userInfo() { return this.#userInfo; }
+  port()     { return this.#port; }
+  path()     { return this.#path; }
+  pathStr()  { return this.#pathStr; }
 
-fan.sys.Uri.prototype.query = function() { return this.m_query; }
-fan.sys.Uri.prototype.queryStr = function() { return this.m_queryStr; }
-fan.sys.Uri.prototype.frag = function() { return this.m_frag; }
+  isPathAbs() {
+    if (this.#pathStr == null || this.#pathStr.length == 0)
+      return false;
+    else
+      return this.#pathStr.charAt(0) == '/';
+  }
+
+  isPathRel() { return !this.isPathAbs(); }
+
+  isPathOnly() {
+    return this.#scheme == null && this.#host == null && this.#port == null &&
+           this.#userInfo == null && this.#queryStr == null && this.#frag == null;
+  }
+
+  name$() {
+    if (this.#path.size() == 0) return "";
+    return this.#path.last();
+  }
+
+  basename() {
+    const n   = this.name$();
+    const dot = n.lastIndexOf('.');
+    if (dot < 2) {
+      if (dot < 0)   return n;
+      if (n == ".")  return n;
+      if (n == "..") return n;
+    }
+    return n.slice(0, dot);
+  }
+
+  ext() {
+    const n = this.name$();
+    const dot = n.lastIndexOf('.');
+    if (dot < 2) {
+      if (dot < 0)   return null;
+      if (n == ".")  return null;
+      if (n == "..") return null;
+    }
+    return n.slice(dot+1);
+  }
+
+  mimeType() {
+    if (this.isDir()) return MimeType.fromStr("x-directory/normal");
+    return MimeType.forExt(this.ext());
+  }
+
+  query()    { return this.#query; }
+  queryStr() { return this.#queryStr; }
+  frag()     { return this.#frag; }
 
 //////////////////////////////////////////////////////////////////////////
 // Utils
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.Uri.prototype.parent = function()
-{
-  // if no path bail
-  if (this.m_path.size() == 0) return null;
+  parent() {
+    // if no path bail
+    if (this.#path.size() == 0) return null;
 
-  // if just a simple filename, then no parent
-  if (this.m_path.size() == 1 && !this.isPathAbs() && !this.isDir()) return null;
+    // if just a simple filename, then no parent
+    if (this.#path.size() == 1 && !this.isPathAbs() && !this.isDir()) return null;
 
-  // use getRange
-  return this.getRange(fan.sys.Uri.parentRange);
-}
-
-fan.sys.Uri.prototype.pathOnly = function()
-{
-  if (this.m_pathStr == null)
-    throw fan.sys.Err.make("Uri has no path: " + this);
-
-  if (this.m_scheme == null && this.m_userInfo == null && this.m_host == null &&
-      this.m_port == null && this.m_queryStr == null && this.m_frag == null)
-    return this;
-
-  var t = new fan.sys.UriSections();
-  t.path     = this.m_path;
-  t.pathStr  = this.m_pathStr;
-  t.query    = fan.sys.Uri.emptyQuery();
-  t.str      = this.m_pathStr;
-  return fan.sys.Uri.makeSections(t);
-}
-
-fan.sys.Uri.prototype.getRangeToPathAbs = function(range) { return this.getRange(range, true); }
-
-fan.sys.Uri.prototype.getRange = function(range, forcePathAbs)
-{
-  if (forcePathAbs === undefined) forcePathAbs = false;
-
-  if (this.m_pathStr == null)
-    throw fan.sys.Err.make("Uri has no path: " + this);
-
-  var size = this.m_path.size();
-  var s = range.$start(size);
-  var e = range.$end(size);
-  var n = e - s + 1;
-  if (n < 0) throw fan.sys.IndexErr.make(range);
-
-  var head = (s == 0);
-  var tail = (e == size-1);
-  if (head && tail && (!forcePathAbs || this.isPathAbs())) return this;
-
-  var t = new fan.sys.UriSections();
-  t.path = this.m_path.getRange(range);
-
-  var sb = "";
-  if ((head && this.isPathAbs()) || forcePathAbs) sb += '/';
-  for (var i=0; i<t.path.size(); ++i)
-  {
-    if (i > 0) sb += '/';
-    sb += t.path.get(i);
-  }
-  if (t.path.size() > 0 && (!tail || this.isDir())) sb += '/';
-  t.pathStr = sb;
-
-  if (head)
-  {
-    t.scheme   = this.m_scheme;
-    t.userInfo = this.m_userInfo;
-    t.host     = this.m_host;
-    t.port     = this.m_port;
+    // use getRange
+    return this.getRange(Uri.#parentRange);
   }
 
-  if (tail)
-  {
-    t.queryStr = this.m_queryStr;
-    t.query    = this.m_query;
-    t.frag     = this.m_frag;
-  }
-  else
-  {
-    t.query    = fan.sys.Uri.emptyQuery();
+  pathOnly() {
+    if (this.#pathStr == null)
+      throw Err.make(`Uri has no path: ${this}`);
+
+    if (this.#scheme == null && this.#userInfo == null && this.#host == null &&
+        this.#port == null && this.#queryStr == null && this.#frag == null)
+      return this;
+
+    const t    = new UriSections();
+    t.path     = this.#path;
+    t.pathStr  = this.#pathStr;
+    t.query    = Uri.emptyQuery();
+    t.str      = this.#pathStr;
+    return new Uri(t);
   }
 
-  if (!head && !tail)
-  {
-    t.str = t.pathStr;
-  }
+  getRangeToPathAbs(range) { return this.getRange(range, true); }
 
-  return fan.sys.Uri.makeSections(t);
-}
+  getRange(range, forcePathAbs=false)
+  {
+    if (this.#pathStr == null)
+      throw Err.make(`Uri has no path: ${this}`);
+
+    const size = this.#path.size();
+    const s = range.__start(size);
+    const e = range.__end(size);
+    const n = e - s + 1;
+    if (n < 0) throw IndexErr.make(range);
+
+    let head = (s == 0);
+    let tail = (e == size-1);
+    if (head && tail && (!forcePathAbs || this.isPathAbs())) return this;
+
+    const t = new UriSections();
+    t.path = this.#path.getRange(range);
+
+    let sb = "";
+    if ((head && this.isPathAbs()) || forcePathAbs) sb += '/';
+    for (let i=0; i<t.path.size(); ++i)
+    {
+      if (i > 0) sb += '/';
+      sb += t.path.get(i);
+    }
+    if (t.path.size() > 0 && (!tail || this.isDir())) sb += '/';
+    t.pathStr = sb;
+
+    if (head) {
+      t.scheme   = this.#scheme;
+      t.userInfo = this.#userInfo;
+      t.host     = this.#host;
+      t.port     = this.#port;
+    }
+
+    if (tail) {
+      t.queryStr = this.#queryStr;
+      t.query    = this.#query;
+      t.frag     = this.#frag;
+    }
+    else {
+      t.query    = Uri.emptyQuery();
+    }
+
+    if (!head && !tail) t.str = t.pathStr;
+
+    return new Uri(t);
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Relativize
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.Uri.prototype.relTo = function(base)
-{
-  if ((this.m_scheme != base.m_scheme) ||
-      (this.m_userInfo != base.m_userInfo) ||
-      (this.m_host != base.m_host) ||
-      (this.m_port != base.m_port))
-    return this;
+  relTo(base) {
+    if ((this.#scheme != base.#scheme) ||
+        (this.#userInfo != base.#userInfo) ||
+        (this.#host != base.#host) ||
+        (this.#port != base.#port))
+      return this;
 
-  // at this point we know we have the same scheme and auth, and
-  // we're going to create a new URI which is a subset of this one
-  var t = new fan.sys.UriSections();
-  t.query    = this.m_query;
-  t.queryStr = this.m_queryStr;
-  t.frag     = this.m_frag;
+    // at this point we know we have the same scheme and auth, and
+    // we're going to create a new URI which is a subset of this one
+    const t = new UriSections();
+    t.query    = this.#query;
+    t.queryStr = this.#queryStr;
+    t.frag     = this.#frag;
 
-  // find divergence
-  var d=0;
-  var len = Math.min(this.m_path.size(), base.m_path.size());
-  for (; d<len; ++d)
-    if (this.m_path.get(d) != base.m_path.get(d))
-      break;
+    // find divergence
+    let d=0;
+    const len = Math.min(this.#path.size(), base.#path.size());
+    for (; d<len; ++d)
+      if (this.#path.get(d) != base.#path.get(d))
+        break;
 
-  // if diverenge is at root, then no commonality
-  if (d == 0)
-  {
-    // `/a/b/c`.relTo(`/`) should be `a/b/c`
-    if (base.m_path.isEmpty() && fan.sys.Str.startsWith(this.m_pathStr, "/"))
-    {
-      t.path = this.m_path;
-      t.pathStr = this.m_pathStr.substring(1);
+    // if diverenge is at root, then no commonality
+    if (d == 0) {
+      // `/a/b/c`.relTo(`/`) should be `a/b/c`
+      if (base.#path.isEmpty() && Str.startsWith(this.#pathStr, "/")) {
+        t.path    = this.#path;
+        t.pathStr = this.#pathStr.substring(1);
+      }
+      else {
+        t.path    = this.#path;
+        t.pathStr = this.#pathStr;
+      }
     }
-    else
-    {
-      t.path = this.m_path;
-      t.pathStr = this.m_pathStr;
+
+    // if paths are exactly the same
+    else if (d == this.#path.size() && d == base.#path.size()) {
+      t.path    = Uri.emptyPath();
+      t.pathStr = "";
     }
+
+    // create sub-path at divergence point
+    else {
+      // slice my path
+      t.path = this.#path.getRange(Range.makeInclusive(d, -1));
+
+      // insert .. backup if needed
+      let backup = base.#path.size() - d;
+      if (!base.isDir()) backup--;
+      while (backup-- > 0) t.path.insert(0, "..");
+
+      // format the new path string
+      t.pathStr = Uri.__toPathStr(false, t.path, this.isDir());
+    }
+
+    return new Uri(t);
   }
 
-  // if paths are exactly the same
-  else if (d == this.m_path.size() && d == base.m_path.size())
-  {
-    t.path = fan.sys.Uri.emptyPath();
-    t.pathStr = "";
+  relToAuth() {
+    if (this.#scheme == null && this.#userInfo == null &&
+        this.#host == null && this.#port == null)
+      return this;
+
+    const t    = new UriSections();
+    t.path     = this.#path;
+    t.pathStr  = this.#pathStr;
+    t.query    = this.#query;
+    t.queryStr = this.#queryStr;
+    t.frag     = this.#frag;
+    return new Uri(t);
   }
-
-  // create sub-path at divergence point
-  else
-  {
-    // slice my path
-    t.path = this.m_path.getRange(fan.sys.Range.makeInclusive(d, -1));
-
-    // insert .. backup if needed
-    var backup = base.m_path.size() - d;
-    if (!base.isDir()) backup--;
-    while (backup-- > 0) t.path.insert(0, "..");
-
-    // format the new path string
-    t.pathStr = fan.sys.Uri.toPathStr(false, t.path, this.isDir());
-  }
-
-  return fan.sys.Uri.makeSections(t);
-}
-
-fan.sys.Uri.prototype.relToAuth = function()
-{
-  if (this.m_scheme == null && this.m_userInfo == null &&
-      this.m_host == null && this.m_port == null)
-    return this;
-
-  var t = new fan.sys.UriSections();
-  t.path     = this.m_path;
-  t.pathStr  = this.m_pathStr;
-  t.query    = this.m_query;
-  t.queryStr = this.m_queryStr;
-  t.frag     = this.m_frag;
-  return fan.sys.Uri.makeSections(t);
-}
 
 //////////////////////////////////////////////////////////////////////////
 // Plus
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.Uri.prototype.plus = function(r)
-{
-  // if r is more or equal as absolute as base, return r
-  if (r.m_scheme != null) return r;
-  if (r.m_host != null && this.m_scheme == null) return r;
-  if (r.isPathAbs() && this.m_host == null) return r;
+  plus(r) {
+    // if r is more or equal as absolute as base, return r
+    if (r.#scheme != null) return r;
+    if (r.#host != null && this.#scheme == null) return r;
+    if (r.isPathAbs() && this.#host == null) return r;
 
-  // this algorthm is lifted straight from
-  // RFC 3986 (5.2.2) Transform References;
-  var base = this;
-  var t = new fan.sys.UriSections();
-  if (r.m_host != null)
-  {
-    t.setAuth(r);
-    t.setPath(r);
-    t.setQuery(r);
-  }
-  else
-  {
-    if (r.m_pathStr == null || r.m_pathStr == "")
-    {
-      t.setPath(base);
-      if (r.m_queryStr != null)
-        t.setQuery(r);
-      else
-        t.setQuery(base);
-    }
-    else
-    {
-      if (fan.sys.Str.startsWith(r.m_pathStr, "/"))
-        t.setPath(r);
-      else
-        fan.sys.Uri.merge(t, base, r);
+    // this algorthm is lifted straight from
+    // RFC 3986 (5.2.2) Transform References;
+    const base = this;
+    const t = new UriSections();
+    if (r.#host != null) {
+      t.setAuth(r);
+      t.setPath(r);
       t.setQuery(r);
     }
-    t.setAuth(base);
-  }
-  t.scheme = base.m_scheme;
-  t.frag   = r.m_frag;
-  t.normalize();
-  return fan.sys.Uri.makeSections(t);
-}
-
-fan.sys.Uri.merge = function(t, base, r)
-{
-  var baseIsAbs = base.isPathAbs();
-  var baseIsDir = base.isDir();
-  var rIsDir    = r.isDir();
-  var rPath     = r.m_path;
-  var dotLast   = false;
-
-  // compute the target path taking into account whether
-  // the base is a dir and any dot segments in relative ref
-  var tPath;
-  if (base.m_path.size() == 0)
-  {
-    tPath = r.m_path;
-  }
-  else
-  {
-    tPath = base.m_path.rw();
-    if (!baseIsDir) tPath.pop();
-    for (var i=0; i<rPath.size(); ++i)
-    {
-      var rSeg = rPath.get(i);
-      if (rSeg == ".") { dotLast = true; continue; }
-      if (rSeg == "..")
-      {
-        if (tPath.size() > 0) { tPath.pop(); dotLast = true; continue; }
-        if (baseIsAbs) continue;
+    else {
+      if (r.#pathStr == null || r.#pathStr == "") {
+        t.setPath(base);
+        if (r.#queryStr != null)
+          t.setQuery(r);
+        else
+          t.setQuery(base);
       }
-      tPath.add(rSeg); dotLast = false;
+      else {
+        if (Str.startsWith(r.#pathStr, "/"))
+          t.setPath(r);
+        else
+          Uri.#merge(t, base, r);
+        t.setQuery(r);
+      }
+      t.setAuth(base);
     }
+    t.scheme = base.#scheme;
+    t.frag   = r.#frag;
+    t.normalize();
+    return new Uri(t);
   }
 
-  t.path = tPath;
-  t.pathStr = fan.sys.Uri.toPathStr(baseIsAbs, tPath, rIsDir || dotLast);
-}
+  static #merge(t, base, r) {
+    const baseIsAbs = base.isPathAbs();
+    const baseIsDir = base.isDir();
+    const rIsDir    = r.isDir();
+    const rPath     = r.#path;
+    let dotLast     = false;
 
-fan.sys.Uri.toPathStr = function(isAbs, path, isDir)
-{
-  var buf = '';
-  if (isAbs) buf += '/';
-  for (var i=0; i<path.size(); ++i)
-  {
-    if (i > 0) buf += '/';
-    buf += path.get(i);
-  }
-  if (isDir && !(buf.length > 0 && buf.charAt(buf.length-1) == '/'))
-    buf += '/';
-  return buf;
-}
+    // compute the target path taking into account whether
+    // the base is a dir and any dot segments in relative ref
+    let tPath;
+    if (base.#path.size() == 0) {
+      tPath = r.#path;
+    }
+    else {
+      tPath = base.#path.rw();
+      if (!baseIsDir) tPath.pop();
+      for (let i=0; i<rPath.size(); ++i) {
+        const rSeg = rPath.get(i);
+        if (rSeg == ".") { dotLast = true; continue; }
+        if (rSeg == "..")
+        {
+          if (tPath.size() > 0) { tPath.pop(); dotLast = true; continue; }
+          if (baseIsAbs) continue;
+        }
+        tPath.add(rSeg); dotLast = false;
+      }
+    }
 
-fan.sys.Uri.prototype.plusName = function(name, asDir)
-{
-  var size        = this.m_path.size();
-  var isDir       = this.isDir() || this.m_path.isEmpty();
-  var newSize     = isDir ? size + 1 : size;
-  var temp        = this.m_path.dup().m_values;
-  temp[newSize-1] = name;
-
-  var t = new fan.sys.UriSections();
-  t.scheme   = this.m_scheme;
-  t.userInfo = this.m_userInfo;
-  t.host     = this.m_host;
-  t.port     = this.m_port;
-  t.query    = fan.sys.Uri.emptyQuery();
-  t.queryStr = null;
-  t.frag     = null;
-  t.path     = fan.sys.List.make(fan.sys.Str.type$, temp);
-  t.pathStr  = fan.sys.Uri.toPathStr(this.isAbs() || this.isPathAbs(), t.path, asDir);
-  return fan.sys.Uri.makeSections(t);
-}
-
-fan.sys.Uri.prototype.plusSlash = function()
-{
-  if (this.isDir()) return this;
-  var t = new fan.sys.UriSections();
-  t.scheme   = this.m_scheme;
-  t.userInfo = this.m_userInfo;
-  t.host     = this.m_host;
-  t.port     = this.m_port;
-  t.query    = this.m_query;
-  t.queryStr = this.m_queryStr;
-  t.frag     = this.m_frag;
-  t.path     = this.m_path;
-  t.pathStr  = this.m_pathStr + "/";
-  return fan.sys.Uri.makeSections(t);
-}
-
-fan.sys.Uri.prototype.plusQuery = function(q)
-{
-  if (q == null || q.isEmpty()) return this;
-
-  var merge = this.m_query.dup().setAll(q);
-
-  var s = "";
-  var keys = merge.keys();
-  for (var i=0; i<keys.size(); i++)
-  {
-    if (s.length > 0) s += '&';
-    var key = keys.get(i);
-    var val = merge.get(key);
-    s = fan.sys.Uri.appendQueryStr(s, key);
-    s += '=';
-    s = fan.sys.Uri.appendQueryStr(s, val);
+    t.path    = tPath;
+    t.pathStr = Uri.__toPathStr(baseIsAbs, tPath, rIsDir || dotLast);
   }
 
-  var t = new fan.sys.UriSections();
-  t.scheme   = this.m_scheme;
-  t.userInfo = this.m_userInfo;
-  t.host     = this.m_host;
-  t.port     = this.m_port;
-  t.frag     = this.m_frag;
-  t.pathStr  = this.m_pathStr;
-  t.path     = this.m_path;
-  t.query    = merge.ro();
-  t.queryStr = s;
-  return fan.sys.Uri.makeSections(t);
-}
-
-fan.sys.Uri.appendQueryStr = function(buf, str)
-{
-  var len = str.length;
-  for (var i=0; i<len; ++i)
-  {
-    var c = str.charCodeAt(i);
-    if (c < fan.sys.Uri.delimEscMap.length && (fan.sys.Uri.delimEscMap[c] & fan.sys.Uri.QUERY) != 0)
-      buf += '\\';
-    buf += str.charAt(i);
+  static __toPathStr(isAbs, path, isDir) {
+    let buf = '';
+    if (isAbs) buf += '/';
+    for (let i=0; i<path.size(); ++i) {
+      if (i > 0) buf += '/';
+      buf += path.get(i);
+    }
+    if (isDir && !(buf.length > 0 && buf.charAt(buf.length-1) == '/'))
+      buf += '/';
+    return buf;
   }
-  return buf;
-}
 
-fan.sys.Uri.prototype.toFile = function()
-{
-  return fan.sys.File.make(this);
-}
+  plusName(name, asDir=false) {
+    const size        = this.#path.size();
+    const isDir       = this.isDir() || this.#path.isEmpty();
+    const newSize     = isDir ? size + 1 : size;
+    const temp        = this.#path.dup().__values();
+    temp[newSize-1] = name;
+
+    const t = new UriSections();
+    t.scheme   = this.#scheme;
+    t.userInfo = this.#userInfo;
+    t.host     = this.#host;
+    t.port     = this.#port;
+    t.query    = Uri.emptyQuery();
+    t.queryStr = null;
+    t.frag     = null;
+    t.path     = List.make(Str.type$, temp);
+    t.pathStr  = Uri.__toPathStr(this.isAbs() || this.isPathAbs(), t.path, asDir);
+    return new Uri(t);
+  }
+
+  plusSlash() {
+    if (this.isDir()) return this;
+    const t = new UriSections();
+    t.scheme   = this.#scheme;
+    t.userInfo = this.#userInfo;
+    t.host     = this.#host;
+    t.port     = this.#port;
+    t.query    = this.#query;
+    t.queryStr = this.#queryStr;
+    t.frag     = this.#frag;
+    t.path     = this.#path;
+    t.pathStr  = this.#pathStr + "/";
+    return new Uri(t);
+  }
+
+  plusQuery(q) {
+    if (q == null || q.isEmpty()) return this;
+
+    const merge = this.#query.dup().setAll(q);
+
+    let s = "";
+    const keys = merge.keys();
+    for (let i=0; i<keys.size(); i++)
+    {
+      if (s.length > 0) s += '&';
+      const key = keys.get(i);
+      const val = merge.get(key);
+      s = Uri.#appendQueryStr(s, key);
+      s += '=';
+      s = Uri.#appendQueryStr(s, val);
+    }
+
+    const t = new UriSections();
+    t.scheme   = this.#scheme;
+    t.userInfo = this.#userInfo;
+    t.host     = this.#host;
+    t.port     = this.#port;
+    t.frag     = this.#frag;
+    t.pathStr  = this.#pathStr;
+    t.path     = this.#path;
+    t.query    = merge.ro();
+    t.queryStr = s;
+    return new Uri(t);
+  }
+
+  static #appendQueryStr(buf, str) {
+    const len = str.length;
+    for (let i=0; i<len; ++i) {
+      const c = str.charCodeAt(i);
+      if (c < Uri.__delimEscMap.length && (Uri.__delimEscMap[c] & Uri.__QUERY) != 0)
+        buf += '\\';
+      buf += str.charAt(i);
+    }
+    return buf;
+  }
+
+  toFile() { return File.make(this); }
 
 //////////////////////////////////////////////////////////////////////////
 // Utils
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.Uri.isName = function(name)
-{
-  var len = name.length;
+static isName(name) {
+  const len = name.length;
 
   // must be at least one character long
   if (len == 0) return false;
 
   // check for "." and ".."
-  if (name.charAt(0) == '.' && len <= 2)
-  {
+  if (name.charAt(0) == '.' && len <= 2) {
     if (len == 1) return false;
     if (name.charAt(1) == '.') return false;
   }
 
   // check that each char is unreserved
-  for (var i=0; i<len; ++i)
-  {
-    var c = name.charCodeAt(i);
-    if (c < 128 && fan.sys.Uri.nameMap[c]) continue;
+  for (let i=0; i<len; ++i) {
+    const c = name.charCodeAt(i);
+    if (c < 128 && Uri.#nameMap[c]) continue;
     return false;
   }
 
   return true;
 }
 
-fan.sys.Uri.checkName = function(name)
-{
-  if (!fan.sys.Uri.isName(name))
-    throw fan.sys.NameErr.make(name);
-}
+  static checkName(name) {
+    if (!Uri.isName(name))
+      throw NameErr.make(name);
+  }
 
-fan.sys.Uri.isUpper = function(c)
-{
-  return 65 <= c && c <= 90;
-}
+  static __isUpper(c) { return 65 <= c && c <= 90; }
 
-fan.sys.Uri.hexNibble = function(ch)
-{
-  if ((fan.sys.Uri.charMap[ch] & fan.sys.Uri.HEX) == 0)
-    throw fan.sys.ParseErr.make("Invalid percent encoded hex: '" + String.fromCharCode(ch));
 
-  if (ch <= 57) return ch - 48;
-  if (ch <= 90) return (ch - 65) + 10;
-  return (ch - 97) + 10;
-}
+  static __hexNibble(ch) {
+    if ((Uri.__charMap[ch] & Uri.__HEX) == 0)
+      throw ParseErr.make(`Invalid percent encoded hex: '${String.fromCharCode(ch)}'`);
+
+    if (ch <= 57) return ch - 48;
+    if (ch <= 90) return (ch - 65) + 10;
+    return (ch - 97) + 10;
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Character Map
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.Uri.toSection = function(section)
-{
-  switch (section)
-  {
-    case fan.sys.Uri.SCHEME: return "scheme";
-    case fan.sys.Uri.USER:   return "userInfo";
-    case fan.sys.Uri.HOST:   return "host";
-    case fan.sys.Uri.PATH:   return "path";
-    case fan.sys.Uri.QUERY:  return "query";
-    case fan.sys.Uri.FRAG:   return "frag";
-    default:                 return "uri";
+  static __toSection(section) {
+    switch (section) {
+      case Uri.__SCHEME: return "scheme";
+      case Uri.__USER:   return "userInfo";
+      case Uri.__HOST:   return "host";
+      case Uri.__PATH:   return "path";
+      case Uri.__QUERY:  return "query";
+      case Uri.__FRAG:   return "frag";
+      default:          return "uri";
+    }
   }
-}
 
-fan.sys.Uri.isScheme = function(c)
-{
-  return c < 128 ? (fan.sys.Uri.charMap[c] & fan.sys.Uri.SCHEME) != 0 : false;
-}
+  static __isScheme(c) {
+    return c < 128 ? (Uri.__charMap[c] & Uri.__SCHEME) != 0 : false;
+  }
 
-fan.sys.Uri.charMap     = new Array(128);
-fan.sys.Uri.nameMap     = new Array(128);
-fan.sys.Uri.delimEscMap = new Array(128);
-fan.sys.Uri.SCHEME     = 0x01;
-fan.sys.Uri.USER       = 0x02;
-fan.sys.Uri.HOST       = 0x04;
-fan.sys.Uri.PATH       = 0x08;
-fan.sys.Uri.QUERY      = 0x10;
-fan.sys.Uri.FRAG       = 0x20;
-fan.sys.Uri.DIGIT      = 0x40;
-fan.sys.Uri.HEX        = 0x80;
+  static __charMap     = new Array(128);
+  static #nameMap      = new Array(128);
+  static __delimEscMap = new Array(128);
+  static __SCHEME     = 0x01;
+  static __USER       = 0x02;
+  static __HOST       = 0x04;
+  static __PATH       = 0x08;
+  static __QUERY      = 0x10;
+  static __FRAG       = 0x20;
+  static __DIGIT      = 0x40;
+  static __HEX        = 0x80;
 
-// initialize flags for all character maps to 0
-for (var i=0; i<128; ++i) { fan.sys.Uri.charMap[i] = 0 ; }
-for (var i=0; i<128; ++i) { fan.sys.Uri.nameMap[i] = 0 ; }
-for (var i=0; i<128; ++i) { fan.sys.Uri.delimEscMap[i] = 0 ; }
+  static #unreserved = Uri.__SCHEME | Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
 
-// alpha/digits characters
-fan.sys.Uri.unreserved = fan.sys.Uri.SCHEME | fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-for (var i=97; i<=122; ++i) { fan.sys.Uri.charMap[i] = fan.sys.Uri.unreserved; fan.sys.Uri.nameMap[i] = true; }
-for (var i=65; i<=90; ++i) { fan.sys.Uri.charMap[i] = fan.sys.Uri.unreserved; fan.sys.Uri.nameMap[i] = true; }
-for (var i=48; i<=57; ++i) { fan.sys.Uri.charMap[i] = fan.sys.Uri.unreserved; fan.sys.Uri.nameMap[i] = true; }
+  static
+  {
+    // initialize flags for all character maps to 0
+    Uri.__charMap.fill(0);
+    Uri.#nameMap.fill(0);
+    Uri.__delimEscMap.fill(0);
 
-// unreserved symbols
-fan.sys.Uri.charMap[45] = fan.sys.Uri.unreserved; fan.sys.Uri.nameMap[45] = true;
-fan.sys.Uri.charMap[46] = fan.sys.Uri.unreserved; fan.sys.Uri.nameMap[46] = true;
-fan.sys.Uri.charMap[95] = fan.sys.Uri.unreserved; fan.sys.Uri.nameMap[95] = true;
-fan.sys.Uri.charMap[126] = fan.sys.Uri.unreserved; fan.sys.Uri.nameMap[126] = true;
+    // alpha/digits characters
+    for (let i=97; i<=122; ++i) { Uri.__charMap[i] = Uri.#unreserved; Uri.#nameMap[i] = true; }
+    for (let i=65; i<=90; ++i) { Uri.__charMap[i] = Uri.#unreserved; Uri.#nameMap[i] = true; }
+    for (let i=48; i<=57; ++i) { Uri.__charMap[i] = Uri.#unreserved; Uri.#nameMap[i] = true; }
 
-// hex
-for (var i=48; i<=57; ++i) fan.sys.Uri.charMap[i] |= fan.sys.Uri.HEX | fan.sys.Uri.DIGIT;
-for (var i=97; i<=102; ++i) fan.sys.Uri.charMap[i] |= fan.sys.Uri.HEX;
-for (var i=65; i<=70; ++i) fan.sys.Uri.charMap[i] |= fan.sys.Uri.HEX;
+    // unreserved symbols
+    Uri.__charMap[45] = Uri.#unreserved; Uri.#nameMap[45] = true;
+    Uri.__charMap[46] = Uri.#unreserved; Uri.#nameMap[46] = true;
+    Uri.__charMap[95] = Uri.#unreserved; Uri.#nameMap[95] = true;
+    Uri.__charMap[126] = Uri.#unreserved; Uri.#nameMap[126] = true;
 
-// sub-delimiter symbols
-fan.sys.Uri.charMap[33]  = fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[36]  = fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[38]  = fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[39] = fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[40]  = fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[41]  = fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[42]  = fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[43]  = fan.sys.Uri.SCHEME | fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[44]  = fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[59]  = fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[61]  = fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
+    // hex
+    for (let i=48; i<=57; ++i)  Uri.__charMap[i] |= Uri.__HEX | Uri.__DIGIT;
+    for (let i=97; i<=102; ++i) Uri.__charMap[i] |= Uri.__HEX;
+    for (let i=65; i<=70; ++i)  Uri.__charMap[i] |= Uri.__HEX;
 
-// gen-delimiter symbols
-fan.sys.Uri.charMap[58] = fan.sys.Uri.PATH | fan.sys.Uri.USER | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[47] = fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[63] = fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
-fan.sys.Uri.charMap[35] = 0;
-fan.sys.Uri.charMap[91] = 0;
-fan.sys.Uri.charMap[93] = 0;
-fan.sys.Uri.charMap[64] = fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
+    // sub-delimiter symbols
+    Uri.__charMap[33]  = Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[36]  = Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[38]  = Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[39]  = Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[40]  = Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[41]  = Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[42]  = Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[43]  = Uri.__SCHEME | Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__FRAG;
+    Uri.__charMap[44]  = Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[59]  = Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[61]  = Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
 
-// delimiter escape map - which characters need to
-// be backslashed escaped in each section
-fan.sys.Uri.delimEscMap[58]  = fan.sys.Uri.PATH;
-fan.sys.Uri.delimEscMap[47]  = fan.sys.Uri.PATH;
-fan.sys.Uri.delimEscMap[63]  = fan.sys.Uri.PATH;
-fan.sys.Uri.delimEscMap[35]  = fan.sys.Uri.PATH | fan.sys.Uri.QUERY;
-fan.sys.Uri.delimEscMap[38]  = fan.sys.Uri.QUERY;
-fan.sys.Uri.delimEscMap[59]  = fan.sys.Uri.QUERY;
-fan.sys.Uri.delimEscMap[61]  = fan.sys.Uri.QUERY;
-fan.sys.Uri.delimEscMap[92] = fan.sys.Uri.SCHEME | fan.sys.Uri.USER | fan.sys.Uri.HOST | fan.sys.Uri.PATH | fan.sys.Uri.QUERY | fan.sys.Uri.FRAG;
+    // gen-delimiter symbols
+    Uri.__charMap[58] = Uri.__PATH  | Uri.__USER  | Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[47] = Uri.__PATH  | Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[63] = Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[35] = 0;
+    Uri.__charMap[91] = 0;
+    Uri.__charMap[93] = 0;
+    Uri.__charMap[64] = Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
+
+    // delimiter escape map - which characters need to
+    // be backslashed escaped in each section
+    Uri.__delimEscMap[58]  = Uri.__PATH;
+    Uri.__delimEscMap[47]  = Uri.__PATH;
+    Uri.__delimEscMap[63]  = Uri.__PATH;
+    Uri.__delimEscMap[35]  = Uri.__PATH | Uri.__QUERY;
+    Uri.__delimEscMap[38]  = Uri.__QUERY;
+    Uri.__delimEscMap[59]  = Uri.__QUERY;
+    Uri.__delimEscMap[61]  = Uri.__QUERY;
+    Uri.__delimEscMap[92]  = Uri.__SCHEME | Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Empty Path/Query
 //////////////////////////////////////////////////////////////////////////
-*/
 
   static emptyPath() {
     if (Uri.emptyPath$ === undefined) {
@@ -893,9 +815,13 @@ class UriSections {
   userInfo = null;
   port = null;
   pathStr = null;
-  path = null;
+  #path = null;
+  get path() { return this.#path;}
+  set path(it) { this.#path = it.rw(); }
   queryStr = null;
-  query = null;
+  #query = null;
+  get query() { return this.#query; }
+  set query(it) { this.#query = it.rw(); }
   frag = null;
   str = null;
 
@@ -935,8 +861,7 @@ class UriSections {
     let isDir = Str.endsWith(this.pathStr, "/");
     let dotLast = false;
     let modified = false;
-    for (let i=0; i<this.path.size(); ++i)
-    {
+    for (let i=0; i<this.path.size(); ++i) {
       const seg = this.path.get(i);
       if (seg == "." && (this.path.size() > 1 || this.host != null)) {
         this.path.removeAt(i);
@@ -959,7 +884,7 @@ class UriSections {
     if (modified) {
       if (dotLast) isDir = true;
       if (this.path.size() == 0 || this.path.last().toString() == "..") isDir = false;
-      this.pathStr = Uri.toPathStr(isAbs, this.path, isDir);
+      this.pathStr = Uri.__toPathStr(isAbs, this.path, isDir);
     }
   }
 
@@ -997,8 +922,8 @@ class UriDecoder extends UriSections {
     let hasUpper = false;
     for (let i=0; i<len; ++i) {
       let c = str.charCodeAt(i);
-      if (Uri.isScheme(c)) {
-        if (!hasUpper && Uri.isUpper(c)) hasUpper = true;
+      if (Uri.__isScheme(c)) {
+        if (!hasUpper && Uri.__isUpper(c)) hasUpper = true;
         continue;
       }
       if (c != 58) break;
@@ -1038,7 +963,7 @@ class UriDecoder extends UriSections {
 
       // if we found an @ symbol, parse out userinfo
       if (at > 0) {
-        this.userInfo = this.substring(authStart, at, Uri.USER);
+        this.userInfo = this.substring(authStart, at, Uri.__USER);
         hostStart = at+1;
       }
 
@@ -1049,7 +974,7 @@ class UriDecoder extends UriSections {
       }
 
       // host is everything left in the authority
-      this.host = this.substring(hostStart, hostEnd, Uri.HOST);
+      this.host = this.substring(hostStart, hostEnd, Uri.__HOST);
       pos = authEnd;
     }
 
@@ -1074,7 +999,7 @@ class UriDecoder extends UriSections {
     }
 
     // we now have the complete path section
-    this.pathStr = this.substring(pathStart, pathEnd, Uri.PATH);
+    this.pathStr = this.substring(pathStart, pathEnd, Uri.__PATH);
     this.path = this.pathSegments(this.pathStr, numSegs);
     pos = pathEnd;
 
@@ -1097,7 +1022,7 @@ class UriDecoder extends UriSections {
       }
 
       // we now have the complete query section
-      this.queryStr = this.substring(queryStart, queryEnd, Uri.QUERY);
+      this.queryStr = this.substring(queryStart, queryEnd, Uri.__QUERY);
       this.query = this.parseQuery(this.queryStr);
       pos = queryEnd;
     }
@@ -1105,7 +1030,7 @@ class UriDecoder extends UriSections {
     // ==== frag ====
 
     if (pos < len  && str.charAt(pos) == '#') {
-      this.frag = this.substring(pos+1, len, Uri.FRAG);
+      this.frag = this.substring(pos+1, len, Uri.__FRAG);
     }
 
     // === normalize ===
@@ -1118,9 +1043,9 @@ class UriDecoder extends UriSections {
     return this;
   }
 
-  pathSegments = function(pathStr, numSegs) {
+  pathSegments(pathStr, numSegs) {
     // if pathStr is "/" then path is the empty list
-    const len = pathStr.length;
+    let len = pathStr.length;
     if (len == 0 || (len == 1 && pathStr.charAt(0) == '/'))
       return Uri.emptyPath();
 
@@ -1158,7 +1083,7 @@ class UriDecoder extends UriSections {
   }
 
   decodeQuery() {
-    return this.parseQuery(this.substring(0, this.str.length, Uri.QUERY));
+    return this.parseQuery(this.substring(0, this.str.length, Uri.__QUERY));
   }
 
   parseQuery(q) {
@@ -1203,6 +1128,7 @@ class UriDecoder extends UriSections {
   }
 
   addQueryParam(map, q, start, eq, end, escaped) {
+    let key,val;
     if (start == eq && q.charAt(start) != '=') {
       key = this.toQueryStr(q, start, end, escaped);
       val = "true";
@@ -1212,7 +1138,7 @@ class UriDecoder extends UriSections {
       val = this.toQueryStr(q, eq+1, end, escaped);
     }
 
-    dup = map.get(key, null);
+    const dup = map.get(key, null);
     if (dup != null) val = dup + "," + val;
     map.set(key, val);
   }
@@ -1241,7 +1167,7 @@ class UriDecoder extends UriSections {
 
   substring(start, end, section) {
     let buf = [];
-    let delimEscMap = Uri.delimEscMap;
+    const delimEscMap = Uri.__delimEscMap;
     if (!this.decoding) {
       let last = 0;
       let backslash = 92; // code for backslash
@@ -1304,7 +1230,7 @@ class UriDecoder extends UriSections {
     if (c == 37) // %
     {
       this.nextCharWasEscaped = true;
-      return (Uri.hexNibble(this.str.charCodeAt(this.dpos++)) << 4) | Uri.hexNibble(this.str.charCodeAt(this.dpos++));
+      return (Uri.__hexNibble(this.str.charCodeAt(this.dpos++)) << 4) | Uri.__hexNibble(this.str.charCodeAt(this.dpos++));
     }
     else
     {
@@ -1312,12 +1238,12 @@ class UriDecoder extends UriSections {
     }
 
     // + maps to space only in query
-    if (c == 43 && section == fan.sys.Uri.QUERY) // +
+    if (c == 43 && section == Uri.__QUERY) // +
       return 32 // ' ';
 
     // verify character ok
-    if (c >= Uri.charMap.length || (Uri.charMap[c] & section) == 0)
-      throw ParseErr.make("Invalid char in " + Uri.toSection(section) + " at index " + (this.dpos-1));
+    if (c >= Uri.__charMap.length || (Uri.__charMap[c] & section) == 0)
+      throw ParseErr.make("Invalid char in " + Uri.__toSection(section) + " at index " + (this.dpos-1));
 
     // return character as is
     return c;
@@ -1348,22 +1274,22 @@ class UriEncoder {
     // authority
     if (uri.userInfo() != null || uri.host() != null || uri.port() != null) {
       this.buf += '/' + '/';
-      if (uri.userInfo() != null) { this.doEncode(uri.userInfo(), Uri.USER); this.buf += '@'; }
-      if (uri.host() != null) this.doEncode(uri.host(), Uri.HOST);
+      if (uri.userInfo() != null) { this.doEncode(uri.userInfo(), Uri.__USER); this.buf += '@'; }
+      if (uri.host() != null) this.doEncode(uri.host(), Uri.__HOST);
       if (uri.port() != null) this.buf += ':' + uri.port();
     }
 
     // path
     if (uri.pathStr() != null)
-      this.doEncode(uri.pathStr(), Uri.PATH);
+      this.doEncode(uri.pathStr(), Uri.__PATH);
 
     // query
     if (uri.queryStr() != null)
-      { this.buf += '?'; this.doEncode(uri.queryStr(), Uri.QUERY); }
+      { this.buf += '?'; this.doEncode(uri.queryStr(), Uri.__QUERY); }
 
     // frag
     if (uri.frag() != null)
-      { this.buf += '#'; this.doEncode(uri.frag(), Uri.FRAG); }
+      { this.buf += '#'; this.doEncode(uri.frag(), Uri.__FRAG); }
 
     return this.buf;
   }
@@ -1379,7 +1305,8 @@ class UriEncoder {
       c = s.charCodeAt(i);
 
       // unreserved character
-      if (c < 128 && (fan.sys.Uri.charMap[c] & section) != 0 && prev != 92) {
+      const charMap = Uri.__charMap;
+      if (c < 128 && (charMap[c] & section) != 0 && prev != 92) {
         this.buf += String.fromCharCode(c);
         continue;
       }
@@ -1390,7 +1317,7 @@ class UriEncoder {
       // we have a reserved, escaped, or non-ASCII
 
       // encode
-      if (c == 32 && section == Uri.QUERY)
+      if (c == 32 && section == Uri.__QUERY)
         this.buf += '+';
       else
         this.buf = UriEncoder.percentEncodeChar(this.buf, c);

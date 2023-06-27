@@ -36,6 +36,7 @@
 
 */
 
+/*
 @Js
 enum class FutureState
 {
@@ -44,3 +45,4 @@ enum class FutureState
   ** Return if pending state
   Bool isPending() { this === pending }
 }
+*/

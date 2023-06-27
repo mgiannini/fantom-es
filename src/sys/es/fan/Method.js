@@ -71,7 +71,7 @@ class Method extends Slot {
     else {
       func = instance[this.#name$];
     }
-    let vals = args==null ? [] : args.values$();
+    let vals = args==null ? [] : args.__values();
 
     // if not found, assume this is primitive that needs
     // to map into a static call

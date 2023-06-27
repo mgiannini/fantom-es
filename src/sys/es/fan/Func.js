@@ -54,8 +54,8 @@ class Func extends Obj {
   method() { return null; }
 
   call() { return this.#func.apply(null, arguments); }
-  callList(args) { return this.#func.apply(null, args.values$()); }
-  callOn(obj, args) { return this.#func.apply(obj, args.values$()); }
+  callList(args) { return this.#func.apply(null, args.__values()); }
+  callOn(obj, args) { return this.#func.apply(obj, args.__values()); }
 
   //TODO:bind() - never implemented?
 
