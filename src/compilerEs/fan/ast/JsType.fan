@@ -259,6 +259,7 @@ class JsType : JsNode
 
   private Void writeMethod(MethodDef m)
   {
+    plugin.curMethod = m
     if (curType.isEnum)
     {
       if (m.isStaticInit) return writeEnumStaticInit(m)
@@ -297,6 +298,7 @@ class JsType : JsNode
     }
     else doWriteMethod(m)
     js.nl
+    plugin.curMethod = null
   }
 
   private Void doWriteMethod(MethodDef m, Str methName := nameToJs(m.name), CParam[] methParams := m.params)

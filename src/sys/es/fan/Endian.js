@@ -32,6 +32,4 @@ class Endian extends Enum {
   static fromStr(name, checked=true) {
     return Enum.doFromStr(Endian.type$, Endian.vals(), name, checked);
   }
-
-  
 }

@@ -11,86 +11,82 @@
  * MemBuf.
  */
 class MemBuf extends Buf {
-  constructor(buf, size) {
-    super();
-  }
-/*
-fan.sys.MemBuf = fan.sys.Obj.$extend(fan.sys.Buf);
 
 //////////////////////////////////////////////////////////////////////////
 // Constructor
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.MemBuf.prototype.$ctor = function(buf, size)
-{
-  this.m_buf  = (buf  !== undefined) ? buf  : [];
-  this.m_size = (size !== undefined) ? size : 0;
-  this.m_pos  = 0;
-  this.m_out  = new fan.sys.MemBufOutStream(this);
-  this.m_in   = new fan.sys.MemBufInStream(this);
-}
+  constructor(data=new Int8Array(), size=0) {
+    super();
+    this.data   = data;
+    this.__size = size;
+    this.__pos  = 0;
+    this.__out  = MemBufOutStream.make(this);
+    this.__in   = MemBufInStream.make(this);
+  }
 
-fan.sys.MemBuf.makeCapacity = function(capacity)
-{
-  var buf = new fan.sys.MemBuf();
-  buf.capacity$(capacity);
-  return buf;
-}
+  data;
+  __size;
+  __pos;
+  __out;
+  __in;
 
-fan.sys.MemBuf.makeBytes = function(bytes)
-{
-  var buf = new fan.sys.MemBuf();
-  buf.m_buf = bytes;
-  buf.m_size = bytes.length;
-  return buf;
-}
+
+  static makeCapacity(capacity) {
+    const buf = new MemBuf();
+    buf.capacity(capacity);
+    return buf;
+  }
+
+  static __makeBytes(bytes) {
+    const buf = new MemBuf();
+    buf.data   = bytes instanceof Array ? new Int8Array(bytes) : bytes;
+    buf.__size = bytes.length;
+    return buf;
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Obj
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.MemBuf.prototype.$typeof = function() { return fan.sys.MemBuf.$type; }
-
-fan.sys.MemBuf.prototype.toImmutable = function()
-{
-  var buf  = this.m_buf;
-  var size = this.m_size;
-  this.m_buf = fan.sys.MemBuf.$emptyBytes
-  this.m_size = 0;
-  return new fan.sys.ConstBuf(buf, size, this.endian(), this.charset());
-}
+  toImmutable() {
+    const data  = this.data;
+    const size  = this.__size;
+    this.data   = new Int8Array();
+    this.__size = 0;
+    return new ConstBuf(data, size, this.endian(), this.charset());
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Buf Support
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.MemBuf.prototype.size = function() { return this.m_size; }
-fan.sys.MemBuf.prototype.size$ = function(x)
-{
-  if (x > this.m_buf.length)
-  {
-    this.m_buf.length = x;
+  size(it) { 
+    if (it === undefined) return this.__size;
+    if (it > this.data.length) {
+      this.grow(it, true);
+    }
+    this.__size = it;
   }
-  this.m_size = x;
-}
 
-fan.sys.MemBuf.prototype.pos = function() { return this.m_pos; }
-fan.sys.MemBuf.prototype.pos$ = function(x) { this.m_pos = x; }
+  pos(it) {
+    if (it === undefined) return this.__pos;
+    this.__pos = it;
+  }
 
-fan.sys.MemBuf.prototype.getByte = function(pos)
-{
-  return this.m_buf[pos] & 0xFF;
-}
+  __getByte(pos) {
+    return this.data[pos] & 0xFF;
+  }
 
-fan.sys.MemBuf.prototype.setByte = function(pos, x)
-{
-  this.m_buf[pos] = x & 0xFF;
-}
+  __setByte(pos, x) {
+    this.data[pos] = x & 0xFF;
+  }
 
-fan.sys.MemBuf.prototype.getBytes = function(pos, len)
-{
-  return this.m_buf.slice(pos, pos+len);
-}
+  __getBytes(pos, len) {
+    // TODO:FIXIT - should this return a new MemBuf instead of TypedArray?
+    return this.data.slice(pos, pos+len);
+  }
+/*
 
 //////////////////////////////////////////////////////////////////////////
 // Java IO Streams (Rhino)
@@ -137,52 +133,50 @@ fan.sys.MemBuf.prototype.cpJavaBufferToMem = function(bytes, len)
 //////////////////////////////////////////////////////////////////////////
 // Buf API
 //////////////////////////////////////////////////////////////////////////
+*/
 
-fan.sys.MemBuf.prototype.capacity = function()
-{
-  return this.m_buf.length;
-}
+  capacity(it) {
+    if (it === undefined) return this.data.length;
+    if (it < this.__size) throw ArgErr.make(`capacity < size`);
+    if (it < this.data.length) {
+      // shrink
+      this.data = this.data.slice(0, it);
+    } else {
+      this.grow(it, true);
+    }
+    return this.data.length;
+  }
 
-fan.sys.MemBuf.prototype.capacity$ = function(c)
-{
-  // does this help or hurt performance? seems like js runtime
-  // woudl already be good at expanding native Array object...
-
-  if (c < this.m_size) throw fan.sys.ArgErr.make("capacity < size");
-  this.m_buf.length = c;
-}
-
-fan.sys.MemBuf.prototype.trim = function()
-{
-  if (this.m_size == this.m_buf.length) return this;
-  this.m_buf = this.m_buf.slice(0, size);
-  return this;
-}
+  trim() {
+    if (this.__size == this.data.length) return this;
+    this.data = this.data.slice(0, size);
+    return this;
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // File
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.MemBuf.prototype.toFile = function(uri)
-{
-  return fan.sys.MemFile.make(this.toImmutable(), uri);
-}
+  toFile(uri) { return MemFile.make(this.toImmutable(), uri); }
 
 //////////////////////////////////////////////////////////////////////////
 // Internal Support
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.MemBuf.prototype.grow = function(capacity)
-{
-  if (this.m_buf.length >= capacity) return;
-  this.capacity$(Math.max(capacity, this.m_size*2));
-}
+  grow(capacity, exact=false) {
+    if (this.data.length >= capacity) return;
+    const newSize = exact ? capacity : Math.max(capacity, this.__size*2);
+    const temp = new Int8Array(newSize);
+    temp.set(this.data);
+    this.data = temp;
+  }
 
-fan.sys.MemBuf.prototype.unsafeArray = function()
-{
-  return this.m_buf;
-}
+  __unsafeArray() { return this.data; }
 
-fan.sys.MemBuf.$emptyBytes = [];
-*/
+  static __concat(a, b) {
+    const c = new Int8Array(a.length + b.length);
+    c.set(a);
+    c.set(b, a.length);
+    return c;
+  }
 }

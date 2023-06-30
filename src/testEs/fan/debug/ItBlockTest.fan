@@ -46,3 +46,49 @@ enum class FutureState
   Bool isPending() { this === pending }
 }
 */
+
+
+
+@Js
+class MyBufTest : Test
+{
+  const static Charset[] charsets := [ Charset.utf8, Charset.utf16BE, Charset.utf16LE ]
+  const static Str[] strings := [ "a", "ab", "abc", "\u0080", "\u00FE", "\uabcd", "x\u00FE",
+                      "x\uabcd", "\uabcd-\u00FE", ]
+
+  static Void writeChar(OutStream out)
+  {
+    charsets.each |Charset charset|
+    {
+      out.charset = charset    // change charset mid-stream
+      strings.each |Str str|
+      {
+        out.write('{')         // binary marker
+        out.writeChars(str)    // charset encoding
+        out.write('}')         // binary marker
+      }
+    }
+    out.flush
+  }
+/*
+
+  static Void readChar(Test test, InStream in)
+  {
+    charsets.each |Charset charset|
+    {
+      in.charset = charset   // change charset mid-stream
+      strings.each |Str str|
+      {
+        test.verifyEq(in.read, '{')            // binary marker
+        for (Int j:=0; j<str.size; ++j)
+          test.verifyEq(in.readChar(), str[j]) // charset encoding
+        test.verifyEq(in.read, '}')            // binary marker
+      }
+    }
+  }
+  */
+
+  Void test()
+  {
+  }
+}

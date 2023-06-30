@@ -47,6 +47,7 @@ class JsWriter
       needIndent = false
     }
     str := o.toStr
+if (str.contains("#charsets")) Err("HERE").trace
     if (str.containsChar('\n')) throw Err("cannot w() str with newline: ${str}")
     if (loc != null) sourcemap?.add(str, Loc(loc.file, line, col), loc, name)
     out.writeChars(str)

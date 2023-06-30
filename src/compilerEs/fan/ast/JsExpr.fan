@@ -105,7 +105,7 @@ class JsExpr : JsNode
 
   private Void writeDecimalLiteral(LiteralExpr x)
   {
-    js.w("sys.Decimal.make(${x.val}", loc)
+    js.w("sys.Decimal.make(${x.val})", loc)
   }
 
   private Void writeStrLiteral(LiteralExpr x)
@@ -379,8 +379,11 @@ class JsExpr : JsNode
     parent      := fe.field.parent
     useAccessor := fe.useAccessor
 
-    // use accessor if referring to an enum field
+    // use accessor if referring to an enum
     if (fe.field.isEnum) useAccessor = true
+    // use the accessor for static fields unless we are in the static initializer;
+    // in which case we need to access the private fields directly to initialize them.
+    else if (fe.field.isStatic) useAccessor = !plugin.curMethod.isStaticInit
 
     // force use of the accessor methods if we are accessing the
     // field outside its type since we declare all fields as private

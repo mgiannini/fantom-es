@@ -29,7 +29,7 @@ class Int extends Num {
   static maxVal() { return Math.pow(2, 53); }
   static minVal() { return -Math.pow(2, 53); }
   static defVal() { return 0; }
-  static Chunk  = 4096;
+  static __chunk  = 4096;
 
 //////////////////////////////////////////////////////////////////////////
 // Construction

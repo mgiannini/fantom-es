@@ -521,7 +521,7 @@ class Str extends Obj {
     if (charset === undefined) charset = Charset.utf8();
 
     const buf = new MemBuf();
-    buf.charset$(charset);
+    buf.charset(charset);
     buf.print(self);
     return buf.flip();
   }
