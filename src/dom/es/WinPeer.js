@@ -17,17 +17,21 @@ class WinPeer extends sys.Obj {
 
   constructor(self)
   {
+    super();
     this.win = null;
   }
 
+  win;
+
+  static #cur;
   static cur()
   {
-    if (WinPeer.$cur == null)
+    if (!WinPeer.#cur)
     {
-      WinPeer.$cur = Win.make();
-      WinPeer.$cur.peer.win = window;
+      WinPeer.#cur = Win.make();
+      WinPeer.#cur.peer.win = window;
     }
-    return WinPeer.$cur;
+    return WinPeer.#cur;
   }
 
   userAgent(self)
@@ -73,24 +77,26 @@ class WinPeer extends sys.Obj {
 // Access
 //////////////////////////////////////////////////////////////////////////
 
+  #doc;
   doc(self)
   {
-    if (this.$doc == null)
+    if (!this.#doc)
     {
-      this.$doc = Doc.make();
-      this.$doc.peer.doc = this.win.document;
+      this.#doc = Doc.make();
+      this.#doc.peer.doc = this.win.document;
     }
-    return this.$doc;
+    return this.#doc;
   }
 
+  #textSel;
   textSel(self)
   {
-    if (this.$textSel == null)
+    if (!this.#textSel)
     {
-      this.$textSel = TextSel.make();
-      this.$textSel.peer.sel = this.win.getSelection();
+      this.#textSel = TextSel.make();
+      this.#textSel.peer.sel = this.win.getSelection();
     }
-    return this.$textSel;
+    return this.#textSel;
   }
 
   addStyleRules(self, rules)
@@ -122,33 +128,36 @@ class WinPeer extends sys.Obj {
           this.win.document.documentElement.clientHeight);
   }
 
+  #screenSize;
   screenSize(self)
   {
-    if (this.$screenSize == null)
-      this.$screenSize = graphics.Size.makeInt(this.win.screen.width, this.win.screen.height);
-    return this.$screenSize;
+    if (!this.#screenSize)
+      this.#screenSize = graphics.Size.makeInt(this.win.screen.width, this.win.screen.height);
+    return this.#screenSize;
   }
 
+  #parent;
   parent(self)
   {
     if (this.win == this.win.parent) return null;
-    if (this.$parent == null)
+    if (!this.#parent)
     {
-      this.$parent = Win.make();
-      this.$parent.peer.win = this.win.parent;
+      this.#parent = Win.make();
+      this.#parent.peer.win = this.win.parent;
     }
-    return this.$parent;
+    return this.#parent;
   }
 
+  #top;
   top(self)
   {
     if (this.win == this.win.top) return self;
-    if (this.$top == null)
+    if (!this.#top)
     {
-      this.$top = Win.make();
-      this.$top.peer.win = this.win.top;
+      this.#top = Win.make();
+      this.#top.peer.win = this.win.top;
     }
-    return this.$top;
+    return this.#top;
   }
 
   static eval(js)
@@ -157,7 +166,7 @@ class WinPeer extends sys.Obj {
   }
 
   log(self, obj)
-  {fan.
+  {
     console.log(obj);
   }
 
@@ -197,7 +206,7 @@ class WinPeer extends sys.Obj {
   hyperlink(self, uri)
   {
     let href = uri.encode();
-    if (uri.m_scheme == "mailto")
+    if (uri.scheme() == "mailto")
     {
       // TODO: mailto links are not decoding + as spaces properly, so
       // not showing up correctly in email clients when subj/body are
@@ -218,7 +227,7 @@ class WinPeer extends sys.Obj {
 
   clipboardReadText(self, func)
   {
-    this.win.navigator.clipboard.readText().then((text) => func.call(text));
+    this.win.navigator.clipboard.readText().then((text) => func(text));
   }
 
   clipboardWriteText(self, text)
@@ -267,13 +276,13 @@ class WinPeer extends sys.Obj {
         // copy state object into Event.stash
         // TODO FIXIT: deserializtaion
         const array = e.state;
-        for (const key in array) evt.m_stash.set(key, array[key]);
+        for (const key in array) evt.stash().set(key, array[key]);
       }
-      handler.call(evt);
+      handler(evt);
 
       if (type == "beforeunload")
       {
-        const msg = evt.m_stash.get("beforeunloadMsg");
+        const msg = evt.stash().get("beforeunloadMsg");
         if (msg != null)
         {
           e.returnValue = msg;
@@ -308,7 +317,7 @@ class WinPeer extends sys.Obj {
       if (oldHash != newHash)
       {
         oldHash = newHash;
-        handler.call(EventPeer.make(null));
+        handler(EventPeer.make(null));
       }
     }
     setInterval(checkHash, 100);
@@ -358,16 +367,16 @@ class WinPeer extends sys.Obj {
   geoCurPosition(self, onSuccess, onErr, opts)
   {
     this.win.navigator.geolocation.getCurrentPosition(
-      function(p,ts) { onSuccess.call(DomCoordPeer.wrap(p,ts)); },
-      function(err)  { if (onErr) onErr.call(sys.Err.make(err.code + ": " + err.message)); },
+      function(p,ts) { onSuccess(DomCoordPeer.wrap(p,ts)); },
+      function(err)  { if (onErr) onErr(sys.Err.make(err.code + ": " + err.message)); },
       this.$geoOpts(opts));
   }
 
   geoWatchPosition(self, onSuccess, onErr, opts)
   {
     return this.win.navigator.geolocation.watchPosition(
-      function(p,ts) { onSuccess.call(DomCoordPeer.wrap(p,ts)); },
-      function(err)  { if (onErr) onErr.call(sys.Err.make(err.code + ": " + err.message)); },
+      function(p,ts) { onSuccess(DomCoordPeer.wrap(p,ts)); },
+      function(err)  { if (onErr) onErr(sys.Err.make(err.code + ": " + err.message)); },
       this.$geoOpts(opts));
   }
 
@@ -422,8 +431,8 @@ class WinPeer extends sys.Obj {
 
   diagnostics(self)
   {
-    var map = sys.Map.make(sys.Str.$type, sys.Obj.$type);
-    map.ordered$(true);
+    var map = sys.Map.make(sys.Str.type$, sys.Obj.type$);
+    map.ordered(true);
 
     var dur = function(s, e) {
       return s && e ? sys.Duration.makeMillis(e-s) : null;

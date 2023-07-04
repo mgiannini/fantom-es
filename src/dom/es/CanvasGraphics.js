@@ -59,7 +59,7 @@ class CanvasGraphics extends sys.Obj {
   {
     if (it === undefined) return this.#stroke;
 
-    this.#stroke         = it;
+    this.#stroke       = it;
     this.cx.lineWidth  = it.width();
     this.cx.lineCap    = it.cap().toStr();
     this.cx.lineJoin   = it.join() == graphics.StrokeJoin.radius() ? "round" : it.join().toStr();
@@ -69,6 +69,7 @@ class CanvasGraphics extends sys.Obj {
   #toStrokeDash(x)
   {
     if (x == null) return [];
+    //TODO: values is not a list method/no way to get back the list of values
     return graphics.GeomUtil.parseFloatList(x).values();
   }
 
@@ -102,7 +103,7 @@ class CanvasGraphics extends sys.Obj {
   path()
   {
     this.cx.beginPath();
-    let path = new CanvasGraphicsPath();
+    const path = new CanvasGraphicsPath();
     path.cx = this.cx;
     return path;
   }
@@ -221,12 +222,13 @@ class CanvasGraphics extends sys.Obj {
       this.cx.rect(0, 0, r.w(), r.h());
       this.cx.clip();
     }
-    const state = new Object();
-    state.paint     = this.#paint;
-    state.color     = this.#color;
-    state.stroke    = this.#stroke;
-    state.alpha     = this.#alpha;
-    state.font      = this.#font;
+    const state = {
+      paint:  this.#paint,
+      color:  this.#color,
+      stroke: this.#stroke,
+      alpha:  this.#alpha,
+      font:   this.#font
+    }
     this.#stack.push(state);
     return this;
   }

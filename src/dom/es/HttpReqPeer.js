@@ -22,10 +22,10 @@ class HttpReqPeer extends sys.Obj {
     // attach progress listener if configured
     if (self.m_cbProgress != null)
     {
-      let _p = xhr;
-      const _m = method.toUpperCase();
-      if (_m == "POST" || _m == "PUT") _p = xhr.upload
-      _p.addEventListener("progress", function(e) {
+      let p = xhr;
+      const m = method.toUpperCase();
+      if (m == "POST" || m == "PUT") p = xhr.upload
+      p.addEventListener("progress", function(e) {
         if (e.lengthComputable) self.m_cbProgress(e.loaded, e.total);
       });
     }
@@ -65,7 +65,7 @@ class HttpReqPeer extends sys.Obj {
       // send FormData (implicity adds Content-Type header)
       xhr.send(content);
     }
-    else if (sys.ObjUtil.$typeof(content) === sys.Str.$type)
+    else if (sys.ObjUtil.typeof$(content) === sys.Str.type$)
     {
       // send text
       if (!ct) xhr.setRequestHeader("Content-Type", "text/plain");
@@ -77,6 +77,7 @@ class HttpReqPeer extends sys.Obj {
       if (!ct) xhr.setRequestHeader("Content-Type", "application/octet-stream");
       buf = new ArrayBuffer(content.size());
       view = new Uint8Array(buf);
+      //TODO: buf() does not exist
       view.set(content.buf().slice(0, content.size()));
       xhr.send(view);
     }
@@ -99,12 +100,11 @@ class HttpReqPeer extends sys.Obj {
     const isText = xhr.responseType == "" || xhr.responseType == "text";
 
     const res = HttpRes.make();
-    res.$xhr      = xhr;
     res.status     (xhr.status);
     res.content    (isText ? xhr.responseText : "");
 
     const all = xhr.getAllResponseHeaders().split("\n");
-    for (const i=0; i<all.length; i++)
+    for (let i=0; i<all.length; i++)
     {
       if (all[i].length == 0) continue;
       const j = all[i].indexOf(":");

@@ -221,18 +221,16 @@ class TsDocWriter : DocWriter
                   }
                   else if (lineWidth + s.size >= maxWidth)
                   {
-                    if (s != "")
-                    {
-                      // New line in text block
-                      lineWidth = s.size
-                      acc.add(s)
-                    }
+                    // New line in text block
+                    lineWidth = s.size
+                    acc.add(s)
                   }
                   else
                   {
                     // Continue existing line
-                    lineWidth += s.size + 1
-                    acc[-1] += " $s"
+                    newStr := acc.size > 1 && acc[-1] == "" ? s : " $s"
+                    lineWidth += newStr.size
+                    acc[-1] += newStr
                   }
                   return acc
                 } as Str[])

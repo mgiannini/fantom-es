@@ -7,17 +7,22 @@
 //   10 Jun 2023 Kiera O'Flynn  Refactor to ES
 //
 
+// TODO: this needs to come before ResizeObserver is declared (?)
+let NativeResizeObserver = ResizeObserver;
+
 class ResizeObserverPeer extends sys.Obj {
 
   constructor(self)
   {
-    this.observer = new ResizeObserver(function(entries)
+    super();
+    this.observer = new NativeResizeObserver(function(entries)
     {
+      //TODO: private field?
       if (self.m_callback != null)
       {
         const list = ResizeObserverPeer.$makeEntryList(entries);
-        const args = sys.List.make(sys.Obj.$type, [list]);
-        self.m_callback.callOn(self, args);
+        const args = sys.List.make(sys.Obj.type$, [list]);
+        self.m_callback(args);
       }
     });
   }
@@ -44,7 +49,7 @@ class ResizeObserverPeer extends sys.Obj {
     const list = new Array();
     for (let i=0; i<entries.length; i++)
       list.push(ResizeObserverPeer.$makeEntry(entries[i]));
-    return sys.List.make(ResizeObserver.$type, list);
+    return sys.List.make(ResizeObserver.type$, list);
   }
 
   static $makeEntry(entry)
@@ -52,8 +57,8 @@ class ResizeObserverPeer extends sys.Obj {
     const w  = entry.contentRect.width;
     const h  = entry.contentRect.height;
     const re = ResizeObserverEntry.make();
-    re.m_target = ElemPeer.wrap(entry.target);
-    re.m_size   = graphics.Size.make(w, h);
+    re.target (ElemPeer.wrap(entry.target));
+    re.size   (graphics.Size.make(w, h));
     return re;
   }
 }

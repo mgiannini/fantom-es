@@ -110,7 +110,7 @@ class ElemPeer extends sys.Obj {
     else this.elem.textContent = it;
   }
 
-  html(self, val)
+  html(self, it)
   {
     if (it === undefined) return this.elem.innerHTML;
     this.elem.innerHTML = it;
@@ -129,7 +129,7 @@ class ElemPeer extends sys.Obj {
 
   attrs(self)
   {
-    const map = sys.Map.make(fan.sys.Str.$type, fan.sys.Str.$type);
+    const map = sys.Map.make(sys.Str.type$, sys.Str.type$);
     map.caseInsensitive(true);
     const attrs = this.elem.attributes;
     for(let i=0; i<attrs.length; i++)
@@ -195,7 +195,7 @@ class ElemPeer extends sys.Obj {
     {
       const f = peer.elem.files;
       if (f == null) return null;
-      const list = sys.List.make(DomFile.$type);
+      const list = sys.List.make(DomFile.type$);
       for (let i=0; i<f.length; i++) list.add(DomFilePeer.wrap(f[i]));
       return list;
     }
@@ -223,7 +223,7 @@ class ElemPeer extends sys.Obj {
       throw sys.ArgErr.make(name + " is not a function");
 
     // map fantom objects to js natives
-    const arglist = null;
+    let arglist = null;
     if (args != null)
     {
       // TODO :)
@@ -260,7 +260,7 @@ class ElemPeer extends sys.Obj {
     const r = this.elem.getBoundingClientRect();
     const x = Math.round(r.left);
     const y = Math.round(r.top);
-    return fan.graphics.Point.makeInt(x, y);
+    return graphics.Point.makeInt(x, y);
   }
 
   size(self, it)
@@ -286,11 +286,11 @@ class ElemPeer extends sys.Obj {
       const x = this.elem.scrollLeft;
       const y = this.elem.scrollTop;
       if (!this.#scrollPos || this.#scrollPos.x() != x || this.#scrollPos.y() != y)
-        this.#scrollPos = fan.graphics.Point.makeInt(x, y);
+        this.#scrollPos = graphics.Point.makeInt(x, y);
       return this.#scrollPos;
     }
 
-    this.#scrollPos = fan.graphics.Point.makeInt(it.x(), it.y());
+    this.#scrollPos = graphics.Point.makeInt(it.x(), it.y());
     this.elem.scrollLeft = it.x();
     this.elem.scrollTop  = it.y();
   }
@@ -300,7 +300,7 @@ class ElemPeer extends sys.Obj {
     const w = this.elem.scrollWidth;
     const h = this.elem.scrollHeight;
     if (!this.#scrollSize || this.#scrollSize.w() != w || this.#size.h() != h)
-      this.#scrollSize = fan.graphics.Size.makeInt(w, h);
+      this.#scrollSize = graphics.Size.makeInt(w, h);
     return this.#scrollSize;
   }
 
@@ -333,7 +333,7 @@ class ElemPeer extends sys.Obj {
     for (let i=0; i<kids.length; i++)
       if (kids[i].nodeType == 1)
         list.push(ElemPeer.wrap(kids[i]));
-    return sys.List.make(Elem.$type, list);
+    return sys.List.make(Elem.type$, list);
   }
 
   firstChild(self)
@@ -356,7 +356,7 @@ class ElemPeer extends sys.Obj {
 
   prevSibling(self)
   {
-    const sib = this.elem.previousSibling;
+    let sib = this.elem.previousSibling;
     while (sib != null && sib.nodeType != 1)
       sib = sib.previousSibling;
     if (sib == null) return null;
@@ -365,7 +365,7 @@ class ElemPeer extends sys.Obj {
 
   nextSibling(self)
   {
-    const sib = this.elem.nextSibling;
+    let sib = this.elem.nextSibling;
     while (sib != null && sib.nodeType != 1)
       sib = sib.nextSibling;
     if (sib == null) return null;
@@ -386,7 +386,7 @@ class ElemPeer extends sys.Obj {
 
   querySelectorAll(self, selectors)
   {
-    const list  = sys.List.make(Elem.$type);
+    const list  = sys.List.make(Elem.type$);
     const elems = this.elem.querySelectorAll(selectors);
     for (let i=0; i<elems.length; i++)
       list.add(ElemPeer.wrap(elems[i]));
@@ -447,7 +447,7 @@ class ElemPeer extends sys.Obj {
   find(self, f)
   {
     const kids = this.children(self);
-    for (let i=0; i<kids.length; i++)
+    for (let i=0; i<kids.size(); i++)
     {
       let kid = kids[i];
       if (f(kid)) return kid;
@@ -461,7 +461,7 @@ class ElemPeer extends sys.Obj {
   {
     if (acc == null) acc = new Array();
     const kids = this.children(self);
-    for (let i=0; i<kids.length; i++)
+    for (let i=0; i<kids.size(); i++)
     {
       const kid = kids[i];
       if (f(kid)) acc.push(kid);
@@ -488,7 +488,7 @@ class ElemPeer extends sys.Obj {
     const name = this.elem.nodeName;
     const type = this.elem.type;
     const id   = this.elem.id;
-    const str  = "<" + sys.Str.lower(name);
+    let str    = "<" + sys.Str.lower(name);
     if (type != null && type.length > 0) str += " type='" + type + "'";
     if (id != null && id.length > 0) str += " id='" + id + "'"
     str += ">";

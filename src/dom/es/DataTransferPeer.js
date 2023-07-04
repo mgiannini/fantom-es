@@ -28,7 +28,7 @@ class DataTransferPeer extends sys.Obj {
 
   types(self)
   {
-    const list = sys.List.make(fan.sys.Str.$type);
+    const list = sys.List.make(sys.Str.type$);
     for (let i=0; i<this.dataTx.types.length; i++) list.add(this.dataTx.types[i]);
     return list;
   }
@@ -56,9 +56,9 @@ class DataTransferPeer extends sys.Obj {
   files(self)
   {
     if (this.dataTx.files.length == 0)
-      return DomFile.$type.emptyList();
+      return DomFile.type$.emptyList();
 
-    const list = sys.List.make(DomFile.$type);
+    const list = sys.List.make(DomFile.type$);
     for (let i=0; i<this.dataTx.files.length; i++)
         list.add(DomFilePeer.wrap(this.dataTx.files[i]));
     return list;

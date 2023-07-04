@@ -62,7 +62,12 @@ class TsDeclFile
       extends := ""
       if (type.base != null)
         extends = "extends ${getNamespacedType(type.base.name, type.base.pod.name, pod)} "
-      
+      if (!type.mixins.isEmpty)
+      {
+        implement := type.mixins.map { getNamespacedType(it.name, it.pod.name, pod) }.join(", ")
+        extends += "implements $implement "
+      }
+
       // Write class documentation & header
       printDoc(type.doc, 0)
       out.print("export class $type.name$classParams $extends{\n")
@@ -71,7 +76,10 @@ class TsDeclFile
       type.fields.each |field|
       {
         if (!field.isPublic) return
-        if (type.base?.slot(field.name, false) != null && type.base.slot(field.name).isPublic) return
+        if (type.base?.slot(field.name, false) != null &&
+            type.base.slot(field.name).isPublic &&
+            !pmap.containsKey(type.signature))
+              return
 
         name := JsNode.nameToJs(field.name)
         staticStr := field.isStatic ? "static " : ""
@@ -87,7 +95,10 @@ class TsDeclFile
       type.methods.each |method|
       {
         if (!method.isPublic) return
-        if (type.base?.slot(method.name, false) != null && type.base.slot(method.name).isPublic) return
+        if (type.base?.slot(method.name, false) != null &&
+            type.base.slot(method.name).isPublic &&
+            !pmap.containsKey(type.signature))
+              return
 
         isStatic := method.isStatic || method.isCtor || pmap.containsKey(type.signature)
         staticStr := isStatic ? "static " : ""

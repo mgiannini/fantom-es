@@ -37,7 +37,7 @@ class MutationObserver
   native MutationRec[] takeRecs()
 
   ** Disconnect this observer from receiving DOM mutation events.
-  native This disconnet()
+  native This disconnect()
 
   private Func? callback
 }

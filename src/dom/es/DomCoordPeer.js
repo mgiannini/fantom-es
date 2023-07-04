@@ -14,20 +14,20 @@ class DomCoordPeer extends sys.Obj {
   static wrap(pos)
   {
     let x = DomCoord.make();
-    x.peer.coords = pos.coords;
-    x.peer.ts = pos.timestamp ? sys.Duration.fromStr(""+pos.timestamp+"ms") : null;
+    x.peer.$coords = pos.coords;
+    x.peer.$ts = pos.timestamp ? sys.Duration.fromStr(""+pos.timestamp+"ms") : null;
     return x;
   }
 
-  coords;
-  ts;
+  $coords;
+  $ts;
 
-  lat(self)              { return this.coords.latitude;  }
-  lng(self)              { return this.coords.longitude; }
-  accuracy(self)         { return this.coords.accuracy;  }
-  altitude(self)         { return this.coords.altitude; }
-  altitudeAccuracy(self) { return this.coords.altitudeAccuracy; }
-  heading(self)          { return this.coords.heading; }
-  speed(self)            { return this.coords.speed; }
-  ts(self)               { return this.ts; }
+  lat(self)              { return this.$coords.latitude;  }
+  lng(self)              { return this.$coords.longitude; }
+  accuracy(self)         { return this.$coords.accuracy;  }
+  altitude(self)         { return this.$coords.altitude; }
+  altitudeAccuracy(self) { return this.$coords.altitudeAccuracy; }
+  heading(self)          { return this.$coords.heading; }
+  speed(self)            { return this.$coords.speed; }
+  ts(self)               { return this.$ts; }
 }

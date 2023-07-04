@@ -16,6 +16,7 @@ class StylePeer extends sys.Obj {
   constructor(self)
   {
     // set in ElemPeer.style
+    super();
     this.elem  = null;
     this.style = null;
   }
@@ -23,7 +24,7 @@ class StylePeer extends sys.Obj {
   classes(self, it)
   {
     if (it === undefined)
-      return sys.List.make(sys.Str.$type, this.elem.classList);
+      return sys.List.make(sys.Str.type$, this.elem.classList);
     else
       this.elem.className = it.join(" ");
   }

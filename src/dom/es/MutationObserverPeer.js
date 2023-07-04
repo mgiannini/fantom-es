@@ -12,11 +12,11 @@ class MutationObserverPeer extends sys.Obj {
   constructor(self)
   {
     super();
-    this.observer = new MutationObserver(function(recs)
+    this.observer = MutationObserver.make(function(recs)
     {
       const list = MutationObserverPeer.$makeRecList(recs);
-      const args = sys.List.make(sys.Obj.$type, [list]);
-      self.m_callback.callOn(self, args);
+      const args = sys.List.make(sys.Obj.type$, [list]);
+      self.callback()(args);
     });
   }
 
@@ -66,12 +66,12 @@ class MutationObserverPeer extends sys.Obj {
     const added = new Array();
     for (let i=0; i<rec.addedNodes.length; i++)
       added.push(ElemPeer.wrap(rec.addedNodes[i]));
-    fanRec.added (sys.List.make(Elem.$type, added));
+    fanRec.added (sys.List.make(Elem.type$, added));
 
     const removed = new Array();
     for (let i=0; i<rec.removedNodes.length; i++)
       removed.push(ElemPeer.wrap(rec.removedNodes[i]));
-    fanRec.removed (sys.List.make(Elem.$type, removed));
+    fanRec.removed (sys.List.make(Elem.type$, removed));
 
     return fanRec;
   }
@@ -81,6 +81,6 @@ class MutationObserverPeer extends sys.Obj {
     const list = new Array();
     for (let i=0; i<recs.length; i++)
       list.push(MutationObserverPeer.$makeRec(recs[i]));
-    return sys.List.make(MutationRec.$type, list);
+    return sys.List.make(MutationRec.type$, list);
   }
 }

@@ -13,6 +13,8 @@ class DocPeer extends sys.Obj {
 
   constructor(self) { super(); }
 
+  doc;
+
   title(self, it)
   {
     if (it===undefined) return this.doc.title;
@@ -75,7 +77,7 @@ class DocPeer extends sys.Obj {
 
   querySelectorAll(self, selectors)
   {
-    const list  = sys.List.make(Elem.$type);
+    const list  = sys.List.make(Elem.type$);
     const elems = this.doc.querySelectorAll(selectors);
     for (let i=0; i<elems.length; i++)
       list.add(ElemPeer.wrap(elems[i]));
@@ -84,7 +86,7 @@ class DocPeer extends sys.Obj {
 
   querySelectorAllType(self, selectors, type)
   {
-    const list  = sys.List.make(Elem.$type);
+    const list  = sys.List.make(Elem.type$);
     const elems = this.doc.querySelectorAll(selectors);
     for (let i=0; i<elems.length; i++)
       list.add(ElemPeer.wrap(elems[i], type.make()));
