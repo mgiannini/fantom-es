@@ -24,8 +24,6 @@ class ConstBuf extends Buf {
     this.__pos    = 0;
     this.__in     = ConstBuf.#errInStream();
     this.__out    = ConstBuf.#errOutStream();
-    // this.#endian  = endian;
-    // this.#charset = charset;
   }
 
   static #_errInStream;
@@ -45,8 +43,6 @@ class ConstBuf extends Buf {
   __pos;
   __in;
   __out;
-  #endian;
-  #charset;
 
 //////////////////////////////////////////////////////////////////////////
 // Obj
@@ -61,6 +57,8 @@ class ConstBuf extends Buf {
 //////////////////////////////////////////////////////////////////////////
 
   in$() { return new ConstBufInStream(this); }
+  
+  toFile(uri) { return MemFile.make(this.toImmutable(), uri); }
 
   size(it) {
     if (it === undefined) return this.__size;

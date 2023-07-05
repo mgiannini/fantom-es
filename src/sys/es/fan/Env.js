@@ -53,7 +53,9 @@ class Env extends Obj {
     else main.callOn(main.parent().make());
   }
 
-  static node$(module=null) {
+  static __isNode() { return typeof node !== undefined; }
+
+  static __node(module=null) {
     if (typeof node === "undefined") throw UnsupportedErr.make("Only supported in Node runtime");
     return module == null ? node : node[module];
   }
@@ -61,8 +63,6 @@ class Env extends Obj {
 //////////////////////////////////////////////////////////////////////////
 // Obj
 //////////////////////////////////////////////////////////////////////////
-
-  $typeof() { return Env.type$; }
 
   toStr() { return this.typeof$().toString(); }
 
@@ -75,13 +75,13 @@ class Env extends Obj {
   javaVersion() { return 0; }
 
   os() { 
-    let p = Env.node$().os.platform();
+    let p = Env.__node().os.platform();
     if (p === "darwin") p = "macosx";
     return p;
   }
 
   arch() {
-    let a = Env.node$().os.arch();
+    let a = Env.__node().os.arch();
     switch (a) {
       case "ia32": a = "x86";
       case "x64":  a = "x86_64";

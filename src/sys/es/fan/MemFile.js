@@ -13,14 +13,12 @@
 class MemFile extends File {
 
   constructor(buf, uri) { 
-    super(); 
+    super(uri); 
     this.#buf = buf;
-    this.#uri = uri;
     this.#ts  = DateTime.now();
   }
 
   #buf;
-  #uri;
   #ts;
 
   static make(buf, uri) {
@@ -47,6 +45,6 @@ class MemFile extends File {
   mmap(mode, pos, size) { throw this.err(); }
   in$(bufSize) { return this.#buf.in$(); }
   out(append, bufSize) { throw this.err(); }
-  toStr() { return this.#uri.toStr(); }
+  toStr() { return this.uri().toStr(); }
   err() { return UnsupportedErr.make("MemFile"); }
 }
