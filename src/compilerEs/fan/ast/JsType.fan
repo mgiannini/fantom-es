@@ -130,7 +130,12 @@ class JsType : JsNode
     if (!def.isMixin) js.wl("super();")
     if (peer != null) js.wl("this.peer = new ${qnameToJs(peer)}Peer(this);", loc)
     js.wl("const this\$ = this;", loc)
-    if (instanceInit != null) writeBlock(instanceInit.code)
+    if (instanceInit != null)
+    {
+      plugin.curMethod = instanceInit
+      writeBlock(instanceInit.code)
+      plugin.curMethod = null
+    }
     js.unindent
     js.wl("}").nl
   }

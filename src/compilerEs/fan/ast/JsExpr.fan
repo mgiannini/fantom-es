@@ -72,6 +72,8 @@ class JsExpr : JsNode
       case ExprId.staticTarget:    writeStaticTargetExpr(expr)
       case ExprId.throwExpr:       writeThrowExpr(expr)
 
+      case ExprId.unknownVar:      writeUnknownVarExpr(expr)
+
       default:
         Err().trace
         expr.print(AstWriter()); Env.cur.out.printLine()
@@ -270,7 +272,8 @@ class JsExpr : JsNode
       fe := (FieldExpr)lhs.expr
       if (leave)
       {
-        throw Err("TODO:THIS IS DONE BUT HOW DID I GET HERE???")
+        // code like this seems to trigger this path:
+        // foo = bar = 1
         var := uniqName
         old := plugin.thisName
         plugin.thisName = "this\$"
@@ -293,6 +296,11 @@ class JsExpr : JsNode
       rhs.write
       if (isAssign && !isLocalDefStmt) js.w(")")
     }
+  }
+
+  private Void writeUnknownVarExpr(UnknownVarExpr expr)
+  {
+    js.w(expr.name)
   }
 
 //////////////////////////////////////////////////////////////////////////
