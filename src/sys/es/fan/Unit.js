@@ -185,7 +185,7 @@ class Unit extends Obj {
     c = s.indexOf(';');
     if (c < 0) return new Unit(ids, Unit.#parseDim(dim), Float.fromStr(scale), Float.make(0));
 
-    scale = fan.sys.Str.trim(s.substring(0, c));
+    scale = Str.trim(s.substring(0, c));
     let offset = Str.trim(s.substring(c+1));
     return new Unit(ids, Unit.#parseDim(dim), Float.fromStr(scale), Float.fromStr(offset));
     }

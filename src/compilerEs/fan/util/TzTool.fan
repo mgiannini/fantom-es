@@ -83,9 +83,12 @@ class TzTool
     jsOut := js.out
     try
     {
-      jsOut.printLine(
-        "import * as sys from './sys.js';
-         const c=sys.TimeZone.__cache;")
+      typeRef := this.embed ? "TimeZone" : "sys.TimeZone"
+      if (!embed)
+      {
+        jsOut.printLine("import * as sys from './sys.js'");
+      }
+      jsOut.printLine("const c=${typeRef}.__cache;")
 
       // write built-in timezones
       byContinent.each |TimeZone[] timezones, Str continent|
@@ -99,7 +102,7 @@ class TzTool
       }
 
       // write aliases
-      jsOut.printLine("const a=sys.TimeZone.__alias;")
+      jsOut.printLine("const a=${typeRef}.__alias;")
       aliases.each |target, alias|
       {
         log.debug("Alias $alias = $target")
@@ -148,7 +151,8 @@ class TzTool
 // Args
 //////////////////////////////////////////////////////////////////////////
 
-  private Bool gen := false
+  private Bool gen   := false
+  private Bool embed := false
 
   private Void parseArgs()
   {
@@ -161,6 +165,8 @@ class TzTool
       {
         case "-gen":
           this.gen = true
+        case "-embed":
+          this.embed = true
         case "-outDir":
           outDir := args[i++].toUri.toFile
           if (!outDir.isDir) throw ArgErr("Not a directory: ${outDir}")
@@ -188,8 +194,9 @@ class TzTool
       "Usage:
          $main [options]
        Options:
-         -gen          Generate tz.js
-         -outDir       (optional) generate tz.js in this directory
+         -gen          Generate fan_tz.js
+         -embed        Generate code to be embedded directly in sys.js
+         -outDir       (optional) generate fan_tz.js in this directory
          -verbose, -v  Enable verbose logging
          -silent       Suppress all logging
          -help, -?     Print usage help

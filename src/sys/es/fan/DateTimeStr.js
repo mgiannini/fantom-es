@@ -34,8 +34,8 @@ class DateTimeStr
   dst = 0;
   str = ""; // when parsing
   pos = 0;
-  valDateTime = null;
-  valDate = null;
+  valDateTime;
+  valDate;
 
   static makeDateTime(pattern, locale, dt) {
     const x = new DateTimeStr(pattern, locale);
@@ -124,10 +124,10 @@ class DateTimeStr
           switch (n)
           {
             case 4:
-              s += this.mon.full(this.locale());
+              s += this.mon.__full(this.locale());
               break;
             case 3:
-              s += this.mon.abbr(this.locale());
+              s += this.mon.__abbr(this.locale());
               break;
             case 2:  if (this.mon.ordinal()+1 < 10) s += '0';
             case 1:  s += this.mon.ordinal()+1; break;
@@ -149,17 +149,17 @@ class DateTimeStr
           switch (n)
           {
             case 4:
-              s += this.weekday.full(this.locale());
+              s += this.weekday.__full(this.locale());
               break;
             case 3:
-              s += this.weekday.abbr(this.locale());
+              s += this.weekday.__abbr(this.locale());
               break;
             default: invalidNum = true;
           }
           break;
 
         case 'Q':
-          let quarter = this.mon.m_quarter;
+          let quarter = this.mon.__quarter();
           switch (n)
           {
             case 4:  s += quarter + DateTimeStr.daySuffix(quarter) + " " + this.quarterLabel(); break;
@@ -265,8 +265,7 @@ class DateTimeStr
           break;
 
         case 'z':
-          var rule = this.tz.rule(this.year);
-          // TODO:FIXIT - is this access to timezone rule correct?
+          const rule = this.tz.__rule(this.year);
           switch (n)
           {
             case 1:
@@ -284,7 +283,7 @@ class DateTimeStr
               s += this.dst ? rule.dstAbbr : rule.stdAbbr;
               break;
             case 4:
-              s += this.tz.$name();
+              s += this.tz.name$();
               break;
             default:
               invalidNum = true;
@@ -294,7 +293,7 @@ class DateTimeStr
 
         default:
           if (Int.isAlpha(c.charCodeAt(0)))
-            throw fan.sys.ArgErr.make("Invalid pattern: unsupported char '" + c + "'");
+            throw ArgErr.make("Invalid pattern: unsupported char '" + c + "'");
 
           // check for symbol skip
           if (i+1 < len) {
@@ -341,10 +340,10 @@ class DateTimeStr
       this.parse(s);
 
       // now figure out what timezone to use
-      let defRule = defTz.rule(this.year);
+      let defRule = defTz.__rule(this.year);
       if (this.tzName != null) {
         // use defTz if tzName was specified and matches any variations of defTz
-        if (this.tzName == defTz.$name() ||
+        if (this.tzName == defTz.name$() ||
             this.tzName == defRule.stdAbbr ||
             this.tzName == defRule.dstAbbr)
         {
@@ -363,21 +362,21 @@ class DateTimeStr
       else if (this.tzOffset != null) {
         // figure out what expected offset was for defTz
         const time = this.hour*3600 + this.min*60 + this.sec;
-        const defOffset = defRule.offset + TimeZone.dstOffset(defRule, this.year, this.mon.ordinal(), this.day, time);
+        const defOffset = defRule.offset + TimeZone.__dstOffset(defRule, this.year, this.mon.ordinal(), this.day, time);
 
         // if specified offset matches expected offset for defTz then
         // use defTz, otherwise use a vanilla GMT+/- timezone
         if (this.tzOffset == defOffset)
           this.tz = defTz;
         else
-          this.tz = TimeZone.fromGmtOffset(this.tzOffset);
+          this.tz = TimeZone.__fromGmtOffset(this.tzOffset);
       }
 
       // no tzName or tzOffset specified, use defTz
       else this.tz = defTz;
 
       // construct DateTime
-      return DateTime.doMake$(this.year, this.mon, this.day, this.hour, this.min, this.sec, this.ns, this.tzOffset, this.tz);
+      return DateTime.__doMake(this.year, this.mon, this.day, this.hour, this.min, this.sec, this.ns, this.tzOffset, this.tz);
     }
     catch (err) {
       if (checked) throw ParseErr.makeStr("DateTime", s, Err.make(err));
@@ -576,7 +575,7 @@ class DateTimeStr
       if (65 <= ch && ch <= 90)  { s += String.fromCharCode(Int.lower(ch)); this.pos++; continue; }
       break;
     }
-    const m = this.locale().monthByName$(s);
+    const m = this.locale().__monthByName(s);
     if (m == null) throw Err.make("Invalid month: " + s);
     return m;
   }

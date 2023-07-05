@@ -47,7 +47,7 @@ class Facets extends Obj {
   list() {
     if (this.#list == null)
     {
-      this.#list = List.make(fan.sys.Facet.type$);
+      this.#list = List.make(Facet.type$);
       for (let key in this.#map)
       {
         let type = Type.find(key);

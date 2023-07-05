@@ -61,7 +61,7 @@ class Decimal extends Num {
 
   static toCode(self) { return "" + self + "d"; }
 
-  static toLocale(self, pattern=null, locale=Local.cur()) {
+  static toLocale(self, pattern=null, locale=Locale.cur()) {
 
     // TODO: for now we just route to Float.toLocale
     return Float.toLocale(self, pattern, locale);

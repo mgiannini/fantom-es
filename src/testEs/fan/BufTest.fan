@@ -940,8 +940,6 @@ class BufTest : AbstractBufTest
 
   Void testToFile()
   {
-    if (Env.cur.runtime == "js") return
-
     mut := Buf().print("test!")
     f := mut.toFile(`test/path/file.txt`)
     verifyToFile(f)

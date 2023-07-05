@@ -137,19 +137,19 @@ class Float extends Num {
   // arithmetic
   static plus(a,b) { return Float.make(a+b); }
   static plusInt(a,b) { return Float.make(a+b); }
-  static plusDecimal(a,b) { return fan.sys.Decimal.make(a+b); }
+  static plusDecimal(a,b) { return Decimal.make(a+b); }
 
   static minus(a,b) { return Float.make(a-b); }
   static minusInt(a,b) { return Float.make(a-b); }
-  static minusDecimal(a,b) { return fan.sys.Decimal.make(a-b); }
+  static minusDecimal(a,b) { return Decimal.make(a-b); }
 
   static mult(a,b) { return Float.make(a*b); }
   static multInt(a,b) { return Float.make(a*b); }
-  static multDecimal(a,b) { return fan.sys.Decimal.make(a*b); }
+  static multDecimal(a,b) { return Decimal.make(a*b); }
 
   static div(a,b) { return Float.make(a/b); }
   static divInt(a,b) { return Float.make(a/b); }
-  static divDecimal(a,b) { return fan.sys.Decimal.make(a/b); }
+  static divDecimal(a,b) { return Decimal.make(a/b); }
 
   static mod(a,b) { return Float.make(a%b); }
   static modInt(a,b) { return Float.make(a%b); }
@@ -221,9 +221,9 @@ class Float extends Num {
     try
     {
       // handle special values
-      if (isNaN(self)) return locale.numSymbols$().nan;
-      if (self == Float.posInf) return locale.numSymbols$().posInf;
-      if (self == Float.negInf) return locale.numSymbols$().negInf;
+      if (isNaN(self)) return locale.__numSymbols().nan;
+      if (self == Float.posInf) return locale.__numSymbols().posInf;
+      if (self == Float.negInf) return locale.__numSymbols().negInf;
 
       // get default pattern if necessary
       if (pattern == null) {

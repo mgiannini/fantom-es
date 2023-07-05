@@ -460,14 +460,12 @@ class Str extends Obj {
     return true;
   }
 
-// fan.sys.Str.isEveryChar = function(self, ch)
-// {
-//   var len = self.length;
-//   for (var i=0; i<len; ++i)
-//     if (self.charCodeAt(i) != ch) return false;
-//   return true;
-// }
-
+  static isEveryChar(self, ch) {
+    const len = self.length;
+    for (let i=0; i<len; ++i)
+      if (self.charCodeAt(i) != ch) return false;
+    return true;
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Locale
@@ -487,7 +485,7 @@ class Str extends Obj {
   }
 
   static localeDecapitalize(self) {
-    const lower = fan.sys.Str.localeLower(self);
+    const lower = Str.localeLower(self);
     return lower[0] + self.substring(1);
   }
 

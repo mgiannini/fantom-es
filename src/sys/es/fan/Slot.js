@@ -60,7 +60,7 @@ class Slot extends Obj {
   }
 
   static findField(qname, checked=true) {
-    const slot = fan.sys.Slot.find(qname, checked);
+    const slot = Slot.find(qname, checked);
     if (slot instanceof Field || checked)
       return ObjUtil.coerce(slot, Field.type$);
     return null;

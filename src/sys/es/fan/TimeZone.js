@@ -95,7 +95,7 @@ class TimeZone extends Obj {
     return TimeZone.#cur;
   }
 
-  static fromGmtOffset(offset=0) {
+  static __fromGmtOffset(offset=0) {
     if (offset == 0)
       return TimeZone.utc();
     else
@@ -112,31 +112,31 @@ class TimeZone extends Obj {
 // Methods
 //////////////////////////////////////////////////////////////////////////
 
-  name() { return this.#name; }
+  name$() { return this.#name; }
 
   fullName() { return this.#fullName; }
 
   offset(year) {
-    return Duration.make(this.rule(year).offset * Duration.nsPerSec$);
+    return Duration.make(this.__rule(year).offset * Duration.nsPerSec$);
   }
 
   dstOffset(year) {
-    const r = this.rule(year);
+    const r = this.__rule(year);
     if (r.dstOffset == 0) return null;
     return Duration.make(r.dstOffset * Duration.nsPerSec$);
   }
 
-  stdAbbr(year) { return this.rule(year).stdAbbr; }
+  stdAbbr(year) { return this.__rule(year).stdAbbr; }
 
-  dstAbbr(year) { return this.rule(year).dstAbbr; }
+  dstAbbr(year) { return this.__rule(year).dstAbbr; }
 
   abbr(year, inDST) {
-    return inDST ? this.rule(year).dstAbbr : this.rule(year).stdAbbr;
+    return inDST ? this.__rule(year).dstAbbr : this.__rule(year).stdAbbr;
   }
 
-  rule(year) {
+  __rule(year) {
     // most hits should be in latest rule
-    const rule = this.#rules[0];
+    let rule = this.#rules[0];
     if (year >= rule.startYear) return rule;
 
     // check historical time zones
@@ -151,7 +151,6 @@ class TimeZone extends Obj {
 // DST Calculations
 //////////////////////////////////////////////////////////////////////////
 
-  // TODO: I don't think this is used anywhere
   /**
    * Compute the daylight savings time offset (in seconds)
    * for the specified parameters:
@@ -161,132 +160,121 @@ class TimeZone extends Obj {
    *  - weekday: 0-6
    *  - time:    seconds since midnight
    */
-  // static dstOffset(rule, year, mon, day, time) {
-  //   const start = rule.dstStart;
-  //   const end   = rule.dstEnd;
+  static __dstOffset(rule, year, mon, day, time) {
+    const start = rule.dstStart;
+    const end   = rule.dstEnd;
 
-  //   if (start == null) return 0;
+    if (start == null) return 0;
 
-  //   const s = TimeZone.#compare(rule, start, year, mon, day, time);
-  //   const e = TimeZone.#compare(rule, end,   year, mon, day, time);
+    const s = TimeZone.#compare(rule, start, year, mon, day, time);
+    const e = TimeZone.#compare(rule, end,   year, mon, day, time);
 
-  //   // if end month comes earlier than start month,
-  //   // then this is dst in southern hemisphere
-  //   if (end.mon < start.mon) {
-  //     if (e > 0 || s <= 0) return rule.dstOffset;
-  //   }
-  //   else {
-  //     if (s <= 0 && e > 0) return rule.dstOffset;
-  //   }
+    // if end month comes earlier than start month,
+    // then this is dst in southern hemisphere
+    if (end.mon < start.mon) {
+      if (e > 0 || s <= 0) return rule.dstOffset;
+    }
+    else {
+      if (s <= 0 && e > 0) return rule.dstOffset;
+    }
 
-  //   return 0;
-  // }
-
-  // /**
-  //  * Compare the specified time to the dst start/end time.
-  //  * Return -1 if x < specified time and +1 if x > specified time.
-  //  */
-  // static #compare(rule, x, year, mon, day, time) {
-  //   let c = TimeZone.#compareMonth(x, mon);
-  //   if (c != 0) return c;
-
-  //   c = TimeZone.#compareOnDay(rule, x, year, mon, day);
-  //   if (c != 0) return c;
-
-  //   return TimeZone.#compareAtTime(rule, x, time);
-  // }
-
-  // /**
-  //  * Return if given date is the DstTime transition date
-  //  */
-  // static #isDstDate(rule, x, year, mon, day) {
-  //   return TimeZone.#compareMonth(x, mon) == 0 &&
-  //         TimeZone.#compareOnDay(rule, x, year, mon, day) == 0;
-  // }
-
-/**
- * Compare month
- */
-/*
-fan.sys.TimeZone.compareMonth = function(x, mon)
-{
-  if (x.mon < mon) return -1;
-  if (x.mon > mon) return +1;
-  return 0;
-}
-*/
-
-/**
- * Compare on day.
- *     'd'  5        the fifth of the month
- *     'l'  lastSun  the last Sunday in the month
- *     'l'  lastMon  the last Monday in the month
- *     '>'  Sun>=8   first Sunday on or after the eighth
- *     '<'  Sun<=25  last Sunday on or before the 25th (not used)
- */
-/*
-fan.sys.TimeZone.compareOnDay = function(rule, x, year, mon, day)
-{
-  // universal atTime might push us into the previous day
-  if (x.atMode == 'u' && rule.offset + x.atTime < 0)
-    ++day;
-
-  switch (x.onMode)
-  {
-    case 'd':
-      if (x.onDay < day) return -1;
-      if (x.onDay > day) return +1;
-      return 0;
-
-    case 'l':
-      var last = fan.sys.DateTime.weekdayInMonth(year, fan.sys.Month.m_vals.get(mon), fan.sys.Weekday.m_vals.get(x.onWeekday), -1);
-      if (last < day) return -1;
-      if (last > day) return +1;
-      return 0;
-
-    case '>':
-      var start = fan.sys.DateTime.weekdayInMonth(year, fan.sys.Month.m_vals.get(mon), fan.sys.Weekday.m_vals.get(x.onWeekday), 1);
-      while (start < x.onDay) start += 7;
-      if (start < day) return -1;
-      if (start > day) return +1;
-      return 0;
-
-    case '<':
-      var lastw = fan.sys.DateTime.weekdayInMonth(year, fan.sys.Month.m_vals.get(mon), fan.sys.Weekday.m_vals.get(x.onWeekday), -1);
-      while (lastw > x.onDay) lastw -= 7;
-      if (lastw < day) return -1;
-      if (lastw > day) return +1;
-      return 0;
-
-    default:
-      throw new Error('' + x.onMode);
-  }
-}
-*/
-
-/**
- * Compare at time.
- */
-/*
-fan.sys.TimeZone.compareAtTime = function(rule, x, time)
-{
-  var atTime = x.atTime;
-
-  // if universal time, then we need to move atTime back to
-  // local time (we might cross into the previous day)
-  if (x.atMode == 'u')
-  {
-    if (rule.offset + x.atTime < 0)
-      atTime = 24*60*60 + rule.offset + x.atTime;
-    else
-      atTime += rule.offset;
+    return 0;
   }
 
-  if (atTime < time) return -1;
-  if (atTime > time) return +1;
-  return 0;
-}
-*/
+  /**
+   * Compare the specified time to the dst start/end time.
+   * Return -1 if x < specified time and +1 if x > specified time.
+   */
+  static #compare(rule, x, year, mon, day, time) {
+    let c = TimeZone.#compareMonth(x, mon);
+    if (c != 0) return c;
+
+    c = TimeZone.#compareOnDay(rule, x, year, mon, day);
+    if (c != 0) return c;
+
+    return TimeZone.#compareAtTime(rule, x, time);
+  }
+
+  /**
+   * Return if given date is the DstTime transition date
+   */
+  static __isDstDate(rule, x, year, mon, day) {
+    return TimeZone.#compareMonth(x, mon) == 0 &&
+           TimeZone.#compareOnDay(rule, x, year, mon, day) == 0;
+  }
+
+  /**
+   * Compare month
+   */
+  static #compareMonth(x, mon) {
+    if (x.mon < mon) return -1;
+    if (x.mon > mon) return +1;
+    return 0;
+  }
+
+  /**
+   * Compare on day.
+   *     'd'  5        the fifth of the month
+   *     'l'  lastSun  the last Sunday in the month
+   *     'l'  lastMon  the last Monday in the month
+   *     '>'  Sun>=8   first Sunday on or after the eighth
+   *     '<'  Sun<=25  last Sunday on or before the 25th (not used)
+   */
+  static #compareOnDay(rule, x, year, mon, day) {
+    // universal atTime might push us into the previous day
+    if (x.atMode == 'u' && rule.offset + x.atTime < 0)
+      ++day;
+
+    switch (x.onMode) {
+      case 'd':
+        if (x.onDay < day) return -1;
+        if (x.onDay > day) return +1;
+        return 0;
+
+      case 'l':
+        const last = DateTime.weekdayInMonth(year, Month.vals().get(mon), Weekday.vals().get(x.onWeekday), -1);
+        if (last < day) return -1;
+        if (last > day) return +1;
+        return 0;
+
+      case '>':
+        let start = DateTime.weekdayInMonth(year, Month.vals().get(mon), Weekday.vals().get(x.onWeekday), 1);
+        while (start < x.onDay) start += 7;
+        if (start < day) return -1;
+        if (start > day) return +1;
+        return 0;
+
+      case '<':
+        let lastw = DateTime.weekdayInMonth(year, Month.vals().get(mon), Weekday.vals().get(x.onWeekday), -1);
+        while (lastw > x.onDay) lastw -= 7;
+        if (lastw < day) return -1;
+        if (lastw > day) return +1;
+        return 0;
+
+      default:
+        throw new Error('' + x.onMode);
+    }
+  }
+
+  /**
+   * Compare at time.
+   */
+  static #compareAtTime(rule, x, time) {
+    let atTime = x.atTime;
+
+    // if universal time, then we need to move atTime back to
+    // local time (we might cross into the previous day)
+    if (x.atMode == 'u') {
+      if (rule.offset + x.atTime < 0)
+        atTime = 24*60*60 + rule.offset + x.atTime;
+      else
+        atTime += rule.offset;
+    }
+
+    if (atTime < time) return -1;
+    if (atTime > time) return +1;
+    return 0;
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Cache
@@ -345,7 +333,7 @@ fan.sys.TimeZone.compareAtTime = function(rule, x, time)
       rules.push(rule);
     }
 
-    const tz = new TimeZone(name, fullName, rules);
+    const tz = new TimeZone(city, fullName, rules);
 
     // update cache
     TimeZone.#cache[city] = tz;

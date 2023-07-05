@@ -39,22 +39,22 @@ class Num extends Obj {
 // Locale
 //////////////////////////////////////////////////////////////////////////
 
-  static localeDecimal() { return Locale.cur().numSymbols$().decimal; }
+  static localeDecimal() { return Locale.cur().__numSymbols().decimal; }
 
-  static localeGrouping() { return Locale.cur().numSymbols$().grouping; }
+  static localeGrouping() { return Locale.cur().__numSymbols().grouping; }
 
-  static localeMinus() { return Locale.cur().numSymbols$().minus; }
+  static localeMinus() { return Locale.cur().__numSymbols().minus; }
 
-  static localePercent() { return Locale.cur().numSymbols$().percent; }
+  static localePercent() { return Locale.cur().__numSymbols().percent; }
 
-  static localePosInf() { return Locale.cur().numSymbols$().posInf; }
+  static localePosInf() { return Locale.cur().__numSymbols().posInf; }
 
-  static localeNegInf() { return Locale.cur().numSymbols$().negInf; }
+  static localeNegInf() { return Locale.cur().__numSymbols().negInf; }
 
-  static localeNaN() { return Locale.cur().numSymbols$().nan; }
+  static localeNaN() { return Locale.cur().__numSymbols().nan; }
 
   static toLocale(p, d, locale) {
-    var symbols = locale.numSymbols$();
+    var symbols = locale.__numSymbols();
 
     // string buffer
     let s = "";
@@ -270,7 +270,7 @@ class NumPattern extends Obj {
   get maxFrac() { return this.#maxFrac; }
 
   static parse(s) {
-    const x = fan.sys.NumPattern.cache$[s];
+    const x = NumPattern.cache$[s];
     if (x != null) return x;
     return NumPattern.make(s);
   }

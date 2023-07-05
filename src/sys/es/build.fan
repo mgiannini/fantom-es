@@ -9,7 +9,6 @@
 
 using build
 using compiler
-// using compilerJs
 
 class Build : BuildScript
 {
@@ -248,8 +247,8 @@ class Build : BuildScript
     append(sys + `StrInStream.js`, out)
     append(sys + `StrBufOutStream.js`, out)
     append(sys + `DateTimeStr.js`, out)
-    // // use expclit ; to avoid parser bugs with tz func wrapper
-    // out.print(";"); (etc + `sys/tz.js`).in.pipe(out)
+    // embed timezones
+    (etc + `sys/fan_tz.js`).in.pipe(out)
     append(sys + `staticInit.js`, out)
   }
 

@@ -380,24 +380,19 @@ class Buf extends Obj {
   }
 
   static fromBase64(s) {
-    throw Err.make("TODO:FIXIT");
-    /*
-    var slen = s.length;
-    var si = 0;
-    var max = slen * 6 / 8;
-    var buf = [];
-    var size = 0;
+    const slen = s.length;
+    let si = 0;
+    const max = slen * 6 / 8;
+    const buf = [];
+    let size = 0;
 
-    while (si < slen)
-    {
-      var n = 0;
-      var v = 0;
-      for (var j=0; j<4 && si<slen;)
-      {
-        var ch = s.charCodeAt(si++);
-        var c = ch < 128 ? fan.sys.Buf.base64inv[ch] : -1;
-        if (c >= 0)
-        {
+    while (si < slen) {
+      let n = 0;
+      let v = 0;
+      for (let j=0; j<4 && si<slen;) {
+        const ch = s.charCodeAt(si++);
+        const c = ch < 128 ? Buf.#base64inv[ch] : -1;
+        if (c >= 0) {
           n |= c << (18 - j++ * 6);
           if (ch != 61) v++; // '='
         }
@@ -408,8 +403,7 @@ class Buf extends Obj {
       if (v > 3) buf.push(n);
     }
 
-    return fan.sys.MemBuf.makeBytes(buf);
-    */
+    return MemBuf.__makeBytes(buf);
   }
 
   static #base64chars = [

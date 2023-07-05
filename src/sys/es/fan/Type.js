@@ -554,7 +554,7 @@ class Type extends Obj {
     {
       const obj = objs[i];
       if (obj == null) { nullable = true; continue; }
-      const t = fan.sys.ObjUtil.typeof$(obj);
+      const t = ObjUtil.typeof$(obj);
       if (best == null) { best = t; continue; }
       while (!t.is(best)) {
         best = best.base();
@@ -664,9 +664,9 @@ class GenericType extends Type {
       slotsByName[slot.name$()] = slot;
     }
 
-    this.slotList$ = fan.sys.List.make(fan.sys.Slot.type$, slots);
-    this.fieldList$ = fan.sys.List.make(fan.sys.Field.type$, fields);
-    this.methodList$ = fan.sys.List.make(fan.sys.Method.type$, methods);
+    this.slotList$ = List.make(Slot.type$, slots);
+    this.fieldList$ = List.make(Field.type$, fields);
+    this.methodList$ = List.make(Method.type$, methods);
     this.slotsByName$ = slotsByName;
   }
 

@@ -31,6 +31,8 @@ class Locale extends Obj {
   #str;
   #lang;
   #country;
+  #monthsByName;
+  #numSymbols;
   __strProps;
   __langProps;
 
@@ -109,27 +111,26 @@ class Locale extends Obj {
 
   toStr() { return this.#str; }
 
-  monthByName$(name)
+  __monthByName(name)
   {
-    if (this.monthsByName$ == null) {
+    if (!this.#monthsByName) {
       const map = {};
-      for (let i=0; i<Month.vals().size(); ++i)
-      {
+      for (let i=0; i<Month.vals().size(); ++i) {
         const m = Month.vals().get(i);
-        map[Str.lower(m.abbr$(this))] = m;
-        map[Str.lower(m.full$(this))] = m;
+        map[Str.lower(m.__abbr(this))] = m;
+        map[Str.lower(m.__full(this))] = m;
       }
-      this.monthsByName$ = map;
+      this.#monthsByName = map;
     }
-    return this.monthsByName$[name];
+    return this.#monthsByName[name];
   }
 
-  numSymbols$() {
-    if (this.numSymbols$ == null) {
+  __numSymbols() {
+    if (!this.#numSymbols) {
       const pod = Pod.find("sys");
       const env = Env.cur();
 
-      this.numSymbols$ =
+      this.#numSymbols =
       {
         decimal:  env.locale(pod, "numDecimal",  ".",    this),
         grouping: env.locale(pod, "numGrouping", ",",    this),
@@ -140,6 +141,6 @@ class Locale extends Obj {
         nan:      env.locale(pod, "numNaN",      "NaN",  this)
       };
     }
-    return this.numSymbols$;
+    return this.#numSymbols;
   }
 }

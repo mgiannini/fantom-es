@@ -34,9 +34,9 @@ class Time extends Obj {
   #sec;
   #ns;
   
-  static #defVal = undefined;
+  static #defVal;
   static defVal() { 
-    if (Time.#defVal === undefined) Time.#defVal = new Time(0, 0, 0, 0);
+    if (!Time.#defVal) Time.#defVal = new Time(0, 0, 0, 0);
     return Time.#defVal;
   }
 
@@ -206,7 +206,7 @@ class Time extends Obj {
                          this.#ns);
   }
 
-  toDateTime(d, tz=TimeZone.cur()) { return DateTime.makeDT(d, this, tz); }
+  toDateTime(d, tz=TimeZone.cur()) { return DateTime.__makeDT(d, this, tz); }
 
   toCode() {
     if (this.equals(Time.defVal())) return "Time.defVal";

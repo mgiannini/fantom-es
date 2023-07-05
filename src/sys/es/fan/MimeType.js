@@ -127,8 +127,8 @@ class MimeType extends Obj {
 
       if (c == ';' && !inQuotes) {
         if (valEnd < 0) valEnd = i-1;
-        var key = fan.sys.Str.trim(s.slice(keyStart, eq));
-        var val = fan.sys.Str.trim(s.slice(valStart, valEnd+1));
+        var key = Str.trim(s.slice(keyStart, eq));
+        var val = Str.trim(s.slice(valStart, valEnd+1));
         if (hasEsc) val = MimeType.#unescape(val);
         params.set(key, val);
         keyStart = i+1;

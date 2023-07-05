@@ -240,7 +240,7 @@ echo(buf.flip.readAllStr)
     writeTzJs
 
     out := ms.file("fan").out
-    ["sys", "fan_mime", "fan_tz"].each |m| { ms.writeInclude(out, "${m}.ext") }
+    ["sys", "fan_mime",].each |m| { ms.writeInclude(out, "${m}.ext") }
     out.printLine("export { sys };").flush.close
 
     // f := moduleDir.plus(`fan.js`)

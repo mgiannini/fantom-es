@@ -76,10 +76,9 @@ class Int extends Num {
 
   static random(r) {
     if (r === undefined) return Math.floor(Math.random() * Math.pow(2, 64));
-    else
-    {
+    else {
       const start = r.start();
-      const end   = r.end();
+      let end     = r.end();
       if (r.inclusive()) ++end;
       if (end <= start) throw ArgErr.make("Range end < start: " + r);
       r = end-start;
@@ -255,7 +254,7 @@ static shifta(a, b) { let x = a >> b; return x; }
     if (b < 10*MB) return Float.toLocale(b/MB, "#.#") + "MB";
     if (b < GB)    return Math.round(b/MB) + "MB";
     if (b < 10*GB) return Float.toLocale(b/GB, "#.#") + "GB";
-    return Math.round(b/fan.sys.Int.m_GB) + "GB";
+    return Math.round(b/Int.#GB) + "GB";
   }
 
   // TODO FIXIT

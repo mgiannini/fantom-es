@@ -161,7 +161,7 @@ class List extends Obj {
     else {
       for (let i=start; i>=0; --i) {
         const obj = values[i];
-        if (obj != null && fan.sys.ObjUtil.equals(obj, value))
+        if (obj != null && ObjUtil.equals(obj, value))
           return i;
       }
     }

@@ -13,6 +13,11 @@
 Pod.sysPod$ = Pod.find("sys");
 
 //
+// DateTime
+//
+DateTime.__boot = DateTime.now();
+
+//
 // Num
 //
 NumPattern.cache$("00");    NumPattern.cache$("000");       NumPattern.cache$("0000");

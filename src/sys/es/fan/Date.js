@@ -28,11 +28,15 @@ class Date extends Obj {
   #month;
   #day;
 
+  static #defVal;
+  static defVal() {
+    if (!Date.#defVal) Date.#defVal = new Date(2000, 0, 1)
+    return Date.#defVal;
+  }
+
 //////////////////////////////////////////////////////////////////////////
 // Methods
 //////////////////////////////////////////////////////////////////////////
-
-  
 
   equals(that) {
     if (that instanceof Date) {
@@ -69,16 +73,16 @@ class Date extends Obj {
   day() { return this.#day; }
 
   weekday() {
-    const weekday = (DateTime.firstWeekday(this.#year, this.#month) + this.#day - 1) % 7;
+    const weekday = (DateTime.__firstWeekday(this.#year, this.#month) + this.#day - 1) % 7;
     return Weekday.vals().get(weekday);
   }
 
   dayOfYear() { 
-    return DateTime.dayOfYear(this.year(), this.month().ordinal$, this.day())+1; 
+    return DateTime.__dayOfYear(this.year(), this.month().ordinal(), this.day())+1; 
   }
 
   weekOfYear(startOfWeek=Weekday.localeStartOfWeek()) {
-    return DateTime.weekOfYear(this.year(), this.month().ordinal$, this.day(), startOfWeek);
+    return DateTime.__weekOfYear(this.year(), this.month().ordinal(), this.day(), startOfWeek);
   }
 
   plus(d) {
@@ -92,12 +96,12 @@ class Date extends Obj {
     let month = this.#month;
     let day = this.#day;
 
-    const numDays = Int.div(ticks, Duration.nsPerDay$);
+    let numDays = Int.div(ticks, Duration.nsPerDay$);
     const dayIncr = numDays < 0 ? +1 : -1;
     while (numDays != 0) {
       if (numDays > 0) {
         day++;
-        if (day > this.numDays(year, month)) {
+        if (day > this.#numDays(year, month)) {
           day = 1;
           month++;
           if (month >= 12) { month = 0; year++; }
@@ -109,7 +113,7 @@ class Date extends Obj {
         if (day <= 0) {
           month--;
           if (month < 0) { month = 11; year--; }
-          day = this.numDays(year, month);
+          day = this.#numDays(year, month);
         }
         numDays++;
       }
@@ -118,7 +122,7 @@ class Date extends Obj {
     return new Date(year, month, day);
   }
 
-  minus(d) { this.plus(d.negate()); }
+  minus(d) { return this.plus(d.negate()); }
 
   minusDate(that) {
     // short circuit if equal
@@ -135,7 +139,7 @@ class Date extends Obj {
       days = b.dayOfYear() - a.dayOfYear(); }
     else
     {
-      days = (DateTime.isLeapYear(a.m_year) ? 366 : 365) - a.dayOfYear();
+      days = (DateTime.isLeapYear(a.#year) ? 366 : 365) - a.dayOfYear();
       days += b.dayOfYear();
       for (let i=a.#year+1; i<b.#year; ++i)
         days += DateTime.isLeapYear(i) ? 366 : 365;
@@ -148,13 +152,7 @@ class Date extends Obj {
     return Duration.make(days * Duration.nsPerDay$);
   }
 
-  // TODO:FIXIT - should this be private and is this impl correct syntax?
-  numDays(year, mon) {
-    if (DateTime.isLeapYear(year))
-      return DateTime.daysInMonLeap[mon];
-    else
-      return DateTime.daysInMon[mon];
-  }
+  #numDays(year, mon) { return DateTime.__numDaysInMonth(year, mon); }
 
   firstOfMonth() {
     if (this.#day == 1) return this;
@@ -171,7 +169,7 @@ class Date extends Obj {
 // Locale
 //////////////////////////////////////////////////////////////////////////
 
-  toLocale(pattern=null, locale=Local.cur()) {
+  toLocale(pattern=null, locale=Locale.cur()) {
     // locale specific default
     if (pattern == null) {
       const pod = Pod.find("sys");
@@ -193,8 +191,8 @@ class Date extends Obj {
   }
 
   static today(tz=TimeZone.cur()) {
-    // TODO: tz not used
-    const d = new JsDate();
+    // TODO:FIXIT tz not used
+    const d = new es6.JsDate();
     return new Date(d.getFullYear(), d.getMonth(), d.getDate());
   }
 
@@ -238,11 +236,11 @@ class Date extends Obj {
   isTomorrow() { return this.equals(Date.today().plus(Duration.oneDay$())); }
 
   toDateTime(t, tz=TimeZone.cur()) {
-    return DateTime.makeDT(this, t, tz);
+    return DateTime.__makeDT(this, t, tz);
   }
 
   midnight(tz=TimeZone.cur()) {
-    return DateTime.makeDT(this, fan.sys.Time.defVal(), tz);
+    return DateTime.__makeDT(this, Time.defVal(), tz);
   }
 
   toCode() {

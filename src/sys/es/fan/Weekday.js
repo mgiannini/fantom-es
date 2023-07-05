@@ -64,26 +64,25 @@ class Weekday extends Enum {
   }
 
   toLocale(pattern=null, locale=Locale.cur()) {
-    if (pattern == null) return this.#abbr(locale);
+    if (pattern == null) return this.__abbr(locale);
     if (Str.isEveryChar(pattern, 87)) // 'W'
     {
-      switch (pattern.length)
-      {
-        case 3: return this.#abbr(locale);
-        case 4: return this.#full(locale);
+      switch (pattern.length) {
+        case 3: return this.__abbr(locale);
+        case 4: return this.__full(locale);
       }
     }
     throw ArgErr.make("Invalid pattern: " + pattern);
   }
 
-  localeAbbr() { return this.#abbr(Locale.cur()); }
-  #abbr(locale) {
+  localeAbbr() { return this.__abbr(Locale.cur()); }
+  __abbr(locale) {
     const pod = Pod.find("sys");
     return Env.cur().locale(pod, this.#localeAbbrKey, this.name$(), locale);
   }
 
-  localeFull() { return this.#full(Locale.cur()); }
-  #full(locale) {
+  localeFull() { return this.__full(Locale.cur()); }
+  __full(locale) {
     const pod = Pod.find("sys");
     return Env.cur().locale(pod, this.#localeFullKey, this.name$(), locale);
   }
