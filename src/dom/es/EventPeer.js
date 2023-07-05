@@ -14,6 +14,9 @@ class EventPeer extends sys.Obj {
 
   constructor(self) { super(); }
 
+  event;
+  static lastDataTx;
+
   static makeMock()
   {
     return EventPeer.make(new Event("mock"));
@@ -54,8 +57,9 @@ class EventPeer extends sys.Obj {
   ctrl(self)  { return this.event.ctrlKey; }
   shift(self) { return this.event.shiftKey; }
   meta (self) { return this.event.metaKey; }
-
   button(self) { return this.event.button; }
+
+  $key;
   key(self)   { return this.$key }
 
   #delta;
@@ -96,7 +100,7 @@ class EventPeer extends sys.Obj {
 
   set(self, name, val)
   {
-    this.elem[name] = val;
+    this.event[name] = val;
   }
 
   dataTransfer(self)
