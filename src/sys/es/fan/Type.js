@@ -688,15 +688,14 @@ class GenericType extends Type {
     if (!m.isGenericMethod()) return m;
 
     // new signature
-    const func = m.func();
     let ret;
     const params = List.make(Param.type$);
 
     // parameterize return type
-    if (func.returns().isGenericParameter())
-      ret = this.parameterizeType$(func.returns());
+    if (m.returns().isGenericParameter())
+      ret = this.parameterizeType$(m.returns());
     else
-      ret = func.returns();
+      ret = m.returns();
 
     // narrow params (or just reuse if not parameterized)
     const arity = m.params().size();
@@ -714,7 +713,7 @@ class GenericType extends Type {
     }
 
     //var pm = new Method(this, m.name, m.flags, m.facets, m.lineNum, ret, m.inheritedReturns, params, m);
-    const pm = new Method(this, m.name$(), m.flags(), ret, params, m.facets(), m)
+    const pm = new Method(this, m.name$(), m.flags$(), ret, params, m.facets(), m)
     //pm.reflect = m.reflect;
     return pm;
   }

@@ -26,8 +26,8 @@ function fanx_ObjEncoder(out, options)
 
 fanx_ObjEncoder.encode = function(obj)
 {
-  var buf = fan.sys.StrBuf.make();
-  var out = new fan.sys.StrBufOutStream(buf);
+  var buf = StrBuf.make();
+  var out = new StrBufOutStream(buf);
   new fanx_ObjEncoder(out, null).writeObj(obj);
   return buf.toStr();
 }
@@ -50,19 +50,19 @@ fanx_ObjEncoder.prototype.writeObj = function(obj)
   if (t === "string")  { this.wStrLiteral(obj.toString(), '"'); return; }
 
   var f = obj.fanType$;
-  if (f === fan.sys.Float.type$)   { fan.sys.Float.encode(obj, this); return; }
-  if (f === fan.sys.Decimal.type$) { fan.sys.Decimal.encode(obj, this); return; }
+  if (f === Float.type$)   { Float.encode(obj, this); return; }
+  if (f === Decimal.type$) { Decimal.encode(obj, this); return; }
 
   if (obj.literalEncode$)
   {
     obj.literalEncode$(this);
     return;
   }
-  var type = fan.sys.ObjUtil.typeof$(obj);
-  var ser = type.facet(fan.sys.Serializable.type$, false);
+  var type = ObjUtil.typeof$(obj);
+  var ser = type.facet(Serializable.type$, false);
   if (ser != null)
   {
-    if (ser.m_simple)
+    if (ser.simple())
       this.writeSimple(type, obj);
     else
       this.writeComplex(type, obj, ser);
@@ -72,7 +72,7 @@ fanx_ObjEncoder.prototype.writeObj = function(obj)
     if (this.skipErrors) // NOTE: /* not playing nice in str - escape as unicode char
       this.w("null /\u002A Not serializable: ").w(type.qname()).w(" */");
     else
-      throw fan.sys.IOErr.make("Not serializable: " + type);
+      throw IOErr.make("Not serializable: " + type);
   }
 }
 
@@ -82,7 +82,7 @@ fanx_ObjEncoder.prototype.writeObj = function(obj)
 
 fanx_ObjEncoder.prototype.writeSimple = function(type, obj)
 {
-  var str = fan.sys.ObjUtil.toStr(obj);
+  var str = ObjUtil.toStr(obj);
   this.wType(type).w('(').wStrLiteral(str, '"').w(')');
 }
 
@@ -100,7 +100,7 @@ fanx_ObjEncoder.prototype.writeComplex = function(type, obj, ser)
   {
     // attempt to instantiate default object for type,
     // this will fail if complex has it-block ctor
-    try { defObj = fan.sys.ObjUtil.typeof$(obj).make(); } catch(e) {}
+    try { defObj = ObjUtil.typeof$(obj).make(); } catch(e) {}
   }
 
   var fields = type.fields();
@@ -109,7 +109,7 @@ fanx_ObjEncoder.prototype.writeComplex = function(type, obj, ser)
     var f = fields.get(i);
 
     // skip static, transient, and synthetic (once) fields
-    if (f.isStatic() || f.isSynthetic() || f.hasFacet(fan.sys.Transient.type$))
+    if (f.isStatic() || f.isSynthetic() || f.hasFacet(Transient.type$))
       continue;
 
     // get the value
@@ -119,7 +119,7 @@ fanx_ObjEncoder.prototype.writeComplex = function(type, obj, ser)
     if (defObj != null)
     {
       var defVal = f.get(defObj);
-      if (fan.sys.ObjUtil.equals(val, defVal)) continue;
+      if (ObjUtil.equals(val, defVal)) continue;
     }
 
     // if first then open braces
@@ -137,7 +137,7 @@ fanx_ObjEncoder.prototype.writeComplex = function(type, obj, ser)
   }
 
   // if collection
-  if (ser.m_collection)
+  if (ser.collection())
     first = this.writeCollectionItems(type, obj, first);
 
   // if we output fields, then close braces
@@ -152,13 +152,14 @@ fanx_ObjEncoder.prototype.writeCollectionItems = function(type, obj, first)
 {
   // lookup each method
   var m = type.method("each", false);
-  if (m == null) throw fan.sys.IOErr.make("Missing " + type.qname() + ".each");
+  if (m == null) throw IOErr.make("Missing " + type.qname() + ".each");
 
   // call each(it)
   var enc = this;
-  var it  = fan.sys.Func.make(
-    fan.sys.List.make(fan.sys.Param.type$),
-    fan.sys.Void.type$,
+  /*
+  var it  = Func.make(
+    List.make(Param.type$),
+    Void.type$,
     function(obj)
     {
       if (first) { enc.w('\n').wIndent().w('{').w('\n'); enc.level++; first = false; }
@@ -167,8 +168,17 @@ fanx_ObjEncoder.prototype.writeCollectionItems = function(type, obj, first)
       enc.w(',').w('\n');
       return null;
     });
+    */
 
-  m.invoke(obj, fan.sys.List.make(fan.sys.Obj.type$, [it]));
+  const it = (obj) => {
+    if (first) { enc.w('\n').wIndent().w('{').w('\n'); enc.level++; first = false; }
+    enc.wIndent();
+    enc.writeObj(obj);
+    enc.w(',').w('\n');
+    return null;
+  }
+
+  m.invoke(obj, List.make(Obj.type$, [it]));
   return first;
 }
 

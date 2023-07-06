@@ -29,6 +29,9 @@ class Env extends Obj {
   #index;
   #vars;
   #props
+  __homeDir;
+  __workDir;
+  __tempDir;
 
   // used to display locale keys
   static __localeTestMode = false;
@@ -106,6 +109,12 @@ class Env extends Obj {
   user() { return "unknown"; }
 
   // TODO: FIXIT
+
+  homeDir() { return this.__homeDir; }
+
+  workDir() { return this.__workDir; }
+  
+  tempDir() { return this.__tempDir; }
 
 //////////////////////////////////////////////////////////////////////////
 // State

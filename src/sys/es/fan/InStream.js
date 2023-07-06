@@ -35,9 +35,7 @@ class InStream extends Obj {
     return s;
   }
 
-  static __makeForStr(s) {
-    throw Err.make("Is this used");
-  }
+  static __makeForStr(s) { return new StrInStream(s); }
 
   static make$(self, in$) { 
     self.#in = in$; 

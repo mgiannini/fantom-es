@@ -19,8 +19,6 @@ class Int extends Num {
 
   constructor() { super(); }
 
-  
-
   make(val) { return val; }
 
   static #MAX_SAFE = 9007199254740991;

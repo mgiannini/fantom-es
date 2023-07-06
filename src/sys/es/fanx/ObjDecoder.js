@@ -142,11 +142,9 @@ fanx_ObjDecoder.prototype.readSimple = function(line, t)
   var str = this.consumeStr("Expected string literal for simple");
   this.consume(fanx_Token.RPAREN, "Expected ) in simple");
 
-  // TEMP
   try
   {
-    var script = "fan." + t.pod().$name() + "." + t.$name() + ".fromStr('" + str + "')";
-    var val = eval(script);
+    const val = t.method("fromStr").invoke(null, [str]);
     return val;
   }
   catch (e)
@@ -687,7 +685,7 @@ fanx_ObjDecoder.prototype.endOfStmt = function(lastLine)
 
 fanx_ObjDecoder.decode = function(s)
 {
-  return new fanx_ObjDecoder(InStream.makeForStr(s), null).readObj();
+  return new fanx_ObjDecoder(InStream.__makeForStr(s), null).readObj();
 }
 
 fanx_ObjDecoder.err = function(msg, line)

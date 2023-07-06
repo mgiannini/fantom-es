@@ -86,7 +86,7 @@ class Facets extends Obj {
       var msg = "ERROR: Cannot decode facet " + type + ": " + s;
       ObjUtil.echo(msg);
       delete this.#map[type.qname()];
-      throw IOErr.make(msg);
+      throw IOErr.make(msg, e);
     }
   }
 

@@ -169,8 +169,7 @@ echo(buf.flip.readAllStr)
     template := this.typeof.pod.file(`/res/testRunnerTemplate.js`).readAllStr
     template = template.replace("//{{include}}", includeStatements)
     template = template.replace("//{{tests}}", testList(pod, type, method))
-    // TODO:FIXIT
-    // template = template.replace("//{{envDirs}}", envDirs)
+    template = template.replace("//{{envDirs}}", envDirs)
 
     // write test runner
     f := nodeDir.plus(`testRunner.js`)
@@ -184,6 +183,15 @@ echo(buf.flip.readAllStr)
     echo("")
     echo("Time: ${(t2-t1).toLocale}")
     echo("")
+  }
+
+  private Str envDirs()
+  {
+    buf := StrBuf()
+    buf.add("  sys.Env.cur().__homeDir = sys.File.os(${Env.cur.homeDir.pathStr.toCode});\n")
+    buf.add("  sys.Env.cur().__workDir = sys.File.os(${Env.cur.workDir.pathStr.toCode});\n")
+    buf.add("  sys.Env.cur().__tempDir = sys.File.os(${Env.cur.tempDir.pathStr.toCode});\n")
+    return buf.toStr
   }
 
   private Str testList(Pod pod, Str type, Str method)

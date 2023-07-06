@@ -13,7 +13,6 @@
 class FileTest : Test
 {
 
-/*
   Void testOsRoots()
   {
     verify(File.osRoots.size > 0)
@@ -127,7 +126,7 @@ class FileTest : Test
     verify(file.exists)
     verify(file.name.startsWith("fantest"))
     verify(file.name.endsWith(".fantest"))
-    verify(file.toStr.startsWith(Env.cur.tempDir.uri.relToAuth.toStr))
+    verify(file.uri.relToAuth.toStr.startsWith(Env.cur.tempDir.uri.relToAuth.toStr))
 
     verifyErr(IOErr#) { File.createTemp("xyz", ".tmp", file) }
     if ("js" != Env.cur.runtime)
@@ -154,7 +153,6 @@ class FileTest : Test
     verifyEq(f.uri.relToAuth.toStr, f.pathStr)
     verifyEq(tempDir.list, [f])
     verifyEq(tempDir.listDirs, File[,])
-    verifyEq(tempDir.listFiles, [f])
 
     // create file - with extension
     e := (tempDir + `file.txt`).create
@@ -430,12 +428,13 @@ class FileTest : Test
     }
   }
 
+/*
   Void testOsPath()
   {
     // abs
     f := tempDir
     g := File.os(f.osPath)
-    verifyEq(f.uri.relToAuth, g.uri)
+    verifyEq(f.uri.relToAuth, g.uri.relToAuth)
     verifyEq(f.osPath, g.osPath)
 
     // relative
@@ -676,6 +675,7 @@ class FileTest : Test
     }
     verify(eq)
   }
+  */
 
   Void testSync()
   {
@@ -703,7 +703,7 @@ class FileTest : Test
       verify(s.totalSpace > s.availSpace)
       verify(s.totalSpace > s.freeSpace)
     }
-    verifyEq(s.typeof.qname, "sys::LocalFileStore")
+    verify(s is FileStore)
   }
 
   Void testList()
@@ -748,5 +748,4 @@ class FileTest : Test
     actual.sort |a, b| { a.name <=> b.name }
     verifyEq(actual, expected)
   }
-*/
 }

@@ -90,6 +90,7 @@ class Err extends Obj {
     if (this.#cause) 
     {
       if (this.#cause.stack) s += "\n  Caused by: " + Err.cleanTrace(this.#cause.stack);
+      else if (this.#cause) s += "\n Caused by: " + this.#cause.traceToStr();
       // else s += this.#cause.traceToStr();
     }
     return s;

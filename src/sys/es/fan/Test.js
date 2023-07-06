@@ -23,6 +23,7 @@ class Test extends Obj {
   }
 
   #verifyCount;
+  #tempDir;
 
   static make$(self) { }
 
@@ -167,17 +168,13 @@ class Test extends Obj {
 //fan.sys.Test.prototype.trap(String name, List args)
 
   tempDir() {
-    throw Err.make("TODO:FIXIT");
-    /*
-    if (this.m_tempDir == null && fan.sys.Env.$nodejs)
-    {
-      var x = fan.sys.Env.cur().tempDir();
-      this.m_tempDir = x.plus(fan.sys.Uri.fromStr("test/"), false);
-      this.m_tempDir.$delete();
-      this.m_tempDir.create();
+    if (this.#tempDir == null && Env.__isNode()) {
+      const x = Env.cur().tempDir();
+      this.#tempDir = x.plus(Uri.fromStr("test/"), false);
+      this.#tempDir.delete$();
+      this.#tempDir.create();
     }
-    return this.m_tempDir;
-    */
+    return this.#tempDir;
   }
 
 //////////////////////////////////////////////////////////////////////////

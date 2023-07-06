@@ -17,11 +17,11 @@ class File extends Obj {
   constructor(uri) {
     super();
     this.#uri = uri;
-    this.#uri_str = uri.toStr();
   }
 
   #uri;
   #uri_str;
+  static #tempCt=0;
 
   static make(uri, checkSlash=true)
   {
@@ -43,7 +43,7 @@ class File extends Obj {
     // Check slash
     if (f.exists()) {
       if (f.__isDirectory() && !checkSlash && !uri.isDir())
-        f = File.make(uri.plusSlash());
+        f.#uri = uri.plusSlash();
       else if (f.__isDirectory() && !uri.isDir())
         throw IOErr.make("Must use trailing slash for dir: " + uri.toStr());
       else if (!f.__isDirectory() && uri.isDir())
@@ -58,81 +58,58 @@ class File extends Obj {
 
     return f;
   }
-  /*
 
-// TODO : what would the difference be?
-fan.sys.File.os = function(osPath)
-{
-  if (!fan.sys.Env.$nodejs)
-    throw fan.sys.Err.make("Must be running on Node JS to create a local file.");
-  var path = require('path');
-  var url  = require('url');
-  var os   = require('os');
-  if (os.platform() == "win32") {
-    if (osPath.startsWith("/")) {
-      osPath = "file://" + osPath;
-    } else if (/^.+:/.test(osPath)) {
-      osPath = "file:///" + osPath;
+  // TODO : what would the difference be?
+  static os(osPath) {
+    if (!Env.__isNode())
+      throw Err.make("Must be running on Node JS to create a local file.");
+    const os   = node.os;
+    if (os.platform() == "win32") {
+      if (osPath.startsWith("/")) {
+        osPath = "file://" + osPath;
+      } else if (/^.+:/.test(osPath)) {
+        osPath = "file:///" + osPath;
+      }
     }
+    return File.make(Uri.fromStr(osPath), false);
   }
-  return fan.sys.File.make(fan.sys.Uri.fromStr(osPath), false);
-}
 
-// TODO : only gets the root for the cwd
-fan.sys.File.osRoots = function()
-{
-  if (!fan.sys.Env.$nodejs)
-    throw fan.sys.Err.make("Must be running on Node JS to access the OS roots.");
-  var path = require('path');
-  var os   = require('os');
-  var r = os.platform() == "win32"
-    ? "/" + fan.sys.File._win32Drive() + "/"
-    : path.parse(process.cwd()).root;
-  return fan.sys.List.make(
-           fan.sys.File.$type,
-           [fan.sys.File.make(r, false)]
-         );
-}
-
-fan.sys.File._win32Drive = function()
-{
-  var path = require('path');
-  return process.cwd().split(path.sep)[0]
-}
-
-fan.sys.File._tempCt = 0;
-
-fan.sys.File.createTemp = function(prefix, suffix, dir)
-{
-  if (prefix === undefined) prefix = "fan";
-  if (suffix === undefined) suffix = ".tmp";
-  if (dir === undefined)    dir = null;
-
-  if (dir == null)
-    dir = fan.sys.Env.cur().tempDir();
-  else if (!dir.isDir())
-    throw fan.sys.IOErr.make("Not a directory: " + dir.toStr());
-  else if (!(dir instanceof fan.sys.LocalFile))
-    throw fan.sys.IOErr.make("Dir is not on local file system: " + dir.toStr());
-  
-  var f;
-  do
-  {
-    f = fan.sys.LocalFile.make(
-          fan.sys.Uri.fromStr(
-              dir.toStr() + prefix + fan.sys.File._tempCt + suffix
-          ));
-    fan.sys.File._tempCt++;
+  // TODO : only gets the root for the cwd
+  static osRoots() {
+    if (!Env.__isNode())
+      throw Err.make("Must be running on Node JS to access the OS roots.");
+    const r = node.os.platform() == "win32"
+      ? "/" + File.__win32Drive() + "/"
+      : node.path.parse(process.cwd()).root;
+    return List.make(File.type$, [File.make(r, false)]);
   }
-  while (f.exists());
-  return f.create();
-}
+
+  static __win32Drive() { return process.cwd().split(node.path.sep)[0]; }
+
+  static createTemp(prefix="fan", suffix=".tmp", dir=null) {
+    if (dir == null)
+      dir = Env.cur().tempDir();
+    else if (!dir.isDir())
+      throw IOErr.make(`Not a directory: ${dir.toStr()}`);
+    else if (!(dir instanceof LocalFile))
+      throw IOErr.make(`Dir is not on local file system: ${dir.toStr()}`);
+    
+    let f;
+    do {
+      f = LocalFile.make(
+            Uri.fromStr(
+                dir.toStr() + prefix + File.#tempCt + suffix
+            ));
+      File.#tempCt++;
+    }
+    while (f.exists());
+    return f.create();
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Identity
 //////////////////////////////////////////////////////////////////////////
 
-*/
   equals(that) {
     if (that && that instanceof File)
       return this.#uri.equals(that.#uri);
@@ -140,338 +117,273 @@ fan.sys.File.createTemp = function(prefix, suffix, dir)
   }
 
   hash() { return this.#uri.hash(); }
-  toStr() { return this.#uri_str; }
+  toStr() { 
+    if (!this.#uri_str) this.#uri_str = this.#uri.toStr();
+    return this.#uri_str; 
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Uri
 //////////////////////////////////////////////////////////////////////////
 
-uri() { return this.#uri; }
-isDir() { return this.#uri.isDir(); }
-path() { return this.#uri.path(); }
-pathStr() { return this.#uri.pathStr(); }
-name$() { return this.#uri.name$(); }
-basename() { return this.#uri.basename(); }
-ext() { return this.#uri.ext(); }
-mimeType() { return this.#uri.mimeType(); }
+  uri() { return this.#uri; }
+  isDir() { return this.#uri.isDir(); }
+  path() { return this.#uri.path(); }
+  pathStr() { return this.#uri.pathStr(); }
+  name$() { return this.#uri.name$(); }
+  basename() { return this.#uri.basename(); }
+  ext() { return this.#uri.ext(); }
+  mimeType() { return this.#uri.mimeType(); }
 
 //////////////////////////////////////////////////////////////////////////
 // Access
 //////////////////////////////////////////////////////////////////////////
 
-// Returns whether the file is *internally* a directory, rather than just using the uri
-__isDirectory() { this.#throwNotSupported("isDirectory"); }
+  // Returns whether the file is *internally* a directory, rather than just using the uri
+  __isDirectory() { this.#throwNotSupported("isDirectory"); }
 
-exists() { return true; }
-size() { this.#throwNotSupported("size"); }
+  exists() { return true; }
+  size() { this.#throwNotSupported("size"); }
 
-isEmpty() {
-  if (this.isDir()) return this.list().isEmpty();
-  const size = this.size();
-  return size == null || size <= 0;
-}
-
-modified(it) { throw this.#throwNotSupported("modified"); }
-
-/*
-fan.sys.File.prototype.isHidden     = function() { this._throwNotSupported("isHidden"); }
-fan.sys.File.prototype.isReadable   = function() { return false; }
-fan.sys.File.prototype.isWritable   = function() { return false; }
-fan.sys.File.prototype.isExecutable = function() { return false; }
-
-fan.sys.File.prototype.osPath   = function() { this._throwNotSupported("osPath"); }
-fan.sys.File.prototype.parent   = function() { this._throwNotSupported("parent"); }
-fan.sys.File.prototype.list     = function(pattern) { this._throwNotSupported("list"); }
-
-fan.sys.File.prototype.listDirs = function(pattern)
-{
-  if (pattern === undefined) pattern = null;
-
-  var list = this.list(pattern);
-  if (list.isEmpty()) return list;
-  return fan.sys.File._filter(list, (f) => f.isDir());
-}
-
-fan.sys.File.prototype.listFiles = function(pattern)
-{
-  if (pattern === undefined) pattern = null;
-
-  var list = this.list(pattern);
-  if (list.isEmpty()) return list;
-  return fan.sys.File._filter(list, (f) => !f.isDir());
-}
-
-fan.sys.File.prototype.walk = function(c)
-{
-  c.call(this);
-  if (this.isDir())
-  {
-    var list = this.list();
-    for (var i=0; i<list.size(); ++i)
-      (list.get(i)).walk(c);
+  isEmpty() {
+    if (this.isDir()) return this.list().isEmpty();
+    const size = this.size();
+    return size == null || size <= 0;
   }
-}
 
-fan.sys.File.prototype.normalize = function() { this._throwNotSupported("normalize"); }
+  modified(it) { throw this.#throwNotSupported("modified"); }
 
-fan.sys.File.prototype.plus = function(uri, checkSlash)
-{
-  if (typeof uri == "string") uri = fan.sys.Uri.fromStr(uri);
-  return fan.sys.File.make(this.m_uri.plus(uri), checkSlash);
-}
+  isHidden() { this.#throwNotSupported("isHidden"); }
+  isReadable() { return false; }
+  isWritable() { return false; }
+  isExecutable() { return false; }
 
-fan.sys.File.prototype.store = function() { this._throwNotSupported("store"); }
+  osPath() { this.#throwNotSupported("osPath"); }
+  parent() { this.#throwNotSupported("parent"); }
+  list(pattern) { this.#throwNotSupported("list"); }
+
+  listDirs(pattern=null) {
+    const list = this.list(pattern);
+    if (list.isEmpty()) return list;
+    return File.#filter(list, (f) => { return f.isDir() });
+  }
+
+  listFiles(pattern=null) {
+    const list = this.list(pattern);
+    if (list.isEmpty()) return list;
+    return File.#filter(list, (f) => { return !f.isDir() });
+  }
+
+  walk(c) {
+    c(this);
+    if (this.isDir()) {
+      const list = this.list();
+      for (let i=0; i<list.size(); ++i)
+        (list.get(i)).walk(c);
+    }
+  }
+
+  normalize() { this.#throwNotSupported("normalize"); }
+
+  plus(uri, checkSlash=true) {
+    if (typeof uri == "string") uri = Uri.fromStr(uri);
+    return File.make(this.#uri.plus(uri), checkSlash);
+  }
+
+  store() { this.#throwNotSupported("store"); }
 
 //////////////////////////////////////////////////////////////////////////
 // Management
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.File.prototype.create = function() { this._throwNotSupported("create"); }
+  create() { this.#throwNotSupported("create"); }
 
-fan.sys.File.prototype.createFile = function(name)
-{
-  if (!this.isDir()) throw IOErr.make("Not a directory: " + this.toStr());
-  return this.plus(fan.sys.Uri.fromStr(name)).create();
-}
+  createFile(name) {
+    if (!this.isDir()) throw IOErr.make(`Not a directory: ${this.toStr()}`);
+    return this.plus(Uri.fromStr(name)).create();
+  }
 
-fan.sys.File.prototype.createDir = function(name)
-{
-  if (!this.isDir()) throw IOErr.make("Not a directory: " + this.toStr());
-  if (!fan.sys.Str.endsWith(name, "/")) name = name + "/";
-  return this.plus(fan.sys.Uri.fromStr(name)).create();
-}
+  createDir(name) {
+    if (!this.isDir()) throw IOErr.make(`Not a directory: ${this.toStr()}`);
+    if (!Str.endsWith(name, "/")) name = name + "/";
+    return this.plus(Uri.fromStr(name)).create();
+  }
 
-fan.sys.File.prototype.$delete      = function() { this._throwNotSupported("delete"); }
-fan.sys.File.prototype.deleteOnExit = function() { this._throwNotSupported("deleteOnExit"); }
+  delete$() { this.#throwNotSupported("delete"); }
+  deleteOnExit() { this.#throwNotSupported("deleteOnExit"); }
 
 //////////////////////////////////////////////////////////////////////////
 // Copy
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.File.prototype.copyTo = function(to, options)
-{
-  if (options === undefined) options = null;
-
-  // sanity
-  if (this.isDir() != to.isDir())
-  {
-    if (this.isDir())
-      throw fan.sys.ArgErr.make("copyTo must be dir `" + to.toStr() + "`");
-    else
-      throw fan.sys.ArgErr.make("copyTo must not be dir `" + to.toStr() + "`");
-  }
-
-  // options
-  var exclude = null, overwrite = null;
-  if (options != null)
-  {
-    exclude = options.get("exclude");
-    overwrite = options.get("overwrite");
-  }
-
-  // recurse
-  this.doCopyTo(to, exclude, overwrite);
-  return to;
-}
-
-fan.sys.File.prototype.doCopyTo = function(to, exclude, overwrite)
-{
-  // check exclude
-  if (exclude instanceof fan.sys.Regex)
-  {
-    if (exclude.matches(this.m_uri.toStr())) return;
-  }
-  else if (exclude instanceof fan.sys.Func)
-  {
-    if (exclude.call(this)) return;
-  }
-
-  // check for overwrite
-  if (to.exists())
-  {
-    if (typeof overwrite == "boolean")
-    {
-      if (!overwrite) return;
+  copyTo(to, options=null) {
+    // sanity
+    if (this.isDir() != to.isDir()) {
+      if (this.isDir())
+        throw ArgErr.make("copyTo must be dir `" + to.toStr() + "`");
+      else
+        throw ArgErr.make("copyTo must not be dir `" + to.toStr() + "`");
     }
-    else if (overwrite instanceof fan.sys.Func)
-    {
-      if (!overwrite.m_func.apply(null, [to, this])) return;
+
+    // options
+    let exclude = null, overwrite = null;
+    if (options != null) {
+      exclude   = options.get("exclude");
+      overwrite = options.get("overwrite");
     }
-    else
-    {
-      throw fan.sys.IOErr.make("No overwrite policy for `" + to.toStr() + "`");
+
+    // recurse
+    this.#doCopyTo(to, exclude, overwrite);
+    return to;
+  }
+
+  #doCopyTo(to, exclude, overwrite) {
+    // check exclude
+    if (exclude instanceof Regex) {
+      if (exclude.matches(this.uri().toStr())) return;
+    }
+    else if (exclude instanceof Function) {
+      if (exclude(this)) return;
+    }
+
+    // check for overwrite
+    if (to.exists()) {
+      if (typeof overwrite == "boolean") {
+        if (!overwrite) return;
+      }
+      else if (overwrite instanceof Function) {
+        if (!overwrite.apply(null, [to, this])) return;
+      }
+      else {
+        throw IOErr.make("No overwrite policy for `" + to.toStr() + "`");
+      }
+    }
+
+    // copy directory
+    if (this.isDir()) {
+      to.create();
+      const kids = this.list();
+      for (let i=0; i<kids.size(); ++i) {
+        const kid = kids.get(i);
+        kid.#doCopyTo(to.#plusNameOf(kid), exclude, overwrite);
+      }
+    }
+
+    // copy file contents
+    else this.__doCopyFile(to);
+  }
+
+  __doCopyFile(to) {
+    const out = to.out();
+    try {
+      this.in$().pipe(out);
+    }
+    finally {
+      out.close();
     }
   }
 
-  // copy directory
-  if (this.isDir())
-  {
-    to.create();
-    var kids = this.list();
-    for (var i=0; i<kids.size(); ++i)
-    {
-      var kid = kids.get(i);
-      kid.doCopyTo(to.plusNameOf(kid), exclude, overwrite);
-    }
+  copyInto(dir, options=null) {
+    if (!dir.isDir())
+      throw ArgErr.make("Not a dir: `" + dir.toStr() + "`");
+
+    return this.copyTo(dir.#plusNameOf(this), options);
   }
-
-  // copy file contents
-  else this.doCopyFile(to);
-}
-
-fan.sys.File.prototype.doCopyFile = function(to)
-{
-  var out = to.out();
-  try
-  {
-    this.$in().pipe(out);
-  }
-  finally
-  {
-    out.close();
-  }
-}
-
-fan.sys.File.prototype.copyInto = function(dir, options)
-{
-  if (options === undefined) options = null;
-
-  if (!dir.isDir())
-    throw fan.sys.ArgErr.make("Not a dir: `" + dir.toStr() + "`");
-
-  return this.copyTo(dir.plusNameOf(this), options);
-}
 
 //////////////////////////////////////////////////////////////////////////
 // Move
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.File.prototype.moveTo = function(to) { this._throwNotSupported("moveTo"); }
+  moveTo(to) { this.#throwNotSupported("moveTo"); }
 
-fan.sys.File.prototype.moveInto = function(dir)
-{
-  if (!dir.isDir())
-    throw fan.sys.ArgErr.make("Not a dir: `" + dir.toStr() + "`");
+  moveInto(dir) {
+    if (!dir.isDir())
+      throw ArgErr.make("Not a dir: `" + dir.toStr() + "`");
 
-  return this.moveTo(dir.plusNameOf(this));
-}
+    return this.moveTo(dir.#plusNameOf(this));
+  }
 
-fan.sys.File.prototype.rename = function(newName)
-{
-  if (this.isDir()) newName += "/";
-  var parent = this.parent();
-  if (parent == null)
-    return this.moveTo(fan.sys.File.make(fan.sys.Uri.fromStr(newName)));
-  else
-    return this.moveTo(parent.plus(fan.sys.Uri.fromStr(newName)));
-}
+  rename(newName) {
+    if (this.isDir()) newName += "/";
+    const parent = this.parent();
+    if (parent == null)
+      return this.moveTo(File.make(Uri.fromStr(newName)));
+    else
+      return this.moveTo(parent.plus(Uri.fromStr(newName)));
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // IO
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.File.prototype.open = function(mode) { this._throwNotSupported("open"); }
-fan.sys.File.prototype.mmap = function(mode, pos, size) { this._throwNotSupported("mmap"); }
-*/
-in$(bufSize=4096) { this.#throwNotSupported("in"); }
-out(append=false, bufSize=4096) { this.#throwNotSupported("out"); }
+  open(mode) { this.#throwNotSupported("open"); }
+  mmap(mode, pos, size) { this.#throwNotSupported("mmap"); }
 
-/*
-fan.sys.File.prototype.readAllBuf = function()
-{
-  return this.$in(fan.sys.Int.Chunk).readAllBuf();
-}
+  in$(bufSize=4096) { this.#throwNotSupported("in"); }
+  out(append=false, bufSize=4096) { this.#throwNotSupported("out"); }
 
-fan.sys.File.prototype.readAllLines = function()
-{
-  return this.$in(fan.sys.Int.Chunk).readAllLines();
-}
+  readAllBuf() { return this.in$(Int.__chunk).readAllBuf(); }
 
-fan.sys.File.prototype.eachLine = function(f)
-{
-  this.$in(fan.sys.Int.Chunk).eachLine(f);
-}
+  readAllLines() { return this.in$(Int.__chunk).readAllLines(); }
 
-*/
+  eachLine(f) { this.in$(Int.__chunk).eachLine(f); }
+
   readAllStr(normalizeNewlines=true) {
     return this.in$(Int.__chunk).readAllStr(normalizeNewlines);
   }
 
-/*
-fan.sys.File.prototype.readProps = function()
-{
-  return this.$in(fan.sys.Int.Chunk).readProps();
-}
+  readProps() { return this.in$(Int.__chunk).readProps(); }
 
-fan.sys.File.prototype.writeProps = function(props)
-{
-  this.out(false, fan.sys.Int.Chunk).writeProps(props, true);
-}
+  writeProps(props) { this.out(false, Int.__chunk).writeProps(props, true); }
 
-fan.sys.File.prototype.readObj = function(options)
-{
-  if (options === undefined) options = null;
-  var ins = this.$in();
-  try
-  {
-    return ins.readObj(options);
+  readObj(options=null) {
+    const ins = this.in$();
+    try {
+      return ins.readObj(options);
+    }
+    finally {
+      ins.close();
+    }
   }
-  finally
-  {
-    ins.close();
-  }
-}
 
-fan.sys.File.prototype.writeObj = function(obj, options)
-{
-  if (options === undefined) options = null;
-  var out = this.out();
-  try
-  {
-    out.writeObj(obj, options);
+  writeObj(obj, options=null) {
+    const out = this.out();
+    try {
+      out.writeObj(obj, options);
+    }
+    finally {
+      out.close();
+    }
   }
-  finally
-  {
-    out.close();
-  }
-}
 
 //////////////////////////////////////////////////////////////////////////
 // Fields
 //////////////////////////////////////////////////////////////////////////
 
-fan.sys.File.sep     = function() { this._throwNotSupported("sep"); }
-fan.sys.File.pathSep = function() { this._throwNotSupported("pathSep"); }
+  static sep() { this.#throwNotSupported("sep"); }
+  static pathSep() { this.#throwNotSupported("pathSep"); }
 
 //////////////////////////////////////////////////////////////////////////
 // Helper functions
 //////////////////////////////////////////////////////////////////////////
 
-*/
   #throwNotSupported(name) { 
     throw UnsupportedErr.make(`File.${name} is not implemented in this environment.`);
   }
 
-/*
-fan.sys.File._filter = function(list, p)
-{
-  var acc = fan.sys.List.make(fan.sys.File.$type, []);
-  for (var i=0; i<list.size(); ++i)
-  {
-    var f = list.get(i);
-    if (p(f))
-      acc.add(f);
+  static #filter(list, p) {
+    const acc = List.make(File.type$, []);
+    for (let i=0; i<list.size(); ++i) {
+      const f = list.get(i);
+      if (p(f)) acc.add(f);
+    }
+    return acc;
   }
-  return acc;
-}
 
-fan.sys.File.prototype.plusNameOf = function(x)
-{
-  var name = x.$name();
-  if (x.isDir()) name += "/";
-  return this.plus(fan.sys.Uri.fromStr(name));
-}
-*/
-  
+  #plusNameOf(x) {
+    let name = x.name$();
+    if (x.isDir()) name += "/";
+    return this.plus(Uri.fromStr(name));
+  }
 
 }

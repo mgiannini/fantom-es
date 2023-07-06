@@ -45,6 +45,8 @@ class OutStream extends Obj {
 // OutStream
 //////////////////////////////////////////////////////////////////////////
 
+  __out() { return this.#out; }
+
   write(x) {
     if (!this.#out) throw UnsupportedErr.make(`${this.typeof$().qname()} wraps null OutStream`);
     this.#out.write(x);

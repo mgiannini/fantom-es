@@ -21,23 +21,28 @@ class Field extends Slot {
 //////////////////////////////////////////////////////////////////////////
 
   static makeSetFunc(map) {
-    // TODO:FIXIT - return a closure that does this
-    throw Err.make("TODO:FIXIT");
-    /*
-    return fan.sys.Func.make(
-      fan.sys.List.make(fan.sys.Param.type$),
-      fan.sys.Void.type$,
-      function(obj)
+    // return fan.sys.Func.make(
+    //   fan.sys.List.make(fan.sys.Param.type$),
+    //   fan.sys.Void.type$,
+    //   function(obj)
+    //   {
+    //     var keys = map.keys();
+    //     for (var i=0; i<keys.size(); i++)
+    //     {
+    //       var field = keys.get(i);
+    //       var val = map.get(field);
+    //       field.set(obj, val, false); //, obj != inCtor);
+    //     }
+    //   });
+    return (obj) => {
+      const keys = map.keys();
+      for (let i=0; i<keys.size(); i++)
       {
-        var keys = map.keys();
-        for (var i=0; i<keys.size(); i++)
-        {
-          var field = keys.get(i);
-          var val = map.get(field);
-          field.set(obj, val, false); //, obj != inCtor);
-        }
-      });
-      */
+        const field = keys.get(i);
+        const val   = map.get(field);
+        field.set(obj, val, false); //, obj != inCtor);
+      }
+    }
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -113,24 +118,22 @@ class Field extends Slot {
   }
 
   set(instance, value, checkConst=true) {
-    throw Err.make("TODO:FIXIT");
-    /*
     // check const
-    if ((this.m_flags & fan.sys.FConst.Const) != 0)
+    if ((this.flags$() & FConst.Const) != 0)
     {
       if (checkConst)
-        throw fan.sys.ReadonlyErr.make("Cannot set const field " + this.m_qname);
-      else if (value != null && !fan.sys.ObjUtil.isImmutable(value))
-        throw fan.sys.ReadonlyErr.make("Cannot set const field " + this.m_qname + " with mutable value");
+        throw ReadonlyErr.make("Cannot set const field " + this.qname$());
+      else if (value != null && !ObjUtil.isImmutable(value))
+        throw ReadonlyErr.make("Cannot set const field " + this.qname$() + " with mutable value");
     }
 
     // check static
-    if ((this.m_flags & fan.sys.FConst.Static) != 0) // && !parent.isJava())
-      throw fan.sys.ReadonlyErr.make("Cannot set static field " + this.m_qname);
+    if ((this.flags$() & FConst.Static) != 0) // && !parent.isJava())
+      throw ReadonlyErr.make("Cannot set static field " + this.qname$());
 
     // check type
-    if (value != null && !fan.sys.ObjUtil.typeof$(value).is(this.m_type.toNonNullable()))
-      throw fan.sys.ArgErr.make("Wrong type for field " + this.m_qname + ": " + this.m_type + " != " + fan.sys.ObjUtil.typeof$(value));
+    if (value != null && !ObjUtil.typeof$(value).is(this.type().toNonNullable()))
+      throw ArgErr.make("Wrong type for field " + this.qname$() + ": " + this.type() + " != " + ObjUtil.typeof$(value));
 
     // TODO
     //if (setter != null)
@@ -139,21 +142,19 @@ class Field extends Slot {
     //  return;
     //}
 
-    if ((this.m_flags & fan.sys.FConst.Native) != 0)
-    {
-      var peer = instance.peer;
-      var setter = peer[this.m_$name + "$"];
+    if ((this.flags$() & FConst.Native) != 0) {
+      const peer = instance.peer;
+      const setter = peer[this.#name$];
       setter.call(peer, instance, value);
     }
-    else
-    {
-      var setter = instance[this.m_$name + "$"];
+    else {
+      var setter = instance[this.#name$];
       if (setter != null)
         setter.call(instance, value);
       else
-        instance["m_"+this.m_$name] = value;
+        throw Err.make(`Failed to set ${this.qname$()}`);
+        // instance["m_"+this.m_$name] = value;
     }
-    */
   }
 
 }
