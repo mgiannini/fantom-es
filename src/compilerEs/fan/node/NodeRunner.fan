@@ -247,8 +247,11 @@ echo(buf.flip.readAllStr)
     writeNodeModules
     writeTzJs
 
+    // include supporting databases
     out := ms.file("fan").out
     ["sys", "fan_mime", "fan_units"].each |m| { ms.writeInclude(out, "${m}.ext") }
+
+    // export sys
     out.printLine("export { sys };").flush.close
 
     // f := moduleDir.plus(`fan.js`)

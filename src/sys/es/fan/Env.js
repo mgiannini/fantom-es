@@ -150,7 +150,7 @@ class Env extends Obj {
     // if (def === undefined) def = "_Env_nodef_";
 
     let val;
-    const maxAge = Duration.maxVal$();
+    const maxAge = Duration.maxVal();
 
     // 1. 'props(pod, `locale/{locale}.props`)'
     val = this.props(pod, locale.__strProps, maxAge).get(key, null);

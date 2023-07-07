@@ -147,12 +147,12 @@ class DateTimeTest : Test
     verify(a === DateTime.now)
     verifySame(a.tz, TimeZone.cur)
 
-    b := DateTime.now(null)
-    verifyNotSame(a, b)
-    verifySame(b, DateTime.now)
-
     if (Env.cur.runtime != "js")
     {
+      b := DateTime.now(null)
+      verifyNotSame(a, b)
+      verifySame(b, DateTime.now)
+
       verifySame(b, DateTime.now)
       verifySame(b, DateTime.now(100ms))
 

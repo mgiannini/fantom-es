@@ -88,7 +88,7 @@ class Depend extends Obj {
   endVersion(index=0) { return this.#constraints[index].endVersion; }
 
   match(v) {
-    for (let i=0; i<this.m_constraints.length; ++i) {
+    for (let i=0; i<this.#constraints.length; ++i) {
       const c = this.#constraints[i];
       if (c.isPlus) {
         // versionPlus

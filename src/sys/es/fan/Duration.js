@@ -22,11 +22,15 @@ class Duration extends Obj {
     this.#ticks = ticks;
   }
 
-  static defVal() { return new Duration(0); }
-
   #ticks;
 
-  static boot$ = undefined;
+  static #defVal;
+  static defVal() { 
+    if (!Duration.#defVal) Duration.#defVal = new Duration(0);
+    return Duration.#defVal;
+  }
+
+  static __boot;
 
   static nsPerYear$  = 365*24*60*60*1000000000;
   static nsPerDay$   = 86400000000000;
@@ -38,8 +42,8 @@ class Duration extends Obj {
   static secPerHr$   = 3600;
   static secPerMin$  = 60;
 
-  static minVal$() { return new Duration(Int.minVal()); }
-  static maxVal$() { return new Duration(Int.maxVal()); }
+  static minVal() { return new Duration(Int.minVal()); }
+  static maxVal() { return new Duration(Int.maxVal()); }
   static oneDay$() { return new Duration(Duration.nsPerDay$); }
   static oneMin$() { return new Duration(Duration.nsPerMin$); }
   static oneSec$() { return new Duration(Duration.nsPerSec$); }
@@ -109,7 +113,7 @@ class Duration extends Obj {
 
   static nowTicks() { return Duration.now().ticks(); }
 
-  static boot() { return Duration.boot$; }
+  static boot() { return Duration.__boot; }
 
   static uptime() { return Duration.now().minus(Duration.boot()); }
 

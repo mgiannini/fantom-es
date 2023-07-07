@@ -106,6 +106,7 @@ class Build : BuildScript
       writeSysSupport
       writeSysProps
       writePodMeta
+      writeBoot
       writeExports
       finish
     }
@@ -278,6 +279,12 @@ class Build : BuildScript
     out.printLine("m.set(\"pod.version\", ${version.toCode});")
     out.printLine("m.set(\"pod.depends\", \"\");")
     out.printLine("p.__meta(m);")
+  }
+
+  private Void writeBoot()
+  {
+    out.printLine("DateTime.__boot = DateTime.now();")
+    out.printLine("Duration.__boot = Duration.make(DateTime.boot().ticks());")
   }
 
   private Void writeExports()

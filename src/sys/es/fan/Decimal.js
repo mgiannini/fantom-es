@@ -19,6 +19,12 @@ class Decimal extends Num {
 
   constructor() { super(); }
 
+  static #defVal;
+  static defVal() {
+    if (!Decimal.#defVal) Decimal.#defVal = Decimal.make(0);
+    return Decimal.#defVal;
+  }
+
   static make(val) {
     const x = new Number(val);
     x.fanType$ = Decimal.type$;

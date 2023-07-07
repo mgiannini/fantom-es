@@ -18,7 +18,6 @@ class DateTime extends Obj {
 //////////////////////////////////////////////////////////////////////////
 
   // TODO - make fan.sys.Ints
-  static __boot = undefined;
   static #diffJs     = 946684800000; // 2000-1970 in milliseconds
   static #nsPerYear  = 365*24*60*60*1000000000;
   static #nsPerDay   = 24*60*60*1000000000;
@@ -41,11 +40,11 @@ class DateTime extends Obj {
     this.#fields = fields;
   }
 
-  __boot;
   #ticks;
   #ns;
   #tz;
   #fields;
+  static __boot = undefined;
   static #cached;
   static #cachedUtc;
 
