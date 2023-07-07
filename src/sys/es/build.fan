@@ -175,7 +175,6 @@ class Build : BuildScript
     // write all types first
     reflect.each |FType t|
     {
-      log.debug("$t")
       // make sure type is loaded
       t.slots
 
@@ -236,14 +235,14 @@ class Build : BuildScript
 
   private Void writeSysSupport()
   {
-    log.debug("fan/ [support] [TODO:FIXIT]")
+    log.debug("fan/ [support]")
     append(sys + `FConst.js`, out)
     append(sys + `Crypto.js`, out)
     append(sys + `MemBufStream.js`, out)
-    // append(sys + `Md5.js`, out)
+    append(sys + `Md5.js`, out)
     append(sys + `ObjUtil.js`, out)
     append(sys + `Sha1.js`, out)
-    // append(sys + `Sha256.js`, out)
+    append(sys + `Sha256.js`, out)
     append(sys + `StrInStream.js`, out)
     append(sys + `StrBufOutStream.js`, out)
     append(sys + `DateTimeStr.js`, out)
@@ -263,7 +262,6 @@ class Build : BuildScript
   private Void writeProps(Uri uri)
   {
     log.indent
-    log.debug("$uri")
     key   := "sys:${uri}"
     file  := build.devHomeDir.plus(`src/sys/${uri}`)
     out.printLine("m=Map.make(Str.type\$,Str.type\$);")
@@ -329,7 +327,6 @@ class Build : BuildScript
   private Void append(File f, OutStream out)
   {
     log.indent
-    log.debug("$f.name")
 
     inBlock := false
     f.readAllLines.each |Str line|
@@ -376,8 +373,8 @@ class Build : BuildScript
           {
             case "ObjUtil":
               exports.add(name)
-            default:
-              log.warn("class ${name} doesn't correspond to FType")
+            // default:
+            //   log.warn("class ${name} doesn't correspond to FType")
           }
         }
       }

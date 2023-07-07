@@ -16,7 +16,7 @@ class MemBuf extends Buf {
 // Constructor
 //////////////////////////////////////////////////////////////////////////
 
-  constructor(data=new Int8Array(), size=0) {
+  constructor(data=new Uint8Array(), size=0) {
     super();
     this.data   = data;
     this.__size = size;
@@ -40,7 +40,7 @@ class MemBuf extends Buf {
 
   static __makeBytes(bytes) {
     const buf = new MemBuf();
-    buf.data   = bytes instanceof Array ? new Int8Array(bytes) : bytes;
+    buf.data   = bytes instanceof Array ? new Uint8Array(bytes) : bytes;
     buf.__size = bytes.length;
     return buf;
   }
@@ -52,7 +52,7 @@ class MemBuf extends Buf {
   toImmutable() {
     const data  = this.data;
     const size  = this.__size;
-    this.data   = new Int8Array();
+    this.data   = new Uint8Array();
     this.__size = 0;
     return new ConstBuf(data, size, this.endian(), this.charset());
   }
@@ -166,7 +166,7 @@ fan.sys.MemBuf.prototype.cpJavaBufferToMem = function(bytes, len)
   grow(capacity, exact=false) {
     if (this.data.length >= capacity) return;
     const newSize = exact ? capacity : Math.max(capacity, this.__size*2);
-    const temp = new Int8Array(newSize);
+    const temp = new Uint8Array(newSize);
     temp.set(this.data);
     this.data = temp;
   }
@@ -174,7 +174,7 @@ fan.sys.MemBuf.prototype.cpJavaBufferToMem = function(bytes, len)
   __unsafeArray() { return this.data; }
 
   static __concat(a, b) {
-    const c = new Int8Array(a.length + b.length);
+    const c = new Uint8Array(a.length + b.length);
     c.set(a);
     c.set(b, a.length);
     return c;

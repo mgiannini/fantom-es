@@ -28,14 +28,14 @@ const buf_crypto = (function () {
    */
   crypto.pbkdf2 = function(PRF, hLen, key, salt, iterations, dkLen)
   {
-    var F = function F(P, S, c, i) {
-      var U_r;
-      var U_c;
-      var xor = function(a, b) {
-        var aw = a;
-        var bw = b;
+    const F = function F(P, S, c, i) {
+      let U_r;
+      let U_c;
+      const xor = function(a, b) {
+        let aw = a;
+        let bw = b;
         if (aw.length != bw.length) throw "Lengths don't match";
-        for (var i = 0; i < aw.length; ++i) {
+        for (let i = 0; i < aw.length; ++i) {
           aw[i] ^= bw[i];
         }
         return aw;
@@ -44,19 +44,24 @@ const buf_crypto = (function () {
       S = S.concat(crypto.wordsToBytes([i]));
       U_r = U_c = PRF(P, S);
 
-      for (var iter = 1; iter < c; ++iter) {
+      for (let iter = 1; iter < c; ++iter) {
         U_c = PRF(P, crypto.wordsToBytes(U_c));
         U_r = xor(U_r, U_c);
       }
       return crypto.wordsToBytes(U_r);
     };
 
-    var l = Math.ceil(dkLen / hLen);
-    var r = dkLen - (l - 1) * hLen;
-    var T = [];
-    var block;
+    // this code requires key and salt to be Arrays
+    // because TypedView doesn't allow concat()
+    key  = Array.from(key);
+    salt = Array.from(salt);
 
-    for (var i = 1; i <= l; ++i) {
+    const l = Math.ceil(dkLen / hLen);
+    const r = dkLen - (l - 1) * hLen;
+    let T = [];
+    let block;
+
+    for (let i = 1; i <= l; ++i) {
       block = F(key, salt, iterations, i);
       T = T.concat(block);
     }

@@ -24,7 +24,7 @@ class Buf extends Obj {
   }
 
   static random(size) {
-    const buf = new Int8Array(size);
+    const buf = new Uint8Array(size);
     for (let i=0; i<size;) {
       var x = Math.random() * 4294967296;
       buf[i++] = (0xff & (x >> 24));
@@ -445,15 +445,13 @@ class Buf extends Obj {
     switch (algorithm)
     {
       case "MD5":
-        throw Err.make("TODO:MD5");
-        // digest = fan.sys.Buf_Md5(buf);  break;
+        digest = buf_md5(buf); break;
       case "SHA1":
       case "SHA-1":
         // fall-through
         digest = buf_sha1.digest(buf); break;
       case "SHA-256":
-        throw Err.make("TODO:SHA-256");
-        // digest = fan.sys.buf_sha256.digest(buf); break;
+        digest = buf_sha256.digest(buf); break;
       default: throw ArgErr.make("Unknown digest algorithm " + algorithm);
     }
     return MemBuf.__makeBytes(digest);
@@ -468,15 +466,13 @@ class Buf extends Obj {
     switch (algorithm)
     {
       case "MD5":
-        throw Err.make("TODO:MD5");
-        // digest = fan.sys.Buf_Md5(buf, key);  break;
+        digest = buf_md5(buf, key); break;
       case "SHA1":
       case "SHA-1":
         // fall thru
         digest = buf_sha1.digest(buf, key); break;
       case "SHA-256":
-        throw Err.make("TODO:SHA-256");
-        // digest = fan.sys.buf_sha256.digest(buf, key); break;
+        digest = buf_sha256.digest(buf, key); break;
       default: throw ArgErr.make("Unknown digest algorithm " + algorithm);
     }
     return MemBuf.__makeBytes(digest);
@@ -591,26 +587,22 @@ class Buf extends Obj {
 //////////////////////////////////////////////////////////////////////////
 
   static pbk(algorithm, password, salt, iterations, keyLen) {
-    throw Err.make("TODO:FIXIT");
-    /*
-    var digest = null;
-    var passBuf = fan.sys.Str.toBuf(password);
+    let digest = null;
+    const passBuf = Str.toBuf(password);
 
     // trim buf to content
-    passBytes = passBuf.m_buf.slice(0, passBuf.m_size);
-    saltBytes = salt.m_buf.slice(0, salt.m_size);
+    const passBytes = passBuf.__unsafeArray().slice(0, passBuf.size());
+    const saltBytes = salt.__unsafeArray().slice(0, salt.size());
 
-    switch(algorithm)
-    {
+    switch(algorithm) {
       case "PBKDF2WithHmacSHA1":
-        digest = fan.sys.buf_sha1.pbkdf2(passBytes, saltBytes, iterations, keyLen); break;
+        digest = buf_sha1.pbkdf2(passBytes, saltBytes, iterations, keyLen); break;
       case "PBKDF2WithHmacSHA256":
-        digest = fan.sys.buf_sha256.pbkdf2(passBytes, saltBytes, iterations, keyLen); break;
-      default: throw fan.sys.Err.make("Unsupported algorithm: " + algorithm);
+        digest = buf_sha256.pbkdf2(passBytes, saltBytes, iterations, keyLen); break;
+      default: throw Err.make("Unsupported algorithm: " + algorithm);
 
     }
-    return fan.sys.MemBuf.makeBytes(digest);
-    */
+    return MemBuf.__makeBytes(digest);
   }
 }
 

@@ -53,7 +53,6 @@ class BufCryptoTest : AbstractBufTest
     verifyBufEq(Buf.fromBase64(breaks.toStr), ascii(src))
   }
 
-/*
 //////////////////////////////////////////////////////////////////////////
 // Digest
 //////////////////////////////////////////////////////////////////////////
@@ -264,5 +263,4 @@ class BufCryptoTest : AbstractBufTest
     */
     verifyEq(actual, expected)
   }
-  */
 }
