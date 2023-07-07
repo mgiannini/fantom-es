@@ -92,9 +92,9 @@ fan.sys.Charset.iso8851_8 = function()
     try
     {
       switch(nname) {
-        case "UTF-8":      return fan.sys.Charset.utf8();
-        // case "UTF-16BE":   return fan.sys.Charset.utf16BE();
-        // case "UTF-16LE":   return fan.sys.Charset.utf16LE();
+        case "UTF-8":      return Charset.utf8();
+        case "UTF-16BE":   return Charset.utf16BE();
+        case "UTF-16LE":   return Charset.utf16LE();
         // case "ISO-8859-1": return fan.sys.Charset.iso8851_1();
         // case "ISO-8859-2": return fan.sys.Charset.iso8851_2();
         // case "ISO-8859-5": return fan.sys.Charset.iso8851_5();
@@ -134,7 +134,6 @@ class CharsetEncoder extends Obj {
   encodeIn(c, inStream) { throw UnsupportedErr.make(); }
   decode(inStream) { throw UnsupportedErr.make(); }
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 // Utf8

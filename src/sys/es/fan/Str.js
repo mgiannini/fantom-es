@@ -93,7 +93,7 @@ class Str extends Obj {
 
   static endsWith(self, test) { return self.endsWith(test); }
 
-  static contains = function(self, arg) { return self.indexOf(arg) != -1 }
+  static contains(self, arg) { return self.indexOf(arg) != -1 }
 
   static containsChar(self, arg) { return self.indexOf(Int.toChar(arg)) != -1 }
 
@@ -498,7 +498,7 @@ class Str extends Obj {
   static toInt(self, radix=10, checked=true) { return Int.fromStr(self, radix, checked); }
   static toDecimal(self, checked=true) { return Decimal.fromStr(self, checked); }
 
-  static in(self) { return InStream.__makeForStr(self); }
+  static in$(self) { return InStream.__makeForStr(self); }
   static toUri(self) { return Uri.fromStr(self); }
   static toRegex(self) { return Regex.fromStr(self); }
 

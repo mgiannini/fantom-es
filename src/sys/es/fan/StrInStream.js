@@ -34,6 +34,8 @@ class StrInStream extends InStream {
 // InStream
 //////////////////////////////////////////////////////////////////////////
 
+  __toCharInStream() { return this; }
+
   read() {
     const b = this.rChar$();
     return (b < 0) ? null : b & 0xFF;
@@ -52,7 +54,7 @@ class StrInStream extends InStream {
     return this.unreadChar(c);
   }
 
-  rChar$() {
+  __rChar() {
     if (this.#pushback != null && this.#pushback.length > 0)
       return this.#pushback.pop();
     if (this.#pos >= this.#size) return -1;
@@ -60,7 +62,7 @@ class StrInStream extends InStream {
   }
 
   readChar() {
-    const c = this.rChar$();
+    const c = this.__rChar();
     return (c < 0) ? null : c;
   }
 

@@ -42,12 +42,9 @@ class CompileEsPlugin : CompilerStep
 
   override Void run()
   {
-    log.info("CompileES: ${pod.name}")
-    log.info("${compiler.pod.depends}")
-
 try {
     JsPod(this).write
-echo(buf.toStr)
+// echo(buf.toStr)
     compiler.es = buf.toStr
 } catch (Err e) { echo(buf.toStr); throw e }
 
