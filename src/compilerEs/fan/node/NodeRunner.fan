@@ -248,7 +248,7 @@ echo(buf.flip.readAllStr)
     writeTzJs
 
     out := ms.file("fan").out
-    ["sys", "fan_mime",].each |m| { ms.writeInclude(out, "${m}.ext") }
+    ["sys", "fan_mime", "fan_units"].each |m| { ms.writeInclude(out, "${m}.ext") }
     out.printLine("export { sys };").flush.close
 
     // f := moduleDir.plus(`fan.js`)
@@ -339,7 +339,7 @@ echo(buf.flip.readAllStr)
     //   (moduleDir + `${tempPod}.${ext}`).out.writeChars(js).flush.close
 
     writeMimeJs
-    // writeUnitsJs
+    writeUnitsJs
 
     // // indexed-props
     // if (!isInit)
@@ -368,6 +368,14 @@ echo(buf.flip.readAllStr)
     {
       out.printLine("c(${ext.toCode},${mime.toCode});")
     }
+    out.flush.close
+  }
+
+  private Void writeUnitsJs()
+  {
+    out := ms.file("fan_units").out
+    ms.writeInclude(out, "sys.ext")
+    JsUnitDatabase().write(out)
     out.flush.close
   }
 
@@ -402,14 +410,6 @@ echo(buf.flip.readAllStr)
       }
     }
   }
-
-  // private Void writeUnitsJs()
-  // {
-  //   // units.js
-  //   out := (moduleDir + `units.js`).out
-  //   JsUnitDatabase().write(out)
-  //   out.flush.close
-  // }
 
   private Void writeTzJs()
   {

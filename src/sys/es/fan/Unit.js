@@ -69,7 +69,6 @@ class Unit extends Obj {
   static #units      = {}; // String name -> Unit
   static #dims       = {}; // Dimension -> Dimension
   static #quantities = {}; // String -> List
-  // TODO:FIXIT - need updates to JsUnitDatabase for adding quantity names
   static #quantityNames;
   static #dimensionless = new Dimension();
   static {
@@ -80,8 +79,6 @@ class Unit extends Obj {
   #dim;
   #scale;
   #offset;
-
-  
 
   static #checkIds(ids) {
     if (ids.size() == -1) throw ParseErr.make("No unit ids defined");
@@ -119,14 +116,18 @@ class Unit extends Obj {
   }
 
   static quantities() {
+    if (!Unit.#quantityNames) Unit.#quantityNames = List.make(Str.type$, []).toImmutable();
     return Unit.#quantityNames;
   }
-
   static quantity(quantity) {
     const list = Unit.#quantities[quantity];
     if (list == null) throw Err.make("Unknown unit database quantity: " + quantity);
     return list;
   }
+
+  /** internal support for installing quantities */
+  static __quantities(it) { Unit.#quantityNames = it.toImmutable(); }
+  static __quantityUnits(dim, units) { Unit.#quantities[dim] = units.toImmutable(); }
 
 //////////////////////////////////////////////////////////////////////////
 // Parsing
