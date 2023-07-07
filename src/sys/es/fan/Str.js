@@ -514,7 +514,7 @@ class Str extends Obj {
     return s;
   }
 
-  static toBuf(self, charset=Charset.utf()) {
+  static toBuf(self, charset=Charset.utf8()) {
     const buf = new MemBuf();
     buf.charset(charset);
     buf.print(self);
