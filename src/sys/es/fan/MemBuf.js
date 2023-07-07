@@ -82,58 +82,14 @@ class MemBuf extends Buf {
     this.data[pos] = x & 0xFF;
   }
 
+  /** Get a new Uint8Array slice of the bytes */
   __getBytes(pos, len) {
-    // TODO:FIXIT - should this return a new MemBuf instead of TypedArray?
     return this.data.slice(pos, pos+len);
   }
-/*
-
-//////////////////////////////////////////////////////////////////////////
-// Java IO Streams (Rhino)
-//////////////////////////////////////////////////////////////////////////
-
-fan.sys.MemBuf.prototype.pipeTo = function(dst, len)
-{
-  if (this.m_pos+len > this.m_size) throw fan.sys.IOErr.make("Not enough bytes to write");
-  var byteArray = this.cpMemToJavaBuffer(len)
-  dst.write(byteArray, 0, len);
-  this.m_pos += len;
-}
-
-fan.sys.MemBuf.prototype.pipeFrom = function(src, len)
-{
-  this.grow(this.m_pos + len);
-  var byteArray = new java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, len);
-  var read = src.read(byteArray, 0, len);
-   if (read < 0) return -1;
-  this.cpJavaBufferToMem(byteArray, read);
-  this.m_pos += read;
-  this.m_size = this.m_pos;
-  return read;
-}
-
-fan.sys.MemBuf.prototype.cpMemToJavaBuffer = function(len)
-{
-  var bytes = new java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, len);
-  for (var i=0; i<len; ++i)
-  {
-    var b = this.m_buf[this.m_pos+i];
-    if (b > 127) b |= 0xFFFFFF00;
-    bytes[i] = b;
-  }
-  return bytes;
-}
-
-fan.sys.MemBuf.prototype.cpJavaBufferToMem = function(bytes, len)
-{
-  for (var i=0; i<len; ++i)
-    this.m_buf[this.m_pos+i] = bytes[i] & 0xFF;
-}
 
 //////////////////////////////////////////////////////////////////////////
 // Buf API
 //////////////////////////////////////////////////////////////////////////
-*/
 
   capacity(it) {
     if (it === undefined) return this.data.length;

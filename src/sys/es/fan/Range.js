@@ -139,10 +139,9 @@ class Range extends Obj {
   }
 
   map(func) {
-    // TODO:FIXIT - how to handle return type for native js functiosn
-    // let r = func.returns();
-    // if (r === fan.sys.Void.type$) r = fan.sys.Obj.type$.toNullable();
-    let r = Obj.type$.toNullable();
+    let r = f.__returns;
+    if (r == null || r == Void.type$) r = Obj.type$.toNullable();
+
     const acc = List.make(r);
     let start = this.#start;
     let end   = this.#end;

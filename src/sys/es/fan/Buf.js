@@ -117,19 +117,15 @@ class Buf extends Obj {
     const n = (e - s + 1);
     if (n < 0) throw IndexErr.make(range);
 
-    // TODO:FIXIT - getBytes and MemBuf construction???
-    const slice = this.__getBytes(s, n);
-
+    const slice  = this.__getBytes(s, n);
     const result = new MemBuf(slice, n);
     result.charset(this.charset());
     return result;
   }
 
   dup() {
-    const size = this.size();
-    const copy = this.__getBytes(0, size);
-
-    // TODO:FIXIT MemBuf constructor
+    const size   = this.size();
+    const copy   = this.__getBytes(0, size);
     const result = new MemBuf(copy, size);
     result.charset(this.charset());
     return result;

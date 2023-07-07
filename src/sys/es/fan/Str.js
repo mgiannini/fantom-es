@@ -514,10 +514,7 @@ class Str extends Obj {
     return s;
   }
 
-  //TODO:FIXIT - default charset=utf8
-  static toBuf(self, charset) {
-    if (charset === undefined) charset = Charset.utf8();
-
+  static toBuf(self, charset=Charset.utf()) {
     const buf = new MemBuf();
     buf.charset(charset);
     buf.print(self);

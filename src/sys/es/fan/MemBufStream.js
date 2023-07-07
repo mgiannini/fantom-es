@@ -146,7 +146,6 @@ class MemBufInStream extends InStream {
     }
     else
     {
-      // throw Err.make("TODO:FIXIT - need to handle this case");
       if (this.buf.__size+1 >= this.buf.data.length) this.buf.grow(this.buf.__size+1);
       const temp = this.buf.data.slice(this.buf.__pos, this.buf.data.length - 1);
       this.buf.data[this.buf.__pos] = n;

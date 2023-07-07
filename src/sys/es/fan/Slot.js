@@ -140,7 +140,6 @@ class Slot extends Obj {
 // Util
 //////////////////////////////////////////////////////////////////////////
 
-  // TODO:FIXIT - do we still need this (if so internal names now end with $ instead of start with it)
   name$$(n) {
     // must keep in sync with compilerJs::JsNode
     switch (n)

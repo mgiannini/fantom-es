@@ -11,7 +11,6 @@
  * StrBufOutStream
  */
 class StrBufOutStream extends OutStream {
-  // TODO:FIXIT - do i need anything here after I emplement OutStream???
   constructor(buf) {
     super();
     this.#buf = buf;
