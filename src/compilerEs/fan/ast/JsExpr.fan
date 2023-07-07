@@ -405,7 +405,12 @@ class JsExpr : JsNode
 
     if (fe.isSafe)
     {
-      throw Err("TODO:FIXIT safe access - i have no idea how this code path triggers")
+      v := uniqName
+      plugin.thisName = "this\$"
+      js.w("((this\$) => { let ${v}=", loc)
+      writeTarget()
+      js.w("; return (${v}==null) ? null : ${v}", loc)
+      plugin.thisName = old
     }
     else
     {
@@ -434,7 +439,7 @@ class JsExpr : JsNode
       }
     }
 
-    if (fe.isSafe) throw Err("TODO:FIXIT finish safe access")
+    if (fe.isSafe) js.w("; })(${old})", loc)
   }
 
   private Void writeSetArg()

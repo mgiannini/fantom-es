@@ -48,7 +48,7 @@ enum class FutureState
 */
 
 
-
+/*
 @Js
 class MyBufTest : Test
 {
@@ -90,5 +90,35 @@ class MyBufTest : Test
 
   Void test()
   {
+  }
+}
+*/
+@Js class InfTest : Test
+{
+  Void testInference()
+  {
+    // verifyType([,],     Obj?[]#)
+    // verifyType(Obj?[,], Obj?[]#)
+    // verifyType(Obj[,],  Obj[]#)
+    // verifyType([null],  Obj?[]#)
+    // verifyType([null,null], Obj?[]#)
+    // verifyType([2,null],  Int?[]#)
+    // verifyType([null,2],  Int?[]#)
+    // verifyType([2,null,2f], Num?[]#)
+    // verifyType([null,3,2f], Num?[]#)
+
+    // // // expressions used to create list literal
+    [Str:Int]? x := null
+    // verifyType([this->toStr], Obj?[]#)
+    // verifyType([Pod.find("xxxx", false)], Pod?[]#)
+    // verifyType([this as Test], Test?[]#)
+    // verifyType([(Obj?)this ?: "foo"], Obj?[]#)
+    // verifyType([x?.toStr], Str?[]#)
+    verifyType([x?.def], Int?[]#)
+    // verifyType([x?.caseInsensitive], Bool?[]#)
+    // verifyType([x?->foo], Obj?[]#)
+    // verifyType([returnThis], ListTest[]#)
+    // verifyType([x == null ? "x" : null], Str?[]#)
+    // verifyType([x == null ? null : 4f], Float?[]#)
   }
 }
