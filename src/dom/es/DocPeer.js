@@ -51,8 +51,6 @@ class DocPeer extends sys.Obj {
       ? this.doc.createElementNS(ns.toStr, tagName)
       : this.doc.createElement(tagName);
     const wrap = ElemPeer.wrap(elem);
-    //TODO: don't think this was doing anything? there is no such field?
-    if (ns) wrap.m_ns = ns;
     if (attribs != null)
     {
       const k = attribs.keys();
@@ -152,7 +150,7 @@ class DocPeer extends sys.Obj {
   addCookie(self,c)
   {
     // always force HttpOnly otherwise this is a no-op for browsers
-    c.httpOnly(false)
+    c.__httpOnly(false)
     this.doc.cookie = c.toStr();
   }
 }

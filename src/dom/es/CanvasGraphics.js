@@ -69,8 +69,7 @@ class CanvasGraphics extends sys.Obj {
   #toStrokeDash(x)
   {
     if (x == null) return [];
-    //TODO: values is not a list method/no way to get back the list of values
-    return graphics.GeomUtil.parseFloatList(x).values();
+    return graphics.GeomUtil.parseFloatList(x).__values();
   }
 
   // Float alpha

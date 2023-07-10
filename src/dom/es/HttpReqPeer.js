@@ -77,8 +77,7 @@ class HttpReqPeer extends sys.Obj {
       if (!ct) xhr.setRequestHeader("Content-Type", "application/octet-stream");
       buf = new ArrayBuffer(content.size());
       view = new Uint8Array(buf);
-      //TODO: buf() does not exist
-      view.set(content.buf().slice(0, content.size()));
+      view.set(content.__unsafeArray().slice(0, content.size()));
       xhr.send(view);
     }
     else if (content instanceof DomFile)
