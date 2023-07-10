@@ -30,6 +30,11 @@ class TsDeclFile
 // Main writing method
 //////////////////////////////////////////////////////////////////////////
 
+  Void writePod(CPod pod)
+  {
+    throw Err("TODO:FIXIT - using cpod now ${pod}")
+  }
+/*
   Void writePod(Pod pod)
   {
     // Write dependencies
@@ -131,6 +136,8 @@ class TsDeclFile
       out.print("}\n")
     }
   }
+  */
+
 
 //////////////////////////////////////////////////////////////////////////
 // Utils

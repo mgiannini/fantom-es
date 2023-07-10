@@ -124,7 +124,8 @@ class NodeRunner
 
   private Void doTypeScript()
   {
-    pod := Pod.find(arg("ts"))
+    // pod := Pod.find(arg("ts"))
+    pod := ReflectNamespace().resolvePod(arg("ts"), null)
     buf := Buf()
     TsDeclFile(buf.out).writePod(pod)
 // TODO: where to write this?
