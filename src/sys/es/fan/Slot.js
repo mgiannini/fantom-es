@@ -78,7 +78,7 @@ class Slot extends Obj {
     {
       throw Err.make("Invalid slot qname \"" + qname + "\", use <pod>::<type>.<slot>");
     }
-    _type = Type.find(typeName, false);
+    let _type = Type.find(typeName, false);
     if (_type == null) console.log("Type not found: " + _type);
     const type = Type.find(typeName, checked);
     if (type == null) return null;

@@ -93,6 +93,7 @@ class MyBufTest : Test
   }
 }
 */
+/*
 @Js class InfTest : Test
 {
   Void testInference()
@@ -121,4 +122,11 @@ class MyBufTest : Test
     // verifyType([x == null ? "x" : null], Str?[]#)
     // verifyType([x == null ? null : 4f], Float?[]#)
   }
+}
+*/
+
+
+@Js facet class FacetS1
+{
+  const Str val := "alpha"
 }

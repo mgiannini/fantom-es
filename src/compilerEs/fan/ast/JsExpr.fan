@@ -553,7 +553,11 @@ internal class JsCallExpr : JsExpr
 
     if (ce.target != null)
     {
-      resolveType := |CType ctype->CType| { ctype is TypeRef ? ctype->t : ctype }
+      resolveType := |CType ctype->CType| {
+        t := ctype is TypeRef ? ctype->t : ctype
+        if (t is NullableType) t = t->root
+        return t
+      }
       this.targetType = ce.target.ctype == null ? this.parent : ce.target.ctype
       isFunc = resolveType(ce.target.ctype) is FuncType
     }

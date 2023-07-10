@@ -22,16 +22,13 @@ class Facet extends Obj {
 class Deprecated extends Obj {
   constructor(f=null) { 
     super(); 
-    this.#msg;
     if (f != null) f(this);
   }
 
   #msg;
 
-  msg(it=undefined) {
-    if (it === undefined) return this.#msg;
-    this.#msg = it;
-  }
+  msg() { return this.#msg; }
+  __msg(it) { this.#msg = it; }
 
   static make(f=null) { return new Deprecated(f); }
   
@@ -51,10 +48,8 @@ class FacetMeta extends Obj {
 
   #inherited;
 
-  inherited(it=undefined) {
-    if (it === undefined) return this.#inherited;
-    this.#inherited = it;
-  }
+  inherited() { return this.#inherited; }
+  __inherited(it) { this.#inherited = it; }
 
   static make(f=null) { return new FacetMeta(f); }
   
@@ -67,7 +62,11 @@ class FacetMeta extends Obj {
 
 class Js extends Obj {
   constructor() { super(); }
-  static defVal = new Js();
+  static #defVal;
+  static defVal() { 
+    if (!Js.#defVal) Js.#defVal = new Js();
+    return Js.#defVal;
+  }
   
   toStr() { return this.typeof$().qname(); }
 }
@@ -78,7 +77,11 @@ class Js extends Obj {
 
 class NoDoc extends Obj {
   constructor() { super(); }
-  static defVal = new NoDoc();
+  static #defVal;
+  static defVal() { 
+    if (!NoDoc.#defVal) NoDoc.#defVal = new NoDoc();
+    return NoDoc.#defVal;
+  }
   
   toStr() { return this.typeof$().qname(); }
 }
@@ -89,7 +92,11 @@ class NoDoc extends Obj {
 
 class Operator extends Obj {
   constructor() { super(); }
-  static defVal = new Operator();
+  static #defVal;
+  static defVal() {
+    if (!Operator.#defVal) Operator.#defVal = new Operator();
+    return Operator.#defVal;
+  }
   
   toStr() { return this.typeof$().qname(); }
 }
@@ -109,15 +116,11 @@ class Serializable extends Obj {
   #simple;
   #collection;
 
-  simple(it=undefined) {
-    if (it === undefined) return this.#simple;
-    this.#simple = it;
-  }
+  simple() { return this.#simple; }
+  __simple(it) { this.#simple = it; }
 
-  collection(it=undefined) {
-    if (it === undefined) return this.#collection;
-    this.#collection = it;
-  }
+  collection() { return this.#collection; }
+  __collection(it) { this.#collection = it; }
 
   static make(f=null) { return new Serializable(f); }
   
@@ -130,7 +133,11 @@ class Serializable extends Obj {
 
 class Transient extends Obj {
   constructor() { super(); }
-  static defVal = new Transient();
+  static #defVal;
+  static defVal() {
+    if (!Transient.#defVal) Transient.#defVal = new Transient();
+    return Transient.#defVal;
+  }
   
   toStr() { return this.typeof$().qname(); }
 }

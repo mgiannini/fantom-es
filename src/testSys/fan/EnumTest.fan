@@ -220,7 +220,7 @@ class EnumTest : Test
 }
 
 @Js
-internal enum class EnumAbc
+enum class EnumAbc
 {
   A, B, C
 
