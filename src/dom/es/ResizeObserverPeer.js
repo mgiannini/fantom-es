@@ -7,22 +7,18 @@
 //   10 Jun 2023 Kiera O'Flynn  Refactor to ES
 //
 
-// TODO: this needs to come before ResizeObserver is declared (?)
-let NativeResizeObserver = ResizeObserver;
-
 class ResizeObserverPeer extends sys.Obj {
 
   constructor(self)
   {
     super();
-    this.observer = new NativeResizeObserver(function(entries)
+    this.observer = new es.JsResizeObserver(function(entries)
     {
-      //TODO: private field?
-      if (self.m_callback != null)
+      if (self.callback() != null)
       {
         const list = ResizeObserverPeer.$makeEntryList(entries);
         const args = sys.List.make(sys.Obj.type$, [list]);
-        self.m_callback(args);
+        self.callback()(args);
       }
     });
   }
@@ -54,9 +50,9 @@ class ResizeObserverPeer extends sys.Obj {
 
   static $makeEntry(entry)
   {
-    const w  = entry.contentRect.width;
-    const h  = entry.contentRect.height;
-    const re = ResizeObserverEntry.make();
+    const w   = entry.contentRect.width;
+    const h   = entry.contentRect.height;
+    const re  = ResizeObserverEntry.make();
     re.target (ElemPeer.wrap(entry.target));
     re.size   (graphics.Size.make(w, h));
     return re;

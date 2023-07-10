@@ -367,7 +367,7 @@ class WinPeer extends sys.Obj {
   geoCurPosition(self, onSuccess, onErr, opts)
   {
     this.win.navigator.geolocation.getCurrentPosition(
-      function(p,ts) { onSuccess(DomCoordPeer.wrap(p,ts)); },
+      function(p) { onSuccess(DomCoordPeer.wrap(p)); },
       function(err)  { if (onErr) onErr(sys.Err.make(err.code + ": " + err.message)); },
       this.$geoOpts(opts));
   }
@@ -375,7 +375,7 @@ class WinPeer extends sys.Obj {
   geoWatchPosition(self, onSuccess, onErr, opts)
   {
     return this.win.navigator.geolocation.watchPosition(
-      function(p,ts) { onSuccess(DomCoordPeer.wrap(p,ts)); },
+      function(p) { onSuccess(DomCoordPeer.wrap(p)); },
       function(err)  { if (onErr) onErr(sys.Err.make(err.code + ": " + err.message)); },
       this.$geoOpts(opts));
   }
