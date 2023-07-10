@@ -22,9 +22,9 @@ class DomFilePeer extends sys.Obj {
   */
   static wrap(file)
   {
-    if (file == null) throw sys.ArgErr.make("file is null")
+    if (!file) throw sys.ArgErr.make("file is null")
 
-    if (file._fanFile != undefined)
+    if (file._fanFile)
       return file._fanFile;
 
     const x = DomFile.make();

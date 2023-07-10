@@ -19,7 +19,7 @@ class EventPeer extends sys.Obj {
 
   static makeMock()
   {
-    return EventPeer.make(new Event("mock"));
+    return EventPeer.make(new es.JsEvent("mock"));
   }
 
   static fromNative(obj)

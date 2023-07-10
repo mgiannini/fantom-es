@@ -16,7 +16,7 @@ class CanvasGraphicsPath extends sys.Obj {
   typeof$() { return CanvasGraphicsPath.type$; }
 
   // canvas context
-  cx = null;
+  cx;
 
   // This draw()
   draw()

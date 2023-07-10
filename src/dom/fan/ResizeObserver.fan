@@ -34,7 +34,8 @@ using web
     this.callback = callback
   }
 
-  private Func? callback
+  @NoDoc
+  internal Func? callback
 }
 
 *************************************************************************

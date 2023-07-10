@@ -56,10 +56,10 @@ class ElemPeer extends sys.Obj {
   }
 
   /*
-  * Native only method to wrap an existing DOM node.  If this node
-  * has already been wrapped by an Elem instance, return the
-  * existing instance.
-  */
+   * Native only method to wrap an existing DOM node.  If this node
+   * has already been wrapped by an Elem instance, return the
+   * existing instance.
+   */
   static wrap = function(elem, fanElem)
   {
     if (!elem) throw sys.ArgErr.make("elem is null")

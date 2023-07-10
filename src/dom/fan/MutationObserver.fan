@@ -39,7 +39,8 @@ class MutationObserver
   ** Disconnect this observer from receiving DOM mutation events.
   native This disconnect()
 
-  private Func? callback
+  @NoDoc
+  internal Func? callback
 }
 
 **************************************************************************

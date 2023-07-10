@@ -152,7 +152,6 @@ class DocPeer extends sys.Obj {
   addCookie(self,c)
   {
     // always force HttpOnly otherwise this is a no-op for browsers
-    //TODO: should this method exist? httpOnly is const
     c.httpOnly(false)
     this.doc.cookie = c.toStr();
   }
