@@ -7,6 +7,7 @@
 //
 
 using compilerJs
+using concurrent
 using util
 using web
 using wisp
@@ -19,12 +20,18 @@ class Main : AbstractMain
   @Opt { help = "apply sample css" }
   Bool css := false
 
+  @Opt { help = "use es javascript" }
+  Bool es := false
+
   override Int run()
   {
+    // set javascript mode for file packing
+    FilePack.es.val = this.es
+
     wisp := WispService
     {
       it.httpPort = this.port
-      it.root = DomkitTestMod { it.useSampleCss=css }
+      it.root = DomkitTestMod { it.useSampleCss=css; it.es = this.es }
     }
     return runServices([wisp])
   }
@@ -36,11 +43,23 @@ const class DomkitTestMod : WebMod
   {
     f(this)
     pods := [typeof.pod]
-    this.jsPack  = FilePack(FilePack.toAppJsFiles(pods))
+    appJsFiles  := FilePack.toAppJsFiles(pods)
+    this.jsPack  = FilePack(appJsFiles)
     this.cssPack = FilePack(FilePack.toAppCssFiles(pods))
+
+    map := [Str:FilePack][:] { ordered = true }
+    appJsFiles.each |js| { map[js.name] = FilePack([js]) }
+    this.jsToPackRef.val = map.toImmutable
   }
 
+  const Log log := Log.get("filepack")
+
+  const Bool es := false
+
   const Bool useSampleCss := false
+
+  [Str:FilePack] jsToPack() { jsToPackRef.val }
+  private const AtomicRef jsToPackRef := AtomicRef()
 
   const FilePack jsPack
 
@@ -51,14 +70,20 @@ const class DomkitTestMod : WebMod
     n := req.modRel.path.first
     switch (n)
     {
-      case null:       onIndex
-      case "test":     onTest
-      case "app.js":   jsPack.onService
-      case "app.css":  cssPack.onService
-      case "pod":      onPod
-      case "form":     onForm
-      default:         res.sendErr(404)
+      case null:       return onIndex
+      case "test":     return onTest
+      case "app.js":   return jsPack.onService
+      case "app.css":  return cssPack.onService
+      case "pod":      return onPod
+      case "form":     return onForm
     }
+    log.info("onService ${req} ${req.modRel} ${n}")
+    if (es)
+    {
+      pack := jsToPack[n]
+      if (pack != null) return pack.onService
+    }
+    res.sendErr(404)
   }
 
   Void onIndex()
@@ -92,6 +117,7 @@ const class DomkitTestMod : WebMod
     env := Str:Str[:]
     env["main"] = "testDomkit::DomkitTest"
     env["ui.test.qname"] = type.qname
+    if (es) env["es"] = "true"
 
     res.headers["Content-Type"] = "text/html; charset=utf-8"
     out := res.out
@@ -101,7 +127,7 @@ const class DomkitTestMod : WebMod
       .title.w("Domkit Test").titleEnd
       .initJs(env)
       .includeCss(`/app.css`)
-      .includeJs(`/app.js`)
+      // .includeJs(`/app.js`)
       .style.w(
        "html { height: 100%; }
         body {
@@ -117,6 +143,16 @@ const class DomkitTestMod : WebMod
       .styleEnd
 
       if (useSampleCss) out.style.w(sampleCss).styleEnd
+
+
+    if (es)
+    {
+      jsToPack.keys.each |js|
+      {
+        out.tag("script", "type='module' src='/${js.toXml}'").tagEnd("script").nl
+      }
+    }
+    else out.includeJs(`/app.js`)
 
     out.headEnd
 

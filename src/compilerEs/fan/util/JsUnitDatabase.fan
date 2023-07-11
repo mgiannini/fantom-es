@@ -12,8 +12,14 @@
 **
 class JsUnitDatabase
 {
+  new make(ModuleSystem ms) { this.ms = ms }
+
+  private ModuleSystem ms;
+
   Void write(OutStream out)
   {
+    ms.writeInclude(out, "sys.ext")
+
     // open etc/sys/units.txt
     in := Env.cur.findFile(`etc/sys/units.txt`).in
     out.printLine("const qn=sys.List.make(sys.Str.type\$,[]);")

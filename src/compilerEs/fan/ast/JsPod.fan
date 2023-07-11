@@ -35,7 +35,7 @@ class JsPod : JsNode
   private PodDef pod
   private JsType[] types := [,]
   private [Str:File] natives := [:]
-
+  private [Str:Bool] peers := [:]{ it.def = false }
 
 //////////////////////////////////////////////////////////////////////////
 // JsPod
@@ -59,7 +59,21 @@ class JsPod : JsNode
     pod.depends.each |depend|
     {
       // NOTE if we change sys to fan we need to update JNode.qnameToJs
-      js.wl("import * as ${depend.name} from './${depend.name}.js';")
+      // js.wl("import * as ${depend.name} from './${depend.name}.js';")
+      if (Pod.find(depend.name).file(`/esm/${depend.name}.js`, false) != null)
+        js.wl("import * as ${depend.name} from './${depend.name}.js';")
+      else
+      {
+        // TODO: FIXIT - non-js dependencies that will only be there in node env
+        // but not the browser. Maybe the browser should return empty export in
+        // this case? or we could put a comment on the same line that we
+        // could search for and strip out before serving the js in the browser.
+        // js.wl("let ${depend.name};")
+        // await import('./esm/testSys.js').then(obj => testSys = obj).catch(err => {});
+        // js.wl("await import('./${depend.name}.js').then(obj => ${depend.name}=obj).catch(err => {});")
+      }
+
+
       // if (depend.name == "sys")
       //   js.wl("import * as fan from './sys.js';")
       // else
@@ -86,7 +100,13 @@ class JsPod : JsNode
 
   private Void writePeer(JsType t, CType? peer)
   {
-    key  := peer == null ? "${t.name}.js" : "${peer.name}Peer.js"
+    key := "${t.name}.js"
+    if (peer != null)
+    {
+      key = "${peer.name}Peer.js"
+      this.peers[t.name] = true
+    }
+
     file := natives[key]
     if (file == null)
     {
@@ -190,7 +210,10 @@ class JsPod : JsNode
   {
     js.wl("export {")
     // only export public types
-    types.findAll { it.def.isPublic }.each |t| { js.wl("${t.name},") }
+    types.findAll { it.def.isPublic }.each |t| {
+      js.wl("${t.name},")
+      if (this.peers[t.name]) js.wl("${t.peer.name}Peer,")
+    }
     js.wl("};")
   }
 

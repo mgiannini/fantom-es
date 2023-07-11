@@ -22,13 +22,31 @@ class Env extends Obj {
     this.#index = Map.make(Str.type$, new ListType(Str.type$)).toImmutable();
     this.#vars = Map.make(Str.type$, Str.type$);
     this.#props = Map.make(Str.type$, Str.type$);
-    // TODO: FIXIT 
+
+    if (typeof fan$env !== 'undefined') { this.__loadVars(fan$env); }
+
+    // TODO:FIXIT - pod props map, keyed by pod.name
+    // TODO:FIXIT - user?
+
+    this.#out = new ConsoleOutStream();
+  }
+
+  __loadVars(env) {
+    if (!env) return
+    const keys = Object.keys(env)
+    for (let i=0; i<keys.length; ++i) {
+      const k = keys[i];
+      const v = env[k];
+      this.#vars.set(k, v);
+    }
+    this.#vars = this.#vars.toImmutable();
   }
 
   #args;
   #index;
   #vars;
-  #props
+  #props;
+  #out;
   __homeDir;
   __workDir;
   __tempDir;
@@ -45,7 +63,7 @@ class Env extends Obj {
   static configProps() { return Uri.fromStr("config.props"); }
   static localeEnProps() { return Uri.fromStr("locale/en.props"); }
 
-  static invokeMain$(qname) {
+  static __invokeMain(qname) {
     // resolve qname to method
     const dot = qname.indexOf('.');
     if (dot < 0) qname += '.main';
@@ -108,7 +126,9 @@ class Env extends Obj {
 
   user() { return "unknown"; }
 
-  // TODO: FIXIT
+  out() { return this.#out; }
+
+  // TODO: FIXIT - prompt
 
   homeDir() { return this.__homeDir; }
 

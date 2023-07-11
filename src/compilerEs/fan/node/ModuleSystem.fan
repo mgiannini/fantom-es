@@ -6,7 +6,10 @@
 //   02 May 2023  Matthew Giannini  Creation
 //
 
-abstract class ModuleSystem
+**
+** ModuleSystem
+**
+abstract const class ModuleSystem
 {
   new make(File nodeDir)
   {
@@ -40,7 +43,11 @@ abstract class ModuleSystem
   protected abstract OutStream doWriteInclude(OutStream out, Str module, Str path)
 }
 
-class CommonJs : ModuleSystem
+**************************************************************************
+** CommonJs
+**************************************************************************
+
+const class CommonJs : ModuleSystem
 {
   new make(File nodeDir) : super(nodeDir)
   {
@@ -61,7 +68,11 @@ class CommonJs : ModuleSystem
   }
 }
 
-class Esm : ModuleSystem
+**************************************************************************
+** Esm
+**************************************************************************
+
+const class Esm : ModuleSystem
 {
   new make(File nodeDir) : super(nodeDir)
   {

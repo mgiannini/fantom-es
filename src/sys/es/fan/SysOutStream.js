@@ -106,30 +106,24 @@ fan.sys.SysOutStream.prototype.$ctor = function(out)
  * ConsoleOutStream
  ************************************************************************/
 
-/*
-fan.sys.ConsoleOutStream = fan.sys.Obj.$extend(fan.sys.OutStream);
-fan.sys.ConsoleOutStream.prototype.$ctor = function()
-{
-  fan.sys.OutStream.prototype.$ctor.call(this);
-  this.m_buf = "";
+class ConsoleOutStream extends OutStream {
+  constructor() { 
+    super(); 
+  }
+  #buf = "";
+  writeChar(c) {
+    if (c == 10) this.flush();
+    else this.#buf += String.fromCharCode(c);
+  }
+  write(v) {
+    if (v == 10) this.flush();
+    else this.#buf += String.fromCharCode(v)
+  }
+  flush() {
+    if (this.#buf.length > 0 && console) console.log(this.#buf);
+    this.#buf = "";
+  }
 }
-fan.sys.ConsoleOutStream.prototype.$typeof = function() { return fan.sys.SysOutStream.$type; }
-fan.sys.ConsoleOutStream.prototype.writeChar = function(c)
-{
-  if (c == 10) this.flush();
-  else this.m_buf += String.fromCharCode(c);
-}
-fan.sys.ConsoleOutStream.prototype.write = function(v)
-{
-  if (v == 10) this.flush();
-  else this.m_buf += String.fromCharCode(v)
-}
-fan.sys.ConsoleOutStream.prototype.flush = function()
-{
-  if (this.m_buf.length > 0 && console) console.log(this.m_buf);
-  this.m_buf = "";
-}
-*/
 
 /*************************************************************************
  * LocalFileOutStream

@@ -119,6 +119,7 @@ class Build : BuildScript
     tempDir.create
     // for now always use js ext regardless of format
     this.out = tempDir.createFile("${format}/sys.js").out
+    out.printLine("import * as es6 from './es6.js';")
   }
 
   private Void resolveSysTypes()

@@ -357,29 +357,21 @@ echo(buf.flip.readAllStr)
   private Void writeEs6()
   {
     out := ms.file("es6").out
-    out.printLine("const JsDate = Date;")
-    out.printLine("const JsMap = Map;")
-    ms.writeExports(out, ["JsDate", "JsMap"]).flush.close
+    JsAliases(ms).write(out)
+    out.flush.close
   }
 
   private Void writeMimeJs()
   {
-    props := Env.cur.findFile(`etc/sys/ext2mime.props`).readProps
-    out   := ms.file("fan_mime").out
-    ms.writeInclude(out, "sys.ext")
-    out.printLine("const c=sys.MimeType.__cache;")
-    props.each |mime, ext|
-    {
-      out.printLine("c(${ext.toCode},${mime.toCode});")
-    }
+    out := ms.file("fan_mime").out
+    JsExtToMime(ms).write(out)
     out.flush.close
   }
 
   private Void writeUnitsJs()
   {
     out := ms.file("fan_units").out
-    ms.writeInclude(out, "sys.ext")
-    JsUnitDatabase().write(out)
+    JsUnitDatabase(ms).write(out)
     out.flush.close
   }
 
@@ -405,7 +397,8 @@ echo(buf.flip.readAllStr)
         if (pod.name == "sys")
         {
           out := target.out
-          ms.writeInclude(out, "es6.ext")
+          // this is currently being written by sys/es/build.fan
+          // ms.writeInclude(out, "es6.ext")
           ms.writeInclude(out, "node.ext")
           file.in.pipe(out)
           out.flush.close
@@ -460,6 +453,10 @@ echo(buf.flip.readAllStr)
 
 }
 
+**************************************************************************
+** Digraph Node
+**************************************************************************
+
 internal class DigraphNode
 {
   new make(Pod pod) { this.pod = pod }
@@ -479,4 +476,22 @@ internal class DigraphNode
   }
   Int numIn() { in.size }
   Int numOut() { out.size }
+}
+
+**************************************************************************
+** JsAliases
+**************************************************************************
+
+class JsAliases
+{
+  new make(ModuleSystem ms) { this.ms = ms }
+  private ModuleSystem ms
+  Void write(OutStream out)
+  {
+    out.printLine("const JsDate = Date;")
+    out.printLine("const JsMap = Map;")
+    out.printLine("const JsEvent = (typeof Event !== 'undefined') ? Event : null;")
+    out.printLine("const JsResizeObserver = (typeof ResizeObserver !== 'undefined') ? ResizeObserver : null;")
+    ms.writeExports(out, ["JsDate", "JsMap", "JsEvent", "JsResizeObserver"])
+  }
 }

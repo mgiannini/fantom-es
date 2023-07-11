@@ -60,6 +60,8 @@ const class FilePack : Weblet
 // Identity (NoDoc fields subject to change)
 //////////////////////////////////////////////////////////////////////////
 
+  @NoDoc static const AtomicBool es := AtomicBool(false)
+
   ** The in-memory file contents in GZIP encoding
   @NoDoc const Buf buf
 
@@ -149,6 +151,7 @@ const class FilePack : Weblet
     pods = Pod.orderByDepends(pods)
     files := toPodJsFiles(pods)
     files.insertAll(1, toEtcJsFiles)
+    if (FilePack.es.val) files.insert(0, toJsFile("JsAliases", `es6.js`))
     return files
   }
 
@@ -156,7 +159,8 @@ const class FilePack : Weblet
   ** standard location used by the Fantom JS compiler is "/{pod-name}.js"
   static File? toPodJsFile(Pod pod)
   {
-    pod.file(`/${pod.name}.js`, false)
+    uri := (FilePack.es.val ? `/esm/` : `/`).plus(`${pod.name}.js`)
+    return pod.file(uri, false)
   }
 
   ** Map a set of pods to "/{name}.js" JavaScript files.
@@ -180,26 +184,31 @@ const class FilePack : Weblet
   **  - add `toIndexPropsJsFile`
   static File[] toEtcJsFiles()
   {
-    [toMimeJsFile, toUnitsJsFile, toIndexPropsJsFile]
+    FilePack.es.val
+      ? [toMimeJsFile, toUnitsJsFile]
+      : [toMimeJsFile, toUnitsJsFile, toIndexPropsJsFile]
+  }
+
+  @NoDoc static Obj moduleSystem()
+  {
+    Type.find("compilerEs::Esm").make([Env.cur.tempDir.plus(`file_pack/`)])
+  }
+
+  private static File toJsFile(Str cname, Uri fname)
+  {
+    buf := Buf(4096)
+    c := FilePack.es.val
+      ? Type.find("compilerEs::${cname}").make([moduleSystem])
+      : Type.find("compilerJs::${cname}").make
+    c->write(buf.out)
+    return buf.toFile(fname)
   }
 
   ** Compile the mime type database into a Javascript file "mime.js"
-  static File toMimeJsFile()
-  {
-    buf := Buf(4096)
-    c := Type.find("compilerJs::JsExtToMime").make
-    c->write(buf.out)
-    return buf.toFile(`mime.js`)
-  }
+  static File toMimeJsFile() { toJsFile("JsExtToMime", `mime.js`) }
 
   ** Compile the unit database into a JavaScript file "unit.js"
-  static File toUnitsJsFile()
-  {
-    buf := Buf(50_000)
-    c := Type.find("compilerJs::JsUnitDatabase").make
-    c->write(buf.out)
-    return buf.toFile(`units.js`)
-  }
+  static File toUnitsJsFile() { toJsFile("JsUnitDatabase", `units.js`) }
 
   ** Compile the timezone database into a JavaScript file "tz.js"
   @Deprecated { msg="tz.js is now included by default in sys.js" }

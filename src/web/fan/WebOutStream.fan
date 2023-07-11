@@ -224,10 +224,14 @@ class WebOutStream : OutStream
   **
   This initJs(Str:Str env)
   {
-    w("<script type='text/javascript'>").nl
+    es := env["es"] != null
+    if (es)
+      w("<script type='module'>").nl
+    else
+      w("<script type='text/javascript'>").nl
 
     // init Env.vars to pickup in Env.$ctor
-    w("var fan\$env = {").nl
+    w("const fan\$env = {").nl
     env.keys.each |n,i|
     {
       v := env[n]
@@ -241,9 +245,21 @@ class WebOutStream : OutStream
     main := env["main"]
     if (main != null)
     {
-      w("window.addEventListener('load', function() {
-           fan.sys.Env.\$invokeMain('${main}');
-         }, false);").nl
+      if (es)
+      {
+        w("import { Env } from '/sys.js';").nl
+        w("Env.cur().__loadVars(fan\$env);").nl
+        w("window.addEventListener('load', function() {
+             Env.__invokeMain('${main}');
+           }, false);").nl
+      }
+      else
+      {
+        w("window.addEventListener('load', function() {
+             fan.sys.Env.\$invokeMain('${main}');
+           }, false);").nl
+      }
+
     }
 
     w("</script>").nl
