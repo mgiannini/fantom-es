@@ -42,6 +42,8 @@ class CompileEsPlugin : CompilerStep
 
   override Void run()
   {
+    if (pod.name.contains("fwt")) return
+
 try {
     JsPod(this).write
 // echo(buf.toStr)
