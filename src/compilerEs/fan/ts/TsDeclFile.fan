@@ -7,7 +7,7 @@
 //
 
 using compiler
-using fandoc
+// using fandoc
 
 **
 ** Generate the TypeScript declaration file for a pod
@@ -17,13 +17,13 @@ class TsDeclFile
   new make(OutStream out)
   {
     this.out = out
-    docParser = FandocParser()
-    docWriter = TsDocWriter(out)
+    // docParser = FandocParser()
+    // docWriter = TsDocWriter(out)
   }
 
   private OutStream out
-  private FandocParser docParser
-  private TsDocWriter docWriter
+  // private FandocParser docParser
+  // private TsDocWriter docWriter
   private Type jsFacet := Type.find("sys::Js")
 
 //////////////////////////////////////////////////////////////////////////
@@ -237,16 +237,16 @@ class TsDeclFile
 
   private Void setupDoc(Str pod, Str type)
   {
-    docWriter.pod = pod
-    docWriter.type = type
+    // docWriter.pod = pod
+    // docWriter.type = type
   }
 
   private Void printDoc(Str? doc, Int indent)
   {
     if (doc == null || doc == "") return
 
-    docWriter.indent = indent
-    docParser.parse("Doc", doc.in).write(docWriter)
+    // docWriter.indent = indent
+    // docParser.parse("Doc", doc.in).write(docWriter)
   }
 
   private const Str:Str pmap :=
