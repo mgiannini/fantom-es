@@ -134,7 +134,7 @@ class Test extends Obj {
     }
     catch (err)
     {
-      const e = fan.sys.Err.make(err);
+      const e = Err.make(err);
       if (e.typeof$() != errType) {
         print("  verifyErrMsg: " + e + "\n");
         this.fail(e.typeof$() + " thrown, expected " + errType);

@@ -40,7 +40,7 @@ class Int extends Num {
       throw new Error("Unsupported radix " + radix);
     }
     catch (err) {
-      if (checked) throw ParseErr.make("Int", s, null, err);
+      if (checked) throw ParseErr.make(`Invalid Int: '${s}'`, s, null, err);
       return null;
     }
   }
@@ -187,9 +187,10 @@ static shifta(a, b) { let x = a >> b; return x; }
       return false;
     }
     if (radix <= 10) return 48 <= self && self <= (48+radix);
-    var x = self-10;
-    if (97 <= self && self <= 97+x) return true;
-    if (65 <= self && self <= 65+x) return true;
+    if ((Int.charMap[self] & Int.DIGIT) != 0) return true;
+    const x = radix-10;
+    if (97 <= self && self < 97+x) return true;
+    if (65 <= self && self < 65+x) return true;
     return false;
   }
 
@@ -213,7 +214,11 @@ static shifta(a, b) { let x = a >> b; return x; }
     return null;
   }
 
-  static equalsIgnoreCase(self, ch) { return (self|0x20) == (ch|0x20); }
+  static equalsIgnoreCase(self, ch) { 
+    if (65 <= self && self <= 90) self |= 0x20;
+    if (65 <= ch   && ch   <= 90) ch   |= 0x20;
+    return self == ch;
+  }
 
 /////////////////////////////////////////////////////////////////////////
 // Locale
@@ -302,7 +307,7 @@ static shifta(a, b) { let x = a >> b; return x; }
 
   static toRadix(self, radix=10, width=null) {
     // convert to hex string
-    const s = self.toString(radix);
+    let s = self.toString(radix);
 
     // pad width
     if (width != null && s.length < width) {

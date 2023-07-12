@@ -80,9 +80,8 @@ class Method extends Slot {
     if (func == null && instance != null) {
       // Obj maps to ObjUtil
       let type = this.parent().name$();
-      if (this.parent().qname() === "sys::Obj") type = "Obj"
-
-      func = ns[type][this.#name$];
+      if (this.parent().qname() === "sys::Obj") func = ObjUtil[this.#name$];
+      else func = ns[type][this.#name$];
       vals.splice(0, 0, instance);
       instance = null;
     }
