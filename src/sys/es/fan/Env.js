@@ -21,9 +21,11 @@ class Env extends Obj {
     this.#args = List.make(Str.type$).toImmutable();
     this.#index = Map.make(Str.type$, new ListType(Str.type$)).toImmutable();
     this.#vars = Map.make(Str.type$, Str.type$);
+    this.#vars.caseInsensitive(true);
     this.#props = Map.make(Str.type$, Str.type$);
 
-    if (typeof fan$env !== 'undefined') { this.__loadVars(fan$env); }
+    const vars = typeof fan$env === 'undefined' ? {} : fan$env;
+    this.__loadVars(vars);
 
     // TODO:FIXIT - pod props map, keyed by pod.name
     // TODO:FIXIT - user?
@@ -34,6 +36,13 @@ class Env extends Obj {
   __loadVars(env) {
     if (!env) return
     const keys = Object.keys(env)
+
+    // set some pre-defined vars
+    if (Env.__isNode()) {
+      this.#vars.set("os.name", this.os());
+      this.#vars.set("os.version", Env.__node().os.version());
+    }
+
     for (let i=0; i<keys.length; ++i) {
       const k = keys[i];
       const v = env[k];
@@ -114,6 +123,11 @@ class Env extends Obj {
 
   // TODO: FIXIT
 
+  idHash(obj) {
+    if (!obj) return 0;
+    return ObjUtil.hash(obj);
+  }
+
 //////////////////////////////////////////////////////////////////////////
 // Virtuals
 //////////////////////////////////////////////////////////////////////////
@@ -123,6 +137,8 @@ class Env extends Obj {
   vars() { return this.#vars; }
 
   diagnostics() { return Map.make(Str.type$, Obj.type$); }
+
+  host() { return Env.__node().os.hostname(); }
 
   user() { return "unknown"; }
 
@@ -135,6 +151,12 @@ class Env extends Obj {
   workDir() { return this.__workDir; }
   
   tempDir() { return this.__tempDir; }
+
+//////////////////////////////////////////////////////////////////////////
+// Resolution
+//////////////////////////////////////////////////////////////////////////
+
+  path() { return List.make(File.type$, [this.workDir()]).toImmutable(); }
 
 //////////////////////////////////////////////////////////////////////////
 // State
@@ -192,4 +214,13 @@ class Env extends Obj {
   // Internal compiler hook for setting properties
   __props(key, m) { this.#props.add(key, m.toImmutable()); }
 
+//////////////////////////////////////////////////////////////////////////
+// Exiting and Shutdown Hooks
+//////////////////////////////////////////////////////////////////////////
+
+  exit(status=0) { process.exit(status); }
+
+  addShutdownHook(f) { }
+
+  removeShutdownHook(f) { }
 }

@@ -123,7 +123,8 @@ class LocalFile extends File {
   normalize() {
     const url  = node.url;
     const path = node.path;
-    const href = url.pathToFileURL(path.resolve(this.#node_os_path)).href;
+    let href = url.pathToFileURL(path.resolve(this.#node_os_path)).href;
+    if (this.__isDirectory()) href += "/";
     const uri  = Uri.fromStr(href);
     return LocalFile.make(uri);
   }

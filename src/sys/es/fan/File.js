@@ -334,7 +334,10 @@ class File extends Obj {
 
   readProps() { return this.in$(Int.__chunk).readProps(); }
 
-  writeProps(props) { this.out(false, Int.__chunk).writeProps(props, true); }
+  writeProps(props) { 
+    this.create();
+    this.out(false, Int.__chunk).writeProps(props, true); 
+  }
 
   readObj(options=null) {
     const ins = this.in$();
