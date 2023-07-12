@@ -29,8 +29,8 @@ class Num extends Obj {
   static toFloat(val) { return Float.make(val.valueOf()); }
   static toInt(val) {
     if (isNaN(val)) return 0;
-    if (val == Number.POSITIVE_INFINITY) return Int.maxVal;
-    if (val == Number.NEGATIVE_INFINITY) return Int.minVal;
+    if (val == Number.POSITIVE_INFINITY) return Int.maxVal();
+    if (val == Number.NEGATIVE_INFINITY) return Int.minVal();
     if (val < 0) return Math.ceil(val);
     return Math.floor(val);
   }

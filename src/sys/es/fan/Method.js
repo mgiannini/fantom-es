@@ -63,8 +63,8 @@ class Method extends Slot {
 
   invoke(instance=null, args=null) {
     let func = null;
+    const ns = Type.$registry[this.parent().pod().name$()];
     if (this.isCtor() || this.isStatic()) {
-      const ns = Type.$registry[this.parent().pod().name$()];
       const js = ns != null ? ns[this.parent().name$()] : null;
       if (js != null) func = js[this.#name$];
     } 
@@ -79,12 +79,10 @@ class Method extends Slot {
     // to map into a static call
     if (func == null && instance != null) {
       // Obj maps to ObjUtil
-      let qname = this.#qname$;
-      if (this.parent().qname() === "sys::Obj")
-        qname = `ObjUtil.${this.#name$}`
+      let type = this.parent().name$();
+      if (this.parent().qname() === "sys::Obj") type = "Obj"
 
-// TODO:FIXIT we need to remove use of eval if at all possible
-      func = eval(qname);
+      func = ns[type][this.#name$];
       vals.splice(0, 0, instance);
       instance = null;
     }

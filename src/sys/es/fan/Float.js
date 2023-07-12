@@ -22,8 +22,8 @@ class Float extends Num {
   static posInf() { return Float.make(Number.POSITIVE_INFINITY); }
   static negInf() { return Float.make(Number.NEGATIVE_INFINITY); }
   static nan() { return Float.make(Number.NaN); }
-  static e() { return Math.e; }
-  static pi() { return Math.pi; }
+  static e() { return Math.E; }
+  static pi() { return Math.PI; }
 
   static #defVal = undefined
   static defVal() {
@@ -178,9 +178,9 @@ class Float extends Num {
 //////////////////////////////////////////////////////////////////////////
 
   static fromStr(s, checked=true) {
-    if (s == "NaN") return Float.nan;
-    if (s == "INF") return Float.posInf;
-    if (s == "-INF") return Float.negInf;
+    if (s == "NaN") return Float.nan();
+    if (s == "INF") return Float.posInf();
+    if (s == "-INF") return Float.negInf();
     if (isNaN(s))
     {
       if (!checked) return null;
@@ -192,22 +192,22 @@ class Float extends Num {
   static toStr(self) {
     if (isNaN(self)) return "NaN";
     if (Float.isNegZero(self)) return "-0.0";
-    if (self == Float.posInf) return "INF";
-    if (self == Float.negInf) return "-INF";
+    if (self == Number.POSITIVE_INFINITY) return "INF";
+    if (self == Number.NEGATIVE_INFINITY) return "-INF";
     return (Float.toInt(self) == self) ? self.toFixed(1) : ""+self;
   }
 
   static encode(self, out) {
     if (isNaN(self)) out.w("sys::Float(\"NaN\")");
-    else if (self == Float.posInf) out.w("sys::Float(\"INF\")");
-    else if (self == Float.negInf) out.w("sys::Float(\"-INF\")");
+    else if (self == Number.POSITIVE_INFINITY) out.w("sys::Float(\"INF\")");
+    else if (self == Number.NEGATIVE_INFINITY) out.w("sys::Float(\"-INF\")");
     else out.w(""+self).w("f");
   }
 
   static toCode(self) {
     if (isNaN(self)) return "Float.nan";
-    if (self == Float.posInf) return "Float.posInf";
-    if (self == Float.negInf) return "Float.negInf";
+    if (self == Number.POSITIVE_INFINITY) return "Float.posInf";
+    if (self == Number.NEGATIVE_INFINITY) return "Float.negInf";
     var s = ""+self
     if (s.indexOf(".") == -1) s += ".0";
     return s + "f";
