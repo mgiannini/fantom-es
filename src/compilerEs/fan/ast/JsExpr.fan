@@ -388,6 +388,7 @@ class JsExpr : JsNode
     useAccessor := fe.useAccessor
 
     // use accessor if referring to an enum
+if (plugin.curMethod == null) throw Err("curMethod is null")
     if (fe.field.isEnum) useAccessor = true
     // use the accessor for static fields unless we are in the static initializer;
     // in which case we need to access the private fields directly to initialize them.
@@ -504,7 +505,13 @@ class JsExpr : JsNode
 
   // TODO:FIXIT:MAYBE - this might need to reference the prototype
   // See compilerJs implementation
-  private Void writeSuperExpr(SuperExpr se) { js.w("super", loc) }
+  private Void writeSuperExpr(SuperExpr se)
+  {
+// echo("${se} explicitType=${se.explicitType} ctype=${se.ctype}")
+    // js.w("super", loc)
+    t := se.explicitType ?: se.ctype
+    js.w("${qnameToJs(t)}.prototype", loc)
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // It

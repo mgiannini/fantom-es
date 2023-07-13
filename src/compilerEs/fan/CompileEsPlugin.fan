@@ -36,6 +36,10 @@ class CompileEsPlugin : CompilerStep
   ** The variable name that refers to "this" in the current method context
   Str thisName := "this"
 
+  ** next unique id
+  private Int uid := 0
+  Int nextUid(){ uid++; }
+
 //////////////////////////////////////////////////////////////////////////
 // Pipeline
 //////////////////////////////////////////////////////////////////////////

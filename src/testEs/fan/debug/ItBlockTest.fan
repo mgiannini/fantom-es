@@ -126,7 +126,9 @@ class MyBufTest : Test
 */
 
 
+/*
 @Js facet class FacetS1
 {
   const Str val := "alpha"
 }
+*/

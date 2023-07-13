@@ -144,20 +144,21 @@ class Slot extends Obj {
     // must keep in sync with compilerJs::JsNode
     switch (n)
     {
-      case "char":   return "char$";
-      case "delete": return "delete$";
-      case "enum":   return "enum$";
-      case "export": return "export$";
-      case "fan":    return "fan$";
-      case "float":  return "float$";
-      case "import": return "import$";
-      case "in":     return "in$";
-      case "int":    return "int$";
-      case "name":   return "name$";
-      case "self":   return "self$";
-      case "typeof": return "typeof$";
-      case "var":    return "var$";
-      case "with":   return "with$";
+      case "char":      return "char$";
+      case "delete":    return "delete$";
+      case "enum":      return "enum$";
+      case "export":    return "export$";
+      case "fan":       return "fan$";
+      case "float":     return "float$";
+      case "import":    return "import$";
+      case "in":        return "in$";
+      case "int":       return "int$";
+      case "interface": return "interface$";
+      case "name":      return "name$";
+      case "self":      return "self$";
+      case "typeof":    return "typeof$";
+      case "var":       return "var$";
+      case "with":      return "with$";
     }
     return n;
   }

@@ -181,14 +181,23 @@ class JsType : JsNode
     if (allowSet) js.w("it")
     js.wl(") {")
     js.indent
-    if (!allowSet) writeBlock(f.getter->code)
+    if (!allowSet)
+    {
+      plugin.curMethod = f.getter
+      writeBlock(f.getter->code)
+      plugin.curMethod = null
+    }
     else
     {
       js.wl("if (it === undefined) {").indent
+      plugin.curMethod = f.getter
       writeBlock(f.getter->code)
+      plugin.curMethod = null
       js.unindent.wl("}")
       js.wl("else {").indent
+      plugin.curMethod = f.setter
       writeBlock(f.setter->code)
+      plugin.curMethod = null
       js.unindent.wl("}")
     }
     js.unindent.wl("}").nl
@@ -271,14 +280,14 @@ class JsType : JsNode
       else if (m.isStatic && m.name == "fromStr") return writeEnumFromStr(m)
     }
 
-    selfJs := nameToJs("self")
+    selfJs := nameToJs("\$self")
     nameJs := nameToJs(m.name)
     typeJs := qnameToJs(m.parentDef)
     if (typeJs != qnameToJs(def)) throw Err("??? ${typeJs} ${qnameToJs(def)}")
     if (m.isInstanceCtor)
     {
       // write static factory make method
-      ctorParams := CParam[SyntheticParam("self")].addAll(m.params)
+      ctorParams := CParam[SyntheticParam(selfJs)].addAll(m.params)
       js.wl("static ${nameJs}${methodParams(m.params)} {", m.loc)
         .indent
         .wl("const ${selfJs} = new ${typeJs}();")

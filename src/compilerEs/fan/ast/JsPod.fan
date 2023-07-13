@@ -71,6 +71,8 @@ class JsPod : JsNode
         // js.wl("let ${depend.name};")
         // await import('./esm/testSys.js').then(obj => testSys = obj).catch(err => {});
         // js.wl("await import('./${depend.name}.js').then(obj => ${depend.name}=obj).catch(err => {});")
+
+        js.wl("import * as ${depend.name} from './${depend.name}.js';")
       }
 
 

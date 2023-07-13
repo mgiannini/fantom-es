@@ -107,7 +107,7 @@ abstract class JsNode
     // make it so java FFI calls parse in js runtimes
     // code will parse but fail if actually invoked
     if (js.contains(".[java].")) js = js.replace(".[java].", ".")
-    else if (js.contains("[java]")) js = js.replace("[java]", "")
+    else if (js.contains("[java]")) js = js.replace("[java]", "java.fail")
 
     return js
   }
@@ -136,19 +136,16 @@ abstract class JsNode
   {
     m := Str:Str[:]
     ["char", "const", "delete", "enum", "export", "float", "import", "in", "int",
-     "let", "name", "self", "require", "typeof", "var", "with",
+     "interface", "let", "name", "self", "require", "typeof", "var", "with",
     ].each |name| { m[name] = "${name}\$" }
     namePickles = m.toImmutable
   }
 
   ** return a unique id name
-  Str uniqName()
+  Str uniqName(Str name := "")
   {
-    s := "u${uid}\$"
-    uid++
-    return s
+    "\$${name}${plugin.nextUid}"
   }
-  private Int uid := 0
 
 //////////////////////////////////////////////////////////////////////////
 // Logging

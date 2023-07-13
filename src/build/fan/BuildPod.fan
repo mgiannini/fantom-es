@@ -177,6 +177,8 @@ abstract class BuildPod : BuildScript
     switch (podName)
     {
       case "compilerJs":
+      case "compilerEs":
+      case "fwt":
       case "webfwt":
       case "testCompiler":
         return
@@ -437,6 +439,8 @@ abstract class BuildPod : BuildScript
       c := Compiler(ci)
       c.frontend
       Env.cur.homeDir.plus(`lib/js/node_modules/${podName}.js`).out.writeChars(c.js).flush.close
+      if (c.es != null)
+        Env.cur.homeDir.plus(`lib/es/esm/${podName}.js`).out.writeChars(c.es).flush.close
     }
     catch (CompilerErr err)
     {
@@ -523,6 +527,7 @@ abstract class BuildPod : BuildScript
     Delete(this, dir+`lib/fan/${podName}.pod`).run
     Delete(this, dir+`lib/java/${podName}.jar`).run
     Delete(this, dir+`lib/js/node_modules/${podName}.js`).run
+    Delete(this, dir+`lib/es/esm/${podName}.js`).run
     Delete(this, dir+`lib/dotnet/${podName}.dll`).run
     Delete(this, dir+`lib/dotnet/${podName}.pdb`).run
     Delete(this, dir+`lib/tmp/${podName}.dll`).run
