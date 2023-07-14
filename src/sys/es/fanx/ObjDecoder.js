@@ -447,7 +447,7 @@ fanx_ObjDecoder.prototype.readMap = function(mapType, firstKey)
 
   // we don't encode whether the original map was ordered or not,
   // so assume it was to ensure map is still ordered after decode
-  map.ordered$(true);
+  map.ordered(true);
 
   // finish first pair
   this.consume(fanx_Token.COLON, "Expected ':'");
@@ -469,8 +469,8 @@ fanx_ObjDecoder.prototype.readMap = function(mapType, firstKey)
   if (mapType == null)
   {
     var size = map.size();
-    var k = Type.common$(map.keys().m_values);
-    var v = Type.common$(map.vals().m_values);
+    var k = Type.common$(map.keys().__values());
+    var v = Type.common$(map.vals().__values());
     map.m_type = new MapType(k, v);
   }
 
