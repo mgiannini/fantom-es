@@ -48,7 +48,6 @@ class Env extends Obj {
       const v = env[k];
       this.#vars.set(k, v);
     }
-    this.#vars = this.#vars.toImmutable();
   }
 
   #args;
@@ -83,7 +82,7 @@ class Env extends Obj {
     else main.callOn(main.parent().make());
   }
 
-  static __isNode() { return typeof node !== undefined; }
+  static __isNode() { return typeof node !== "undefined"; }
 
   static __node(module=null) {
     if (typeof node === "undefined") throw UnsupportedErr.make("Only supported in Node runtime");
@@ -134,7 +133,7 @@ class Env extends Obj {
 
   args() { return this.#args; }
 
-  vars() { return this.#vars; }
+  vars() { return this.#vars.toImmutable(); }
 
   diagnostics() { return Map.make(Str.type$, Obj.type$); }
 
