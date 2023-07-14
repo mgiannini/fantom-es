@@ -240,7 +240,7 @@ class Map extends Obj {
     if (it && this.caseInsensitive())
       throw UnsupportedErr.make("Map cannot be caseInsensitive and ordered");
 
-    this.#ordered = val;
+    this.#ordered = it;
     this.#keys = [];
   }
 
