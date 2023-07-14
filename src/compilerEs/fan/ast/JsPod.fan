@@ -113,6 +113,8 @@ class JsPod : JsNode
     if (file == null)
     {
       err("Missing native impl for ${t.def.signature}", Loc("${t.name}.fan"))
+      // Do not export peer types that we don't have implementations for
+      this.peers[t.name] = false
     }
     else
     {
@@ -152,7 +154,7 @@ class JsPod : JsNode
       t.fields.each |FieldDef f|
       {
         // don't write for FFI
-        if (f.isForeign) return
+        if (f.isForeign || f.fieldType.isForeign) return
 
         facets := toFacets(f.facets)
         js.w(".af\$('${f.name}',${f->flags},'${f.fieldType.signature}',{${facets}})")
