@@ -143,7 +143,41 @@ class Env extends Obj {
 
   out() { return this.#out; }
 
-  // TODO: FIXIT - prompt
+  prompt(msg="") {
+    if (this.os() == "win32") return this.#win32prompt(msg);
+    else return this.#unixprompt(msg);
+  }
+
+  #win32prompt(msg) {
+    // https://github.com/nodejs/node/issues/28243
+    const fs = Env.__node().fs;
+    fs.writeSync(1, String(msg));
+    let s = '', buf = Buffer.alloc(1);
+    while(buf[0] != 10 && buf[0] != 13) {
+      s += buf;
+      fs.readSync(0, buf, 0, 1, 0);
+    }
+    if (buf[0] == 13) { fs.readSync(0, buf, 0, 1, 0); }
+    return s.slice(1);
+  }
+
+  #unixprompt(msg) {
+    // https://stackoverflow.com/questions/61394928/get-user-input-through-node-js-console/74250003?noredirect=1#answer-75008198
+    const fs = Env.__node().fs;
+    const stdin = fs.openSync("/dev/stdin","rs");
+
+    fs.writeSync(process.stdout.fd, msg);
+    let s = '';
+    let buf = Buffer.alloc(1);
+    fs.readSync(stdin,buf,0,1,null);
+    while((buf[0] != 10) && (buf[0] != 13)) {
+      s += buf;
+      fs.readSync(stdin,buf,0,1,null);
+    }
+    // Not sure if we need this on unix?
+    // if (buf[0] == 13) { fs.readSync(0, buf, 0, 1, 0); }
+    return s;
+  }
 
   homeDir() { return this.__homeDir; }
 
