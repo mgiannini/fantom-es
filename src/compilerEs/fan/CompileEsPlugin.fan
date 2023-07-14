@@ -23,6 +23,7 @@ class CompileEsPlugin : CompilerStep
   {
     this.sourcemap = SourceMap(this)
     this.js = JsWriter(buf.out, sourcemap)
+    pod.depends.each |depend| { dependOnNames[depend.name] = true }
   }
 
   private StrBuf buf := StrBuf()
@@ -38,7 +39,10 @@ class CompileEsPlugin : CompilerStep
 
   ** next unique id
   private Int uid := 0
-  Int nextUid(){ uid++; }
+  Int nextUid() { uid++; }
+
+  [Str:Bool] dependOnNames := [:] { def = false }
+
 
 //////////////////////////////////////////////////////////////////////////
 // Pipeline

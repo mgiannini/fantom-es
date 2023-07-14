@@ -126,9 +126,14 @@ abstract class JsNode
   **
   ** Note - use fieldJs for generating field names since we have a lot of special
   ** handling for fields
-  static Str nameToJs(Str name)
+  Str nameToJs(Str name)
   {
-    namePickles.get(name, name)
+    name = namePickles.get(name, name)
+
+    // need to swizzle names that conflict with module imports (e.g. sys)
+    if (plugin.dependOnNames[name]) name = "\$${name}"
+
+    return name
   }
 
   private static const Str:Str namePickles

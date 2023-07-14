@@ -1,4 +1,5 @@
 
+/*
 using [java]java.lang::Thread as JavaThread
 using [java]java.lang.management
 using [java]java.lang::StackTraceElement
@@ -13,6 +14,7 @@ using [java]java.lang::StackTraceElement
   }
   private ThreadMXBean bean := ManagementFactory.getThreadMXBean
 }
+*/
 
 /*
 @Js class SuperTest : Test
