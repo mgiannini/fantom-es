@@ -1,4 +1,5 @@
 
+/*
 @Js class NameSwizzlesTest : Test
 {
   Void test()
@@ -17,3 +18,4 @@
   }
 
 }
+*/

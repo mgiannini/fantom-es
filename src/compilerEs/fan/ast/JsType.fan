@@ -394,6 +394,22 @@ class JsType : JsNode
     js.unindent.wl("}")
     js.wl("return ${valsField};")
     js.unindent.wl("}").nl
+
+    // TODO: this feels brittle
+    // some enums have static initializers for other fields
+    // so we still need to emit the code for those. It turns
+    // out they appear to be wrapped in
+    //   if (true) {...}
+    // blocks so we look for those and only write those.
+    js.wl("static static\$init() {").indent
+    // force the enum vals to be loaded because the static init code
+    // might be attempting to reference <Enum>.#vals field directly
+    js.wl("const ${uniqName} = ${enumName}.vals();")
+    m.code.stmts.each |stmt|
+    {
+      if (stmt is IfStmt) { writeStmt(stmt) }
+    }
+    js.unindent.wl("}").nl
   }
 
   private Void writeEnumFromStr(MethodDef m)

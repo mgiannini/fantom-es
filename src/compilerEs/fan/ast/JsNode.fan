@@ -147,9 +147,9 @@ abstract class JsNode
   }
 
   ** return a unique id name
-  Str uniqName(Str name := "")
+  Str uniqName(Str name := "u")
   {
-    "\$${name}${plugin.nextUid}"
+    "\$_${name}${plugin.nextUid}"
   }
 
 //////////////////////////////////////////////////////////////////////////
