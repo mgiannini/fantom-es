@@ -503,12 +503,8 @@ if (plugin.curMethod == null) throw Err("curMethod is null")
 // Super
 //////////////////////////////////////////////////////////////////////////
 
-  // TODO:FIXIT:MAYBE - this might need to reference the prototype
-  // See compilerJs implementation
   private Void writeSuperExpr(SuperExpr se)
   {
-// echo("${se} explicitType=${se.explicitType} ctype=${se.ctype}")
-    // js.w("super", loc)
     t := se.explicitType ?: se.ctype
     js.w("${qnameToJs(t)}.prototype", loc)
   }
@@ -660,8 +656,8 @@ internal class JsCallExpr : JsExpr
   protected Void writeSuper()
   {
     writeExpr(ce.target)
-    js.w(".${name}(", loc)
-    writeArgs
+    js.w(".${name}.call(this", loc)
+    writeArgs(true)
     js.w(")")
   }
 

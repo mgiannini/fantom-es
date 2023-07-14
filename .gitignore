@@ -38,6 +38,7 @@ obj/Release/
 /lib/es/
 /lib/data/
 /lib/tmp/
+/lib/src/
 
 # doc/
 /doc/
