@@ -49,9 +49,7 @@ class Err extends Obj {
   }
 
   static make$(self, msg, cause) {
-    // TODO - is this correct or should it be self.#err???
-    this.#err = new Error();
-
+    self.#err = new Error();
     self.#msg = msg;
     self.#cause = cause;
   }
