@@ -15,8 +15,7 @@ class MutationObserverPeer extends sys.Obj {
     this.observer = new es6.JsMutationObserver(function(recs)
     {
       const list = MutationObserverPeer.$makeRecList(recs);
-      const args = sys.List.make(sys.Obj.type$, [list]);
-      self.callback()(args);
+      self.callback()(list);
     });
   }
 
