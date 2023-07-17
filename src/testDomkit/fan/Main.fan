@@ -77,10 +77,16 @@ const class DomkitTestMod : WebMod
       case "pod":      return onPod
       case "form":     return onForm
     }
-    log.info("onService ${req} ${req.modRel} ${n}")
     if (es)
     {
       pack := jsToPack[n]
+      if (pack == null && n.toUri.ext == "js")
+      {
+        // serve empty file for module imports that don't have browser js
+        map := jsToPack.dup
+        map[n] = pack = FilePack([Buf().toFile(`${n}`)])
+        jsToPackRef.val = map.toImmutable
+      }
       if (pack != null) return pack.onService
     }
     res.sendErr(404)
