@@ -744,7 +744,7 @@ push(obj) {
     const c = f != null
       ? (item, index) => { return f(key, item); }
       : (item, index) => { return ObjUtil.compare(key,item,false); }
-    return this.doBinaryFind$(c);
+    return this.#doBinaryFind(c);
   }
 
   binaryFind(f) { return this.#doBinaryFind(f); }
