@@ -260,7 +260,7 @@ class TsDocWriter : DocWriter
 
       if (Slot.find("$p::${t}.$s", false) != null)
       {
-        s = JsNode.nameToJs(s)
+        s = nameToJs(s)
         if (p != pod)       link.uri = "${p}.${t}.$s"
         else if (t != type) link.uri = "${t}.$s"
         else                link.uri = s
@@ -287,6 +287,12 @@ class TsDocWriter : DocWriter
 
     if (docMatcher.matches)
       link.uri = "https://fantom.org/doc/${docMatcher.group(1)}/${docMatcher.group(2)}"
+  }
+
+  private Str nameToJs(Str name)
+  {
+    //TODO: fix
+    return name
   }
 
 }
