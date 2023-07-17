@@ -31,7 +31,7 @@ class CompileTsPlugin : CompilerStep
 
   override Void run()
   {
-    buf := StrBuf()
+    buf := Buf()
     out = buf.out
     docWriter = TsDocWriter(out)
 
@@ -132,9 +132,10 @@ class CompileTsPlugin : CompilerStep
 
       out.print("}\n")
     }
+    if (pod.name == "sys") printObjUtil
 
-    c.tsDecl = buf.toStr
-    echo(c.tsDecl)
+    buf.seek(0)
+    c.tsDecl = buf.readAllStr
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -177,10 +178,12 @@ class CompileTsPlugin : CompilerStep
     // List/map types
     if (type.isList || type.isMap)
     {
+      if (type is TypeRef) type = type.deref
+
       res := getNamespacedType(type.name, "sys", thisPod)
       if (!type.isGeneric)
       {
-        k := type.isMap ? "${getJsType(type->k, thisPod, thisType)}, " : ""
+        k := type is MapType ? "${getJsType(type->k, thisPod, thisType)}, " : ""
         v := getJsType(type->v, thisPod, thisType)
         res += "<$k$v>"
       }
@@ -188,8 +191,9 @@ class CompileTsPlugin : CompilerStep
     }
 
     // Function types
-    if (type is FuncType)
+    if (type.isFunc)
     {
+      if (type is TypeRef) type = type.deref
       if (type.isGeneric)
         return "Function"
 
@@ -223,12 +227,12 @@ class CompileTsPlugin : CompilerStep
     docWriter.type = type
   }
 
-  private Void printDoc(Str? doc, Int indent)
+  private Void printDoc(DocDef? doc, Int indent)
   {
-    if (doc == null || doc == "") return
+    if (doc == null) return
 
     docWriter.indent = indent
-    docParser.parse("Doc", doc.in).write(docWriter)
+    docParser.parse("Doc", doc.lines.join("\n").in).write(docWriter)
   }
 
   private Str nameToJs(Str name)
@@ -241,6 +245,32 @@ class CompileTsPlugin : CompilerStep
   private Void printJsObj()
   {
     out.print("export type JsObj = Obj | number | string | boolean | Function\n")
+  }
+
+  private Void printObjUtil()
+  {
+    out.print( """export class ObjUtil {
+                    static hash(obj: any): number
+                    static equals(a: any, b: JsObj | null): boolean
+                    static compare(a: any, b: JsObj | null, op: boolean): number
+                    static compareNE(a: any, b: JsObj | null): boolean
+                    static compareLT(a: any, b: JsObj | null): boolean
+                    static compareLE(a: any, b: JsObj | null): boolean
+                    static compareGE(a: any, b: JsObj | null): boolean
+                    static compareGT(a: any, b: JsObj | null): boolean
+                    static is(obj: any, type: Type): boolean
+                    static as(obj: any, type: Type): any
+                    static coerce(obj: any, type: Type): any
+                    static typeof\$(obj: any): Type
+                    static trap(obj: any, name: string, args: List<JsObj | null> | null): JsObj | null
+                    static doTrap(obj: any, name: string, args: List<JsObj | null> | null, type: Type): JsObj | null
+                    static isImmutable(obj: any): boolean
+                    static toImmutable(obj: any): JsObj | null
+                    static with\$<T>(self: T, f: (() => T)): T
+                    static toStr(obj: any): string
+                    static echo(obj: any): void
+                  }
+                  """)
   }
 
   private const Str:Str pmap :=
