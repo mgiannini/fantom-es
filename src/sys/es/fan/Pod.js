@@ -65,7 +65,7 @@ class Pod extends Obj {
   }
 
 //////////////////////////////////////////////////////////////////////////
-// Methods
+// Identity
 //////////////////////////////////////////////////////////////////////////
 
   name$() { return this.#name; }  
@@ -100,8 +100,6 @@ class Pod extends Obj {
     return this.#depends;
   }
 
-  // TODO:FIXIT - props, config, doc
-
   toStr() { return this.#name; }
 
 //////////////////////////////////////////////////////////////////////////
@@ -131,10 +129,6 @@ class Pod extends Obj {
       throw UnknownTypeErr.make(`${this.#name}::${name}`);
     }
     return t;
-  }
-
-  locale(key, def) {
-    return Env.cur().locale(this, key, def);
   }
 
   // addType
@@ -185,4 +179,19 @@ class Pod extends Obj {
     }
     return this.#log;
   }
+
+  props(uri, maxAge) {
+    return Env.cur().props(this, uri, maxAge);
+  }
+
+  config(key, def=null) {
+    return Env.cur().config(this, key, def);
+  }
+
+  doc() { return null; }
+
+  locale(key, def) {
+    return Env.cur().locale(this, key, def);
+  }
+
 }
