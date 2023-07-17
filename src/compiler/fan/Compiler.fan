@@ -150,6 +150,7 @@ class Compiler
   Str? jsSourceMap          // CompileJs (JavaScript sourcemap)
   Str? es                   // CompileJs (JavaScript code)
   Str? esSourceMap          // CompileJs (JavaScript sourcemap)
+  Str? tsDecl               // CompileJs (TypeScript declaration file)
   LocaleLiteralExpr[] localeDefs  // ResolveExpr.resolveLocaleLiteral
   Str? localeProps          // LocaleProps
   FPod? fpod                // Assemble

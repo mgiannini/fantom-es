@@ -55,6 +55,7 @@ class Build : BuildGroup
       `yaml/build.fan`,
       `doc/build.fan`,
       `cryptoJava/build.fan`,
+      `nodeJs/build.fan`,
       `testSys/build.fan`,
       `testNative/build.fan`,
       `testCompiler/build.fan`,
