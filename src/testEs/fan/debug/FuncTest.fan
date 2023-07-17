@@ -15,5 +15,5 @@
     this.cbSelect = f
   }
 
-  Void fireSelect() { dbSelect?.call(this) }
+  Void fireSelect() { cbSelect?.call(this) }
 }

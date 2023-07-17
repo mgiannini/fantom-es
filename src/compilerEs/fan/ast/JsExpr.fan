@@ -562,7 +562,12 @@ internal class JsCallExpr : JsExpr
         return t
       }
       this.targetType = ce.target.ctype == null ? this.parent : ce.target.ctype
-      isFunc = resolveType(ce.target.ctype) is FuncType
+      resolved := resolveType(ce.target.ctype)
+      funcType := c.ns.resolveType("sys::Func")
+// TODO:FIXIT remove these two lines
+isFunc = resolved is FuncType
+if (isFunc && !resolved.fits(funcType)) throw Err("not fitting!")
+      isFunc = resolved.fits(funcType)
     }
 
     // force these methods to route thru ObjUtil if not a super.xxx expr
