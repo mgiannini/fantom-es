@@ -476,7 +476,7 @@ class JsAliases
     out.printLine("const JsDate = Date;")
     out.printLine("const JsMap = Map;")
     out.printLine("const JsWeakMap = WeakMap;")
-    out.printLine("const JsMutationObserver = MutationObserver;")
+    out.printLine("const JsMutationObserver = typeof MutationObserver !== 'undefined' ? MutationObserver : null;")
     out.printLine("const JsEvent = (typeof Event !== 'undefined') ? Event : null;")
     out.printLine("const JsResizeObserver = (typeof ResizeObserver !== 'undefined') ? ResizeObserver : null;")
     ms.writeExports(out, ["JsDate", "JsMap", "JsWeakMap", "JsMutationObserver", "JsEvent", "JsResizeObserver"])
