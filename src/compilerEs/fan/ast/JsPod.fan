@@ -56,6 +56,12 @@ class JsPod : JsNode
 
   private Void writeImports()
   {
+    // special handling for dom
+    if (pod.name == "dom")
+    {
+      js.wl("import * as es6 from './es6.js'")
+    }
+
     pod.depends.each |depend|
     {
       // NOTE if we change sys to fan we need to update JNode.qnameToJs
