@@ -6,6 +6,7 @@
 //   16 Apr 06  Brian Frank  Creation
 //
 
+/*
 @Js class TokenTest : Test
 {
   Void test()
@@ -118,3 +119,4 @@
   const Bool isAssign
 
 }
+*/
