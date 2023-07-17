@@ -44,7 +44,7 @@ class CompileTsPlugin : CompilerStep
     out.write('\n')
 
     // Write declaration for each type
-    pod.types.findAll { !it.isSynthetic }.each |type|
+    pod.typeDefs.findAll { !it.isSynthetic }.each |type|
     {
       // TODO: for now generate declaration for all types regardless of whether
       // they have the @Js facet or not
@@ -71,11 +71,11 @@ class CompileTsPlugin : CompilerStep
       }
 
       // Write class documentation & header
-      printDoc(type->doc, 0)
+      printDoc(type.doc, 0)
       out.print("export class $type.name$classParams $extends{\n")
 
       // Write fields
-      type.fields.each |field|
+      type.fieldDefs.each |field|
       {
         if (!field.isPublic) return
         if (type.base?.slot(field.name) != null &&
@@ -87,14 +87,14 @@ class CompileTsPlugin : CompilerStep
         staticStr := field.isStatic ? "static " : ""
         typeStr := getJsType(field.fieldType, pod, field.isStatic ? type : null)
 
-        printDoc(field->doc, 2)
+        printDoc(field.doc, 2)
         out.print("  $staticStr$name(): $typeStr\n")
         if (!field.isConst)
           out.print("  $staticStr$name(it: $typeStr): void\n")
       }
 
       // Write methods
-      type.methods.each |method|
+      type.methodDefs.each |method|
       {
         if (!method.isPublic) return
         if (type.base?.slot(method.name) != null &&
@@ -126,7 +126,7 @@ class CompileTsPlugin : CompilerStep
             method.qname == "sys::Map.ro")
               output = "Readonly<$output>"
 
-        printDoc(method->doc, 2)
+        printDoc(method.doc, 2)
         out.print("  $staticStr$name($inputs): $output\n")
       }
 
