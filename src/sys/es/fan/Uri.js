@@ -50,7 +50,11 @@ class Uri extends Obj {
     return Uri.#defVal;
   }
 
-  static #parentRange = Range.make(0, -2, false);
+  static #_parentRange;
+  static #parentRange() { 
+    if (!Uri.#_parentRange) Uri.#_parentRange = Range.make(0, -2, false);
+    return Uri.#_parentRange;
+  }
 
   static fromStr(s, checked=true) {
     try {
@@ -340,7 +344,7 @@ class Uri extends Obj {
     if (this.#path.size() == 1 && !this.isPathAbs() && !this.isDir()) return null;
 
     // use getRange
-    return this.getRange(Uri.#parentRange);
+    return this.getRange(Uri.#parentRange());
   }
 
   pathOnly() {
