@@ -12,7 +12,7 @@ class ResizeObserverPeer extends sys.Obj {
   constructor(self)
   {
     super();
-    this.observer = new es.JsResizeObserver(function(entries)
+    this.observer = new es6.JsResizeObserver(function(entries)
     {
       if (self.callback() != null)
       {
