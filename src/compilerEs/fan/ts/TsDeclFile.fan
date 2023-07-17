@@ -7,6 +7,7 @@
 //
 
 using compiler
+using fandoc
 
 **
 ** Generate the TypeScript declaration file for a pod
@@ -16,11 +17,13 @@ class TsDeclFile
   new make(OutStream out)
   {
     this.out = out
-    // docWriter = TsDocWriter(out)
+    docParser = FandocParser()
+    docWriter = TsDocWriter(out)
   }
 
   private OutStream out
-  // private TsDocWriter docWriter
+  private FandocParser docParser
+  private TsDocWriter docWriter
   private Type jsFacet := Type.find("sys::Js")
 
 //////////////////////////////////////////////////////////////////////////
@@ -66,7 +69,7 @@ class TsDeclFile
       }
 
       // Write class documentation & header
-      // printDoc(type->doc, 0)
+      printDoc(type->doc, 0)
       out.print("export class $type.name$classParams $extends{\n")
 
       // Write fields
@@ -82,7 +85,7 @@ class TsDeclFile
         staticStr := field.isStatic ? "static " : ""
         typeStr := getJsType(field.fieldType, pod, field.isStatic ? type : null)
 
-        // printDoc(field->doc, 2)
+        printDoc(field->doc, 2)
         out.print("  $staticStr$name(): $typeStr\n")
         if (!field.isConst)
           out.print("  $staticStr$name(it: $typeStr): void\n")
@@ -121,7 +124,7 @@ class TsDeclFile
             method.qname == "sys::Map.ro")
               output = "Readonly<$output>"
 
-        // printDoc(method->doc, 2)
+        printDoc(method->doc, 2)
         out.print("  $staticStr$name($inputs): $output\n")
       }
 
@@ -211,20 +214,21 @@ class TsDeclFile
 
   private Void setupDoc(Str pod, Str type)
   {
-    // docWriter.pod = pod
-    // docWriter.type = type
+    docWriter.pod = pod
+    docWriter.type = type
   }
 
   private Void printDoc(Str? doc, Int indent)
   {
     if (doc == null || doc == "") return
 
-    // docWriter.indent = indent
-    // docParser.parse("Doc", doc.in).write(docWriter)
+    docWriter.indent = indent
+    docParser.parse("Doc", doc.in).write(docWriter)
   }
 
   private Str nameToJs(Str name)
   {
+    // TODO: should be something like
     // return JsNode.nameToJs
     return name
   }
