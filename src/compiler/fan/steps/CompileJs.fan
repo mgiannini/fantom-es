@@ -23,6 +23,9 @@ class CompileJs  : CompilerStep
     log.info("CompileJs")
     compile("compilerJs::CompileJsPlugin")
     compile("compilerEs::CompileEsPlugin")
+
+    // only generate d.ts files when forcing js
+    if (compiler.input.forceJs) compile("nodeJs::CompileTsPlugin")
   }
 
   private Void compile(Str qname)

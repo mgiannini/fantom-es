@@ -438,9 +438,12 @@ abstract class BuildPod : BuildScript
     {
       c := Compiler(ci)
       c.frontend
+      esmDir := Env.cur.homeDir.plus(`lib/es/esm/`)
       Env.cur.homeDir.plus(`lib/js/node_modules/${podName}.js`).out.writeChars(c.js).flush.close
       if (c.es != null)
-        Env.cur.homeDir.plus(`lib/es/esm/${podName}.js`).out.writeChars(c.es).flush.close
+        esmDir.plus(`${podName}.js`).out.writeChars(c.es).flush.close
+      if (c.tsDecl != null)
+        esmDir.plus(`${podName}.d.ts`).out.writeChars(c.tsDecl).flush.close
     }
     catch (CompilerErr err)
     {
@@ -528,6 +531,7 @@ abstract class BuildPod : BuildScript
     Delete(this, dir+`lib/java/${podName}.jar`).run
     Delete(this, dir+`lib/js/node_modules/${podName}.js`).run
     Delete(this, dir+`lib/es/esm/${podName}.js`).run
+    Delete(this, dir+`lib/es/esm/${podName}.d.ts`).run
     Delete(this, dir+`lib/dotnet/${podName}.dll`).run
     Delete(this, dir+`lib/dotnet/${podName}.pdb`).run
     Delete(this, dir+`lib/tmp/${podName}.dll`).run
