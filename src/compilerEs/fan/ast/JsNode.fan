@@ -126,13 +126,18 @@ abstract class JsNode
   **
   ** Note - use fieldJs for generating field names since we have a lot of special
   ** handling for fields
-  Str nameToJs(Str name)
+  Str nameToJs(Str name) { pickleName(name, plugin.dependOnNames) }
+
+  @NoDoc static Str pickleName(Str name, Obj? depends := null)
   {
     name = namePickles.get(name, name)
-
-    // need to swizzle names that conflict with module imports (e.g. sys)
-    if (plugin.dependOnNames[name]) name = "\$${name}"
-
+    if (depends != null)
+    {
+      isDepends := false
+      if (depends is Map) isDepends = ((Str:Bool)depends).get(name)
+      else if (depends is List) isDepends = ((List)depends).contains(name)
+      if (isDepends) name = "\$${name}"
+    }
     return name
   }
 
