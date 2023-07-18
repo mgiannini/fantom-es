@@ -28,6 +28,7 @@ class Build : BuildPod
                ]
     depends = ["sys 1.0",
                "compiler 1.0",
+               "compilerEs 1.0",
                "fandoc 1.0",
               ]
     srcDirs = [

@@ -6,6 +6,7 @@
 //   24 Jun 23  Kiera O'Flynn  Creation
 //
 
+using compilerEs
 using fandoc
 
 **
@@ -21,6 +22,8 @@ class TsDocWriter : DocWriter
   Str type := ""
 
   private OutStream out
+  private Str[] deps
+
   private Bool started
   private ListIndex[] listIndexes := [,]
   private Bool inPre
@@ -29,9 +32,10 @@ class TsDocWriter : DocWriter
   private Int lineWidth := 0
   private const Int maxWidth := 60
 
-  new make(OutStream out)
+  new make(OutStream out, Str[] deps)
   {
     this.out = out
+    this.deps = deps
   }
 
   **
@@ -260,7 +264,7 @@ class TsDocWriter : DocWriter
 
       if (Slot.find("$p::${t}.$s", false) != null)
       {
-        s = nameToJs(s)
+        s = JsNode.pickleName(s, deps)
         if (p != pod)       link.uri = "${p}.${t}.$s"
         else if (t != type) link.uri = "${t}.$s"
         else                link.uri = s
@@ -287,12 +291,6 @@ class TsDocWriter : DocWriter
 
     if (docMatcher.matches)
       link.uri = "https://fantom.org/doc/${docMatcher.group(1)}/${docMatcher.group(2)}"
-  }
-
-  private Str nameToJs(Str name)
-  {
-    //TODO: fix
-    return name
   }
 
 }

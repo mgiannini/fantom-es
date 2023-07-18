@@ -7,6 +7,7 @@
 //
 
 using compiler
+using compilerEs
 using fandoc
 
 **
@@ -33,12 +34,14 @@ class CompileTsPlugin : CompilerStep
   {
     buf := Buf()
     out = buf.out
-    docWriter = TsDocWriter(out)
 
     // Write dependencies
-    pod.depends.each |dep|
+    deps := pod.depends.map |CDepend dep->Str| { dep.name }
+    docWriter = TsDocWriter(out, deps)
+
+    deps.each |dep|
     {
-      out.print("import * as ${dep.name} from './${dep.name}.js';\n")
+      out.print("import * as ${dep} from './${dep}.js';\n")
     }
     if (pod.name == "sys") printJsObj
     out.write('\n')
@@ -83,7 +86,7 @@ class CompileTsPlugin : CompilerStep
             !pmap.containsKey(type.signature))
               return
 
-        name := nameToJs(field.name)
+        name := JsNode.pickleName(field.name, deps)
         staticStr := field.isStatic ? "static " : ""
         typeStr := getJsType(field.fieldType, pod, field.isStatic ? type : null)
 
@@ -104,10 +107,10 @@ class CompileTsPlugin : CompilerStep
 
         isStatic := method.isStatic || method.isCtor || pmap.containsKey(type.signature)
         staticStr := isStatic ? "static " : ""
-        name := nameToJs(method.name)
+        name := JsNode.pickleName(method.name, deps)
 
         inputs := method.params.map |CParam p->Str| {
-          paramName := nameToJs(p.name)
+          paramName := JsNode.pickleName(p.name, deps)
           if (p.hasDefault)
             paramName += "?"
           paramType := getJsType(p.paramType, pod, isStatic ? type : null)
@@ -194,7 +197,7 @@ class CompileTsPlugin : CompilerStep
     if (type.isFunc)
     {
       if (type is TypeRef) type = type.deref
-      if (type.isGeneric)
+      if (!(type is FuncType)) //isGeneric
         return "Function"
 
       CType[] args := type->params->dup
@@ -233,13 +236,6 @@ class CompileTsPlugin : CompilerStep
 
     docWriter.indent = indent
     docParser.parse("Doc", doc.lines.join("\n").in).write(docWriter)
-  }
-
-  private Str nameToJs(Str name)
-  {
-    // TODO: should be something like
-    // return JsNode.nameToJs
-    return name
   }
 
   private Void printJsObj()
