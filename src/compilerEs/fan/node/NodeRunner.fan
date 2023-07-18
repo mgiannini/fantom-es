@@ -251,15 +251,16 @@ class NodeRunner
     sysDecl := ms.moduleDir.plus(`sys.d.ts`)
     sysDir  := Env.cur.homeDir.plus(`src/sys/`)
     ci      := CompilerInput()
-    ci.podName  = "sys"
-    ci.summary  = "synthetic sys build"
-    ci.version  = Pod.find("sys").version
-    ci.depends  = Depend[,]
-    ci.inputLoc = Loc.makeFile(sysDir.plus(`build.fan`))
-    ci.baseDir  = sysDir
-    ci.srcFiles = [sysDir.plus(`fan/`).uri]
-    ci.mode     = CompilerInputMode.file
-    ci.output   = CompilerOutputMode.podFile
+    ci.podName    = "sys"
+    ci.summary    = "synthetic sys build"
+    ci.version    = Pod.find("sys").version
+    ci.depends    = Depend[,]
+    ci.inputLoc   = Loc.makeFile(sysDir.plus(`build.fan`))
+    ci.baseDir    = sysDir
+    ci.srcFiles   = [sysDir.plus(`fan/`).uri]
+    ci.mode       = CompilerInputMode.file
+    ci.output     = CompilerOutputMode.podFile
+    ci.includeDoc = true
     c := FanCompiler(ci)
     c.frontend
     sysDecl.out.writeChars(c.tsDecl).flush.close
