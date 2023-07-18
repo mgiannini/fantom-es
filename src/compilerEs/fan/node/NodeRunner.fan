@@ -250,6 +250,27 @@ class NodeRunner
     //      """).flush.close
 
     echo("JS init written to: ${ms.moduleDir}")
+
+    writeTsDecl
+  }
+
+  private Void writeTsDecl()
+  {
+    sysDecl := ms.moduleDir.plus(`sys.d.ts`)
+    sysDir  := Env.cur.homeDir.plus(`src/sys/`)
+    ci      := CompilerInput()
+    ci.podName  = "sys"
+    ci.summary  = "synthetic sys build"
+    ci.version  = Pod.find("sys").version
+    ci.depends  = Depend[,]
+    ci.inputLoc = Loc.makeFile(sysDir.plus(`build.fan`))
+    ci.baseDir  = sysDir
+    ci.srcFiles = [sysDir.plus(`fan/`).uri]
+    ci.mode     = CompilerInputMode.file
+    ci.output   = CompilerOutputMode.podFile
+    c := FanCompiler(ci)
+    c.frontend
+    echo("####### TS DECL #############\n${c.tsDecl}")
   }
 
 //////////////////////////////////////////////////////////////////////////

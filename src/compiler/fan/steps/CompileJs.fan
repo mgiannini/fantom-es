@@ -17,15 +17,15 @@ class CompileJs  : CompilerStep
 
   override Void run()
   {
-    // short circuit if no types define the @Js facet
-    if (!needCompileJs) return
+    if (needCompileJs)
+    {
+      log.info("CompileJs")
+      compile("compilerJs::CompileJsPlugin")
+      compile("compilerEs::CompileEsPlugin")
+    }
 
-    log.info("CompileJs")
-    compile("compilerJs::CompileJsPlugin")
-    compile("compilerEs::CompileEsPlugin")
-
-    // only generate d.ts files when forcing js
-    if (compiler.input.forceJs) compile("nodeJs::CompileTsPlugin")
+    // generate d.ts files when forcing js
+    if (compiler.input.forceJs || pod.name == "sys") compile("nodeJs::CompileTsPlugin")
   }
 
   private Void compile(Str qname)
