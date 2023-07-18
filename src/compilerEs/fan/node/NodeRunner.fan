@@ -240,18 +240,10 @@ class NodeRunner
     // export sys
     out.printLine("export { sys };").flush.close
 
-    // f := moduleDir.plus(`fan.js`)
-    // f.out.writeChars(
-    //   """let fan = require('sys.js');
-    //      require('mime.js');
-    //      require('units.js');
-    //      require('tz.js');
-    //      module.exports = fan;
-    //      """).flush.close
+    // sys.d.ts
+    writeTsDecl
 
     echo("JS init written to: ${ms.moduleDir}")
-
-    writeTsDecl
   }
 
   private Void writeTsDecl()
@@ -270,7 +262,7 @@ class NodeRunner
     ci.output   = CompilerOutputMode.podFile
     c := FanCompiler(ci)
     c.frontend
-    echo("####### TS DECL #############\n${c.tsDecl}")
+    sysDecl.out.writeChars(c.tsDecl).flush.close
   }
 
 //////////////////////////////////////////////////////////////////////////
