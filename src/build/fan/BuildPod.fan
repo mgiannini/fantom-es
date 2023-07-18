@@ -171,6 +171,9 @@ abstract class BuildPod : BuildScript
     log.unindent
   }
 
+  **
+  ** Compile to all classes to JavaScript
+  **
   @Target { help = "Compile to javascript" }
   virtual Void js()
   {
@@ -226,7 +229,7 @@ abstract class BuildPod : BuildScript
     }
   }
 
-  protected CompilerInput stdFanCompilerInput()
+  @NoDoc protected CompilerInput stdFanCompilerInput()
   {
     // add my own meta
     meta := this.meta.dup
