@@ -15,8 +15,8 @@ in the `/cjs/` directory of the `sys.pod`.
 
 ## CompilerES
 
-There is a new JavaScript compiler for generating ES code. The pod is called `compileEs`.
-It serves the same purpose as the old `compilerJs` pod, but emits ES6code and a 
+There is a new JavaScript compiler for generating ES code. The pod is called `compilerEs`.
+It serves the same purpose as the old `compilerJs` pod, but emits ES6 code and a 
 corresponding source map. Currently, the compiler only emits an ESM module for the code.
 All generated artifacts are stored in the pod at `/esm/`.
 
