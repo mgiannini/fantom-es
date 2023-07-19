@@ -59,52 +59,61 @@ and stage the `sys.js` code.
 in a pod. It then stages the js and a typescript declaration file (`d.ts`) to the node package
 in `<fan_home>/lib/es/`
 
-# Naming
+# Porting Native Code
+If you have a pod with native javascript then these are the steps you should take to port your
+code.
 
-All class names are preserved when going from Fantom to JavaScript.
+1. Create a `/es/` directory in the root of your pod (it should be a peer to your existing `/js/`
+directory)
+1. Port all your native code into this directory. Follow the guideliness in the following
+sections for more details on some of the specific implementation patterns you must follow.
+This won't be exhaustive in the short-term so you should use the existing code in `sys` or
+some of the other core pods (e.g. `concurrent` as a pattern/example)
 
-Slot and Parameter names that conflict with built-in JS keywords are "pickled" to end with a `$`. The
-list of names that gets pickled can be found in [compilerEs::JsNode](/src/compilerEs/fan/ast/JsNode.fan).
+# Design
+This section details some of the design decisions and implementation details for the ES code.
 
+## ES6 Classes
+
+All Fantom types are implemented as ES6 classes.  
+
+Fantom
+```fantom
+class Foo { }
 ```
-# Fantom
-Void name(Str var) { ... }
-
-# JavaScript
-name$(var$) { ... }
+ES6
+```javascript
+class Foo extends sys.Obj {
+  constructor() { super(); }
+}
 ```
-
-As a general rule, any field or method that ends with `$` should be considered "public" API when 
-using the JS code natively in an environment like Node or the browser. There are several "internal"
-methods and fields that are intended for compiler support and they will be prefixed with two underbars
-`__`. They should not be used by consumers of the generated JS code and are subject to change at any time.
-
+Note that in all pods (excluding sys), the compiler will auto-generate `import` statements for all
+your pod dependenices using this pattern:
+```javascript
+import * as <podName> from './<podName>.js';
 ```
-# JavaScript - these should be considered private
-static __registry = {};
+You can then refer to types from another pod in your code as `<podName>.<type>`. Notice
+in the example above that the `Foo` class extends `sys.Obj`.
 
-__at(a,b,c) { ... }
-```
-
-***TODO:FIXIT:  I have not implemented the `__` rule. Internal methods and fields currently end in `$` like
-pickled names. I feel that we should make a naming distinction between public/pickled names and internal names.***
-
-# Fields
-
+## Fields
 All Fantom fields are generated as private in the JavaScript and the compiler will generate a single 
 method for getting/setting the field based on the access flags for the getter/setter in Fantom. The 
-generated getter/setter will conform to the [Naming](#naming) rules outlined above.
+generated getter/setter will conform to the [Naming](#naming) rules outlined later.
 
-```
-# Fantom
+Note that an implication of this design is that *all* fields in Fantom are only accessible
+in JavaScript as methods. You never access a javascript field's storage directly.
+
+Fantom
+```fantom
 class Foo
 {
   Int a := 0
   Int b := 1 { private set }
   private Int c := 2
 }
-
-# JavaScript
+```
+JavaScript
+```javascript
 class Foo extends sys.Obj {
   constructor() { 
     super();
@@ -135,95 +144,65 @@ f.a(100);
 console.log(`The value of a is now ${f.a()}`);
 ```
 
-# Fields - Alternate Proposal
+### Enums
 
-Another option is to treat no-arg methods as special. In the case of a no-arg method/field we would an ES6 getter/setter. 
-This has a few benefits:
+This field design has some specific implications for Enums. All static enum fields are generated
+as methods also. See the [fan::Weekday](/src/sys/es/Weekday.js) implementation as an example.
+In general, you don't need to be concerend with the implementation details but any native
+code that wants to work with Enums needs to understand these conventions.
 
-1. It allows you to access the field/method without having to use `()`. The resutling code is more readable; especially when chaining
-no arg method calls. `foo.bar.baz`
-2. When the code is used in TypeScript, it will adhere more closely to TS conventions.
-3. It mimics how Fantom works with no-arg methods
+```javascript
+const monday = sys.Weekday.mon()
+```
 
-Some potential drawbacks:
+## Funcs and Closures
+All Fantom code that expects a closure or Func will be generated to expect a native JavaScript
+closure.
 
-1. It breaks the uniformity of having *every* method/field treated the same.
-2. If a no-arg method ever gets modified to add a parameter (e.g. a single parameter with a default value), it will break existing
-code since it *must* be generated as a normal method instead of a getter.
+For example, the `sys::List.each` method is defined in `List.fan` as
+```fantom
+  Void each(|V item, Int index| c)
+```
+and implemented in `List.js` as
+```javascript
+  each(f) {
+    for (let i=0; i<this.#size; ++i)
+      f(this.#values[i], i);
+  }
+```
+Notice that the `f` parameter is assumed to be a native javascript function and is invoked
+directly (whereas in the old code it would have been `f.call(...)`).
 
-Here is an example of what this code might look like. 
+# Naming
+
+All class names are preserved when going from Fantom to JavaScript.
+
+Slot and Parameter names that conflict with built-in JS keywords are "pickled" to end with a `$`. The
+list of names that gets pickled can be found in [compilerEs::JsNode](/src/compilerEs/fan/ast/JsNode.fan).
 
 ```
 # Fantom
-mixin Foo {
-  virtual Str baz() { "foo" }
-  virtual Str qaz() { "qaz" }
-}
-
-class Bar : Foo {
-  override Str baz := "bar"
-} 
+Void name(Str var) { ... }
 
 # JavaScript
-class Foo {
-  get baz() { return "baz"; }
-  get qaz() { return "qaz"; }
-}
-
-class Bar extends Obj {
-  #baz = "bar"; // this would actually get initialized in the generated constructor
-  get baz() { return this.#baz; }
-  set baz(it) { this.#baz = it; }
-
-  qaz = Foo.prototype.qaz; // this is how mixins are handled (no change)
-}
-
-let b = new Bar();
-# access baz as getter/setter now
-b.baz = "abc123";
-console.log(`The new value of baz is ${b.baz}`);
+name$(var$) { ... }
 ```
 
-This would also impact how we generate fields for Enums
+As a general rule, any field or method that ends with `$` should be considered "public" API when 
+using the JS code natively in an environment like Node or the browser. There are several "internal"
+methods and fields that are intended for compiler support and they will be prefixed with two underbars
+`__`. They should not be used by consumers of the generated JS code and are subject to change at any time.
 
 ```
-# Here is the current pattern for Enums using LogLevel as an example
-class LogLevel extends Enum {
-  constructor(ordinal, name) {
-    super();
-    Enum.make$(this, ordinal, name);
-  }
+# JavaScript - these should be considered private
+static __registry = {};
 
-  static debug() { return LogLevel.vals().get(0); }
-  static info() { return LogLevel.vals().get(1); }
-  static warn() { return LogLevel.vals().get(2); }
-  static err() { return LogLevel.vals().get(3); }
-  static silent() { return LogLevel.vals().get(4); }
-
-  static #vals = undefined;
-  static vals() {
-    if (LogLevel.#vals === undefined) {
-      LogLevel.#vals = List.make(LogLevel.type$,
-        [new LogLevel(0, "debug"), new LogLevel(1, "info"),
-         new LogLevel(2, "warn"), new LogLevel(3, "err"),
-         new LogLevel(4, "silent")]).toImmutable();
-    }
-    return LogLevel.#vals;
-  }
-}
-
-# We would turn these into static getters:
-class LogLevel extends Enum {
-  ...
-
-  static get debug() { return LogLevel.vals().get(0); }
-  static get info() { return LogLevel.vals().get(1); }
-  static get warn() { return LogLevel.vals().get(2); }
-  static get err() { return LogLevel.vals().get(3); }
-  static get silent() { return LogLevel.vals().get(4); }
-
-  ...
-}
-
+__at(a,b,c) { ... }
 ```
+
+***TODO: We are still in the process of porting all the sys code to use the `__` rule. You may see some
+inconsistencies here in the short-term.***
+
+
+
 
