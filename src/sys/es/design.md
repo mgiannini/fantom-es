@@ -1,4 +1,63 @@
-This document describes how we map Fantom to ES6 JavaScript.
+This is a "living" document covering many aspects of the design and implementation
+for the mapping from Fantom to ES6 JavaScript.
+
+# Getting Started
+So you just cloned this repo. This section provides an overview of the code
+organization and the commands you need to run to get started with the JavaScript.
+As you read through this document keep in mind that both the "old" way of generating
+JS and the new way will co-exist side-by-side for a transition period.
+
+The ES6 implementation of the `sys` pod is in `src/sys/es/`.  The build script in
+that directory takes care of packaging all the sys code into a single ESM module
+and putting it in `sys.pod`. All ESM modules are stored in pods in the `/esm/` directory.
+For `sys` only do we also generate a CommonJS (CJS) implementation as well. It is stored
+in the `/cjs/` directory of the `sys.pod`.
+
+## CompilerES
+
+There is a new JavaScript compiler for generating ES code. The pod is called `compileEs`.
+It serves the same purpose as the old `compilerJs` pod, but emits ES6code and a 
+corresponding source map. Currently, the compiler only emits an ESM module for the code.
+All generated artifacts are stored in the pod at `/esm/`.
+
+## Standard Build
+
+To build the code run `fan src\buildall.pod`. Remember that we will generate both the old and new JS code
+during this transition period. 
+
+You could now run the `testDomkit` pod to see the various domkit widgets renedered in the
+browser using the ES6 code:
+
+`fan testDomkit -es`
+
+## compilerEs::NodeRunner
+
+NOTE: this class will eventually be moving to the `nodeJs` pod.
+
+You can use the `compilerEs::NodeRunner` class to run the JS code in the NodeJS environment.
+You must have NodeJS installed on your system and available in your PATH.
+
+To run a test suite you would execute:
+
+```
+fan copmilerEs::NodeRunner -test <pod>[::<test>[.<method>]]
+
+// Examples
+fan compilerEs::NodeRunner -test concurrent
+fan compilerEs::NodeRunner -test testSys::UriTest
+```
+
+## Node Packaging
+
+You can stage all the ES javascript into the filesystem for running in Node by using the `NodeRunner`.
+The full set of steps to accomplish this is
+
+1. `fan src/buildall.fan`
+2. `fan compilerEs::NodeRunner -init` This will create the initial node package in `<fan_home>/lib/es/`
+and stage the `sys.js` code.
+3. `fan src/buildpods.fan js` Run only on the non-bootstrap pods to generate JS code for *all* types
+in a pod. It then stages the js and a typescript declaration file (`d.ts`) to the node package
+in `<fan_home>/lib/es/`
 
 # Naming
 
