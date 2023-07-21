@@ -78,33 +78,37 @@ class CompileTsPlugin : CompilerStep
       out.print("export class $type.name$classParams $extends{\n")
 
       // Write fields
-      type.fieldDefs.each |field|
+      fields := type.fields.findAll |field|
       {
-        if (!field.isPublic) return
-        if (type.base?.slot(field.name) != null &&
-            type.base.slot(field.name).isPublic &&
-            !pmap.containsKey(type.signature))
-              return
-
+        field.isPublic &&
+        (field is FieldDef ||
+         (type.mixins.any |m| { m.slot(field.name)?.isPublic == true } &&
+          type.base?.slot(field.name) == null))
+      }
+      fields.each |field|
+      {
         name := JsNode.pickleName(field.name, deps)
         staticStr := field.isStatic ? "static " : ""
         typeStr := getJsType(field.fieldType, pod, field.isStatic ? type : null)
 
-        printDoc(field.doc, 2)
+        if (field is FieldDef)
+          printDoc(field->doc, 2)
+
         out.print("  $staticStr$name(): $typeStr\n")
         if (!field.isConst)
           out.print("  $staticStr$name(it: $typeStr): void\n")
       }
 
       // Write methods
-      type.methodDefs.each |method|
+      methods := type.methods.findAll |method|
       {
-        if (!method.isPublic) return
-        if (type.base?.slot(method.name) != null &&
-            type.base.slot(method.name).isPublic &&
-            !pmap.containsKey(type.signature))
-              return
-
+        method.isPublic &&
+        (method is MethodDef ||
+         (type.mixins.any |m| { m.slot(method.name)?.isPublic == true } &&
+          type.base?.slot(method.name) == null))
+      }
+      methods.each |method|
+      {
         isStatic := method.isStatic || method.isCtor || pmap.containsKey(type.signature)
         staticStr := isStatic ? "static " : ""
         name := JsNode.pickleName(method.name, deps)
@@ -129,7 +133,8 @@ class CompileTsPlugin : CompilerStep
             method.qname == "sys::Map.ro")
               output = "Readonly<$output>"
 
-        printDoc(method.doc, 2)
+        if (method is MethodDef)
+          printDoc(method->doc, 2)
         out.print("  $staticStr$name($inputs): $output\n")
       }
 
@@ -248,7 +253,7 @@ class CompileTsPlugin : CompilerStep
     out.print( """export class ObjUtil {
                     static hash(obj: any): number
                     static equals(a: any, b: JsObj | null): boolean
-                    static compare(a: any, b: JsObj | null, op: boolean): number
+                    static compare(a: any, b: JsObj | null, op?: boolean): number
                     static compareNE(a: any, b: JsObj | null): boolean
                     static compareLT(a: any, b: JsObj | null): boolean
                     static compareLE(a: any, b: JsObj | null): boolean
