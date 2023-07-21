@@ -767,12 +767,12 @@ static isName(name) {
     Uri.__charMap[61]  = Uri.__USER | Uri.__HOST | Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
 
     // gen-delimiter symbols
-    Uri.__charMap[58] = Uri.__PATH  | Uri.__USER  | Uri.__QUERY | Uri.__FRAG;
+    Uri.__charMap[58] = Uri.__HOST | Uri.__PATH  | Uri.__USER  | Uri.__QUERY | Uri.__FRAG;
     Uri.__charMap[47] = Uri.__PATH  | Uri.__QUERY | Uri.__FRAG;
     Uri.__charMap[63] = Uri.__QUERY | Uri.__FRAG;
     Uri.__charMap[35] = 0;
-    Uri.__charMap[91] = 0;
-    Uri.__charMap[93] = 0;
+    Uri.__charMap[91] = Uri.__HOST;
+    Uri.__charMap[93] = Uri.__HOST;
     Uri.__charMap[64] = Uri.__PATH | Uri.__QUERY | Uri.__FRAG;
 
     // delimiter escape map - which characters need to
