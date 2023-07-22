@@ -64,6 +64,7 @@ class CompileTsPlugin : CompilerStep
       if (type.signature == "sys::Map")
         classParams = "<K = unknown, V = unknown>"
 
+      abstr := type.isMixin ? "abstract " : ""
       extends := ""
       if (type.base != null)
         extends = "extends ${getNamespacedType(type.base.name, type.base.pod.name, pod)} "
@@ -75,7 +76,7 @@ class CompileTsPlugin : CompilerStep
 
       // Write class documentation & header
       printDoc(type.doc, 0)
-      out.print("export class $type.name$classParams $extends{\n")
+      out.print("export ${abstr}class $type.name$classParams $extends{\n")
 
       // Write fields
       fields := type.fields.findAll |field|
@@ -113,19 +114,18 @@ class CompileTsPlugin : CompilerStep
         staticStr := isStatic ? "static " : ""
         name := JsNode.pickleName(method.name, deps)
 
-        inputs := method.params.map |CParam p->Str| {
+        inputList := method.params.map |CParam p->Str| {
           paramName := JsNode.pickleName(p.name, deps)
           if (p.hasDefault)
             paramName += "?"
           paramType := getJsType(p.paramType, pod, isStatic ? type : null)
           return "$paramName: $paramType"
-        }.join(", ")
-        if (!method.isStatic && !method.isCtor && pmap.containsKey(type.signature))
-        {
-          selfInput := "self: ${pmap[type.signature]}"
-          if (inputs == "") inputs = selfInput
-          else inputs = "$selfInput, $inputs"
         }
+        if (!method.isStatic && !method.isCtor && pmap.containsKey(type.signature))
+          inputList.insert(0, "self: ${pmap[type.signature]}")
+        if (method.isCtor)
+          inputList.add("...__overload: unknown")
+        inputs := inputList.join(", ")
 
         output := method.isCtor ? type.name : getJsType(method.returnType, pod, pmap.containsKey(type.signature) ? type : null)
         if (method.qname == "sys::Obj.toImmutable" ||
