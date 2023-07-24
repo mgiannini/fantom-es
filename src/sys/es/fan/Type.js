@@ -793,7 +793,9 @@ class ListType extends GenericType {
     const objType = ObjUtil.typeof$(obj);
 
     if (objType instanceof ListType &&
-        objType.v.qname() == "sys::Obj" &&
+        // TOOD:MAYBE - commenting out this check allows runtime coercion
+        // of one list type to another
+        // objType.v.qname() == "sys::Obj" &&
         that instanceof ListType)
       return obj;
 
@@ -911,7 +913,7 @@ class FuncType extends GenericType {
     // return type are generic parameter types.
     this.#genericParameterType |= ret.isGenericParameter();
     for (let i=0; i<params.length; ++i)
-      this.genericParameterType |= params[i].isGenericParameter();
+      this.#genericParameterType |= params[i].isGenericParameter();
   }
 
   #pars;

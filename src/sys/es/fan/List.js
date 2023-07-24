@@ -13,6 +13,9 @@
  * List
  */
 class List extends Obj {
+  // Known Issues:
+  // - capacity/sizing implementation is inconsistent with Java impl so those
+  //   tests fail: testSizeCapacity()
 
 //////////////////////////////////////////////////////////////////////////
 // Constructors
@@ -65,7 +68,7 @@ class List extends Obj {
     if (it === undefined) return this.#size; 
     this.#modify();
     // const oldSize = this.#size;
-    const newSize = val;
+    const newSize = it;
     for (let i=0; this.#size+i<newSize; i++)
       this.#values.push(null);
     this.#size = newSize;
@@ -75,7 +78,9 @@ class List extends Obj {
     if (it === undefined) return this.#values.length;
     this.#modify();
     if (it < this.#size) throw ArgErr.make("capacity < size");
-    // noop
+    // TODO:??? - no-op
+    // fill with nulls
+    // this.#values = this.#values.concat(new Array(it-this.#values.length).fill(null));
   }
 
   get(index) {
@@ -238,11 +243,6 @@ class List extends Obj {
     //{
     //  throw CastErr.make("Setting '" + FanObj.type(value) + "' into '" + of + "[]'").val;
     //}
-  }
-
-  add(value) {
-    // modify in #insert$
-    return this.#insert$(this.#size, value);
   }
 
   add(value) {
@@ -637,7 +637,7 @@ push(obj) {
     // everything found in the dups map
     const acc = List.make(this.#of);
     for (let i=0; i<this.#size; ++i) {
-      const v = this.m_values[i];
+      const v = this.#values[i];
       let key = v;
       if (key == null) key = "__null_key__";
       if (dups.get(key) != null) {
