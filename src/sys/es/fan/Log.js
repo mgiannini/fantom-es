@@ -17,49 +17,51 @@ class Log extends Obj {
 // Construction
 //////////////////////////////////////////////////////////////////////////
 
-  constructor(name, level, register) {
-    super();
-    Uri.checkName(name);
-    this.#name = name;
-    this.#level = level;
-
-    if (register) {
-      if (Log.#byName[name] != null)
-        throw ArgErr.make("Duplicate log name: " + name);
-      
-      // init and put into map
-      Log.#byName[name] = this;
-      
-      // TODO FIXIT
-      //    var val = (String)Sys.sysPod.props(Uri.fromStr("log.props"), Duration.oneMin).get(name);
-      //    if (val != null) self.level = LogLevel.fromStr(val);
-    }
-  }
+  constructor() { super(); }
 
   #name;
   #level;
-  static #byName = [];
-  static #handlers = [];
+  static #byName = new es6.JsMap();
+  static #handlers = [(rec) => { rec.print(); }]
 
   static list() {
-    return List.make(Log.type$, Log.#byName).ro();
+    return List.make(Log.type$, Array.from(Log.#byName.values())).ro();
   }
 
   static find(name, checked=true) {
-    const log = Log.#byName[name];
+    const log = Log.#byName.get(name);
     if (log != null) return log;
     if (checked) throw Err.make("Unknown log: " + name);
     return null;
   }
 
   static get(name) {
-    const log = Log.#byName[name];
+    const log = Log.#byName.get(name);
     if (log != null) return log;
     return Log.make(name, true);
   }
 
   static make(name, register) {
-    return new Log(name, LogLevel.info(), register);
+    const self = new Log();
+    Log.make$(self, name, register);
+    return self;
+  }
+
+  static make$(self, name, register) {
+    Uri.checkName(name);
+    self.#name = name;
+    self.#level = LogLevel.info();
+    if (register) {
+      if (Log.#byName.get(name) != null)
+        throw ArgErr.make("Duplicate log name: " + name);
+      
+      // init and put into map
+      Log.#byName.set(name, self);
+      
+      // TODO FIXIT
+      //    var val = (String)Sys.sysPod.props(Uri.fromStr("log.props"), Duration.oneMin).get(name);
+      //    if (val != null) self.level = LogLevel.fromStr(val);
+    }
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -76,7 +78,7 @@ class Log extends Obj {
 
   level(it=undefined) {
     if (it === undefined) return this.#level;
-    if (level == null) throw ArgErr.make("level cannot be null");
+    if (it == null) throw ArgErr.make("level cannot be null");
     this.#level = it;
   }
 
