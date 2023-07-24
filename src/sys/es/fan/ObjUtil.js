@@ -35,6 +35,12 @@ class ObjUtil {
     return a === b;
   }
 
+  static same(a, b) {
+    if (a == null) return b == null;
+    if (a instanceof Obj) return a === b;
+    return ObjUtil.equals(a,b);
+  }
+
   static compare(a, b, op) {
     if (a instanceof Obj) {
       if (b == null) return +1;

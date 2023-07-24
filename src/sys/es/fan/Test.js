@@ -92,7 +92,7 @@ class Test extends Obj {
   }
 
   verifySame(expected, actual, msg=null) {
-    if (!ObjUtil.equals(expected, actual)) {
+    if (!ObjUtil.same(expected, actual)) {
       if (msg == null) msg = ObjUtil.toStr(expected) + " [" + expected.typeof$() + "] != " + ObjUtil.toStr(actual) + " [" + actual.typeof$() + "]";
       this.fail(msg);
     }
@@ -100,7 +100,7 @@ class Test extends Obj {
   }
 
   verifyNotSame(expected, actual, msg=null) {
-    if (ObjUtil.equals(expected, actual)) {
+    if (ObjUtil.same(expected, actual)) {
       if (msg == null) msg = ObjUtil.toStr(expected) + " === " + ObjUtil.toStr(actual);
       this.fail(msg);
     }
