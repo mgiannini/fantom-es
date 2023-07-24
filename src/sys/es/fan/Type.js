@@ -678,7 +678,7 @@ class GenericType extends Type {
     // create new parameterized version
     t = this.parameterizeType$(t);
     //var pf = new Field(this, f.name, f.flags, f.facets, f.lineNum, t);
-    const pf = new Field(this, f.name$(), f.flags(), t, f.facets());
+    const pf = new Field(this, f.name$(), f.flags$(), t, f.facets());
     //pf.reflect = f.reflect;
     return pf;
   }

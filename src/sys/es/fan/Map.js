@@ -12,6 +12,12 @@
  * Map.
  */
 class Map extends Obj {
+  // Known Issues:
+  // - ro() does not behave the same as the java impl. Java creates
+  //   a shallow copy initially and saves it in #readOnlyMap field of the
+  //   mutable version. Then if the mutable one gets modified, it detaches the
+  //   shallow copy and does a deep clone transfer to the readOnlyMap.
+  //      - So we are currently excluding verifySame() tests in the MapTest.testReadonly()
 
 //////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -253,7 +259,7 @@ class Map extends Obj {
   }
 
   equals(that) {
-    if (that != null) {
+    if (that != null && that instanceof Map) {
       if (!this.#type.equals(that.#type)) return false;
       if (this.#size != that.#size) return false;
       let eq = true;
@@ -555,13 +561,13 @@ class Map extends Obj {
     let prev = undefined;
     while (b !== undefined) {
       if (this.#keysEqual(b.key, key)) {
+        const v = b.val;
         if (prev !== undefined && b.next !== undefined) prev.next = b.next;
         else if (prev === undefined) this.#vals[h] = b.next;
         else if (b.next === undefined) prev.next = undefined;
         if (this.#ordered) this.#keys[b.ki] = undefined;
         this.#size--;
-        const v = b.val
-        delete prev.next;
+        delete b.key; delete b.val; delete b.next;
         return v;
       }
       prev = b;

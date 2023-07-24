@@ -37,7 +37,7 @@ class ObjUtil {
 
   static same(a, b) {
     if (a == null) return b == null;
-    if (a instanceof Obj) return a === b;
+    if (a instanceof Obj || b instanceof Obj) return a === b;
     return ObjUtil.equals(a,b);
   }
 
