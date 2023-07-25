@@ -13,27 +13,11 @@
  */
 class Field extends Slot {
 
-  // TODO:FIXIT:MAJOR - i think a lot of the get/set reflection is wrong
-  // because we are now generating overloaded <fieldName>(it=undefined) pattern
-
 //////////////////////////////////////////////////////////////////////////
 // Factories
 //////////////////////////////////////////////////////////////////////////
 
   static makeSetFunc(map) {
-    // return fan.sys.Func.make(
-    //   fan.sys.List.make(fan.sys.Param.type$),
-    //   fan.sys.Void.type$,
-    //   function(obj)
-    //   {
-    //     var keys = map.keys();
-    //     for (var i=0; i<keys.size(); i++)
-    //     {
-    //       var field = keys.get(i);
-    //       var val = map.get(field);
-    //       field.set(obj, val, false); //, obj != inCtor);
-    //     }
-    //   });
     return (obj) => {
       const keys = map.keys();
       for (let i=0; i<keys.size(); i++)
@@ -95,24 +79,12 @@ class Field extends Slot {
       else throw Err.make(`Failed to reflect ${this.qname$()}`);
     }
     else {
-      return instance[this.name$()]();
+      let fname = this.#name$;
+      // special handling for once fields
+      if (this.isSynthetic() && fname.endsWith("$Store"))
+        fname = fname.slice(-fname.length, -"$Store".length);
+      return instance[fname]();
     }
-    /*
-    if (this.isStatic()) {
-      return eval(this.#qname$());
-    }
-    else
-    {
-      var target = instance;
-      if ((this.m_flags & fan.sys.FConst.Native) != 0)
-        target = instance.peer;
-      var getter = target[this.m_$name];
-      if (getter != null)
-        return getter.call(target);
-      else
-        return target["m_"+this.m_$name]
-    }
-    */
   }
 
   set(instance, value, checkConst=true) {

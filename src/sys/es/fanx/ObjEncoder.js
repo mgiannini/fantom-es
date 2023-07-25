@@ -126,7 +126,7 @@ fanx_ObjEncoder.prototype.writeComplex = function(type, obj, ser)
     if (first) { this.w('\n').wIndent().w('{').w('\n'); this.level++; first = false; }
 
     // field name =
-    this.wIndent().w(f.$name()).w('=');
+    this.wIndent().w(f.name$()).w('=');
 
     // field value
     this.curFieldType = f.type().toNonNullable();
@@ -196,7 +196,7 @@ fanx_ObjEncoder.prototype.writeList = function(list)
 
   // figure out if we can use an inferred type
   var inferred = false;
-  if (this.curFieldType != null && (this.curFieldType instanceof fan.sys.ListType))
+  if (this.curFieldType != null && (this.curFieldType instanceof ListType))
   {
     inferred = true;
   }
@@ -240,7 +240,7 @@ fanx_ObjEncoder.prototype.writeMap = function(map)
 
   // figure out if we can use an inferred type
   var inferred = false;
-  if (this.curFieldType != null && (this.curFieldType instanceof fan.sys.MapType))
+  if (this.curFieldType != null && (this.curFieldType instanceof MapType))
   {
     inferred = true;
   }

@@ -471,7 +471,7 @@ fanx_ObjDecoder.prototype.readMap = function(mapType, firstKey)
     var size = map.size();
     var k = Type.common$(map.keys().__values());
     var v = Type.common$(map.vals().__values());
-    map.m_type = new MapType(k, v);
+    map.__type(new MapType(k, v));
   }
 
   return map;

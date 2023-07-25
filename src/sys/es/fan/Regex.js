@@ -28,12 +28,10 @@ class Regex extends Obj {
   #regexp;
 
   static #defVal = undefined;
-  defVal() { 
+  static defVal() { 
     if (Regex.#defVal === undefined) Regex.#defVal = Regex.fromStr("");
     return Regex.#defVal;
   }
-
-  
 
   static fromStr(pattern, flags="") {
     return new Regex(pattern, flags);

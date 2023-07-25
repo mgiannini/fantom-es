@@ -247,33 +247,33 @@ fanx_Tokenizer.prototype.number = function(neg)
     if (floatSuffix)
     {
       if (s == null)
-        this.val = fan.sys.Float.make(whole);
+        this.val = Float.make(whole);
       else
-        this.val = fan.sys.Float.fromStr(s);
+        this.val = Float.fromStr(s);
       return fanx_Token.FLOAT_LITERAL;
     }
 
     // decimal literal (or duration)
     if (decimalSuffix || floating)
     {
-      var num = (s == null) ? whole : fan.sys.Float.fromStr(s);
+      var num = (s == null) ? whole : Float.fromStr(s);
       if (dur > 0)
       {
-        this.val = fan.sys.Duration.make(num * dur);
+        this.val = Duration.make(num * dur);
         return fanx_Token.DURATION_LITERAL;
       }
       else
       {
-        this.val = fan.sys.Decimal.make(num);
+        this.val = Decimal.make(num);
         return fanx_Token.DECIMAL_LITERAL;
       }
     }
 
     // int literal (or duration)
-    var num = (s == null) ? whole : Math.floor(fan.sys.Float.fromStr(s, true));
+    var num = (s == null) ? whole : Math.floor(Float.fromStr(s, true));
     if (dur > 0)
     {
-      this.val = fan.sys.Duration.make(num*dur);
+      this.val = Duration.make(num*dur);
       return fanx_Token.DURATION_LITERAL;
     }
     else
@@ -318,7 +318,7 @@ str += String.fromCharCode(this.cur);
     this.consume();
   }
   //this.val = val;
-this.val = fan.sys.Int.fromStr(str, 16);
+this.val = Int.fromStr(str, 16);
   return type;
 }
 
@@ -460,7 +460,7 @@ fanx_Tokenizer.prototype.uri = function()
     }
   }
 
-  this.val = fan.sys.Uri.fromStr(s);
+  this.val = Uri.fromStr(s);
   return fanx_Token.URI_LITERAL;
 }
 
@@ -552,7 +552,7 @@ fanx_Tokenizer.prototype.consume = function()
  */
 fanx_Tokenizer.prototype.undo = function(type, val, line)
 {
-  if (this.$undo != null) throw new fan.sys.Err.make("only one pushback supported");
+  if (this.$undo != null) throw new Err.make("only one pushback supported");
   this.$undo = new fanx_Undo(type, val, line);
 }
 

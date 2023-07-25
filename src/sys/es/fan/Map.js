@@ -63,6 +63,10 @@ class Map extends Obj {
 //////////////////////////////////////////////////////////////////////////
 
   typeof$() { return this.#type; }
+  __type(it) { 
+    if (!(it instanceof MapType)) throw ArgErr.make(`Must be MapType: ${it} ${it.constructor.name}`);
+    this.#type = it;
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Methods
