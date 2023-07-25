@@ -35,6 +35,14 @@ class MimeType extends Obj {
       const mime = MimeType.#byMime[s];
       if (mime != null) return mime;
 
+      // for some reason this one is not in ext2mime and we need to cache it
+      if (s == "x-directory/normal") 
+      {
+        const dir = MimeType.#parseStr(s);
+        MimeType.#byMime[s] = dir;
+        return dir
+      }
+
       return MimeType.#parseStr(s);
     }
     catch (err)
