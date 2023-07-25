@@ -139,7 +139,7 @@ class Range extends Obj {
   }
 
   map(func) {
-    let r = f.__returns;
+    let r = func.__returns;
     if (r == null || r == Void.type$) r = Obj.type$.toNullable();
 
     const acc = List.make(r);
