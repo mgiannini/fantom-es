@@ -9,6 +9,7 @@
 **
 ** ObjTest
 **
+@Js
 class ObjTest : Test
 {
 
@@ -118,11 +119,11 @@ class ObjTest : Test
 // ObjMixin
 //////////////////////////////////////////////////////////////////////////
 
-mixin ObjMixin
+@Js mixin ObjMixin
 {
 }
 
-class ObjMixinImpl : ObjMixin
+@Js class ObjMixinImpl : ObjMixin
 {
   override Int hash() { return 99 }
   override Str toStr() { return "x" }
@@ -132,7 +133,7 @@ class ObjMixinImpl : ObjMixin
 // ObjWrapper
 //////////////////////////////////////////////////////////////////////////
 
-class ObjWrapper
+@Js class ObjWrapper
 {
   new make(Obj obj) { this.obj = obj }
   override Int hash() { return obj.hash(); }
