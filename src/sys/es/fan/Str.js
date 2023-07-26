@@ -117,7 +117,7 @@ class Str extends Obj {
     return Str.index(self.toLowerCase(), s.toLowerCase(), off);
   }
 
-  static indexrIgnoreCase(self, s, off=0) {
+  static indexrIgnoreCase(self, s, off=-1) {
     return Str.indexr(self.toLowerCase(), s.toLowerCase(), off);
   }
 
