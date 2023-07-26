@@ -42,7 +42,7 @@ class StrBufOutStream extends OutStream {
   }
 
   writeChars(s, off=0, len=s.length-off) {
-    this.#buf.add(s.substring(off, len));
+    this.#buf.add(s.slice(off, off+len));
     return this;
   }
 

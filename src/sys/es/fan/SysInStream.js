@@ -109,7 +109,10 @@ class LocalFileInStream extends SysInStream {
     return read == 0 ? null : read;
   }
 
-  unread(n) { this.#pre.push(n); }
+  unread(n) { 
+    this.#pre.push(n); 
+    return this;
+  }
 
   skip(n) {
     let skipped = 0;

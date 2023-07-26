@@ -1117,6 +1117,7 @@ class StreamTest : Test
     verifyErr(UnsupportedErr#) { out.write(6) }
     verifyErr(UnsupportedErr#) { out.writeBuf(Buf.make) }
     verifyErr(UnsupportedErr#) { out.writeI4(7) }
+
     out.writeChar('a')
     out.flush()
     out.writeChars("bc")

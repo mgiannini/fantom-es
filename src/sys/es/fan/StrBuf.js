@@ -32,8 +32,6 @@ class StrBuf extends Obj {
 // Methods
 //////////////////////////////////////////////////////////////////////////
 
-  
-
   add(obj) {
     this.#str += obj==null ? "null" : ObjUtil.toStr(obj);
     return this;

@@ -36,23 +36,9 @@ class StrInStream extends InStream {
 
   __toCharInStream() { return this; }
 
-  read() {
-    const b = this.rChar$();
-    return (b < 0) ? null : b & 0xFF;
-  }
-
-  readBuf(buf, n) {
-    for (let i=0; i<n; ++i) {
-      const c = this.rChar();
-      if (c < 0) return i == 0 ? null : i;
-      buf.out().writeChar(c);
-    }
-    return n;
-  }
-
-  unread(c) {
-    return this.unreadChar(c);
-  }
+  read() { throw UnsupportedErr.make("Binary read on Str.in"); }
+  readBuf() { throw UnsupportedErr.make("Binary read on Str.in"); }
+  unread() { throw UnsupportedErr.make("Binary read on Str.in"); }
 
   __rChar() {
     if (this.#pushback != null && this.#pushback.length > 0)
@@ -68,7 +54,7 @@ class StrInStream extends InStream {
 
   unreadChar(c) {
     if (this.#pushback == null) this.#pushback = [];
-    this.pushback.push(c);
+    this.#pushback.push(c);
     return this;
   }
 

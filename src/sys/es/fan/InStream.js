@@ -64,10 +64,6 @@ class InStream extends Obj {
       return this.#inChar.__rChar();
     else 
       return this.#charset.__encoder().decode(this);
-    // if (this.#in != null)
-    //   return this.$in.rChar();
-    // else
-    //   return this.m_charset.m_encoder.decode(this);
   }
 
   avail() { return 0; }
@@ -75,48 +71,16 @@ class InStream extends Obj {
   read() {
     if (!this.#in) throw UnsupportedErr.make(`${this.typeof$().qname()} wraps null InStream`);
     return this.#in.read();
-    // try {
-    //   return this.$in.read();
-    // }
-    // catch (err)
-    // {
-    //   if (this.$in == null)
-    //     throw fan.sys.UnsupportedErr.make(this.typeof$().qname() + " wraps null InStream");
-    //   else
-    //     throw fan.sys.Err.make(err);
-    // }
   }
 
   readBuf(buf, n) {
     if (!this.#in) throw UnsupportedErr.make(`${this.typeof$().qname()} wraps null InStream`);
     return this.#in.readBuf(buf, n);
-    // try
-    // {
-    //   return this.$in.readBuf(buf, n);
-    // }
-    // catch (err)
-    // {
-    //   if (this.$in == null)
-    //     throw fan.sys.UnsupportedErr.make(this.typeof$().qname() + " wraps null InStream");
-    //   else
-    //     throw fan.sys.Err.make(err);
-    // }
   }
 
   unread(n) {
     if (!this.#in) throw UnsupportedErr.make(`${this.typeof$().qname()} wraps null InStream`);
     return this.#in.unread(n);
-    // try
-    // {
-    //   return this.$in.unread(n);
-    // }
-    // catch (err)
-    // {
-    //   if (this.$in == null)
-    //     throw fan.sys.UnsupportedErr.make(this.typeof$().qname() + " wraps null InStream");
-    //   else
-    //     throw fan.sys.Err.make(err);
-    // }
   }
 
   skip(n) {
@@ -322,7 +286,8 @@ class InStream extends Obj {
 
   unreadChar(c) {
     const ch = this.#charset.__encoder().encodeIn(c, this);
-    return ch < 0 ? null : ch;
+    // return ch < 0 ? null : ch;
+    return this;
   }
 
   peekChar() {
@@ -344,8 +309,6 @@ class InStream extends Obj {
   }
 
   readLine(max=null) {
-    if (max == null) max = Int.__chunk;
-
     // max limit
     const maxChars = (max != null) ? max.valueOf() : Int.maxVal();
     if (maxChars <= 0) return "";
@@ -365,6 +328,31 @@ class InStream extends Obj {
         if (c >= 0 && c != 10) this.unreadChar(c);
         break;
       }
+
+      // append to working buffer
+      buf += String.fromCharCode(c);
+      if (buf.length >= maxChars) break;
+
+      // read next char
+      c = this.__rChar();
+      if (c < 0) break;
+    }
+    return buf;
+  }
+
+  readNullTerminatedStr(max=null) {
+    // max limit
+    const maxChars = (max != null) ? max.valueOf() : Int.maxVal();
+    if (maxChars <= 0) return "";
+
+    // read first char, if at end of file bail
+    let c = this.__rChar();
+    if (c < 0) return null;
+
+    // loop readin chars until we hit '\0' or max chars
+    let buf = "";
+    while (true) {
+      if (c == 0) break;
 
       // append to working buffer
       buf += String.fromCharCode(c);
@@ -482,14 +470,17 @@ class InStream extends Obj {
       let inEndOfLineComment = false;
       let c = 32, last = 32;
       let lineNum = 1;
+      let colNum = 0;
 
       while (true) {
         last = c;
         c = this.__rChar();
+        ++colNum;
         if (c < 0) break;
 
         // end of line
         if (c == 10 || c == 13) {
+          colNum = 0;
           inEndOfLineComment = false;
           if (last == 13 && c == 10) continue;
           const n = Str.trim(name);
@@ -521,7 +512,8 @@ class InStream extends Obj {
         }
 
         // line comment
-        if (c == 35 && (last == 10 || last == 13)) {
+        // if (c == 35 && (last == 10 || last == 13)) {
+        if (c == 35 && colNum == 1) {
           inEndOfLineComment = true;
           continue;
         }
@@ -603,7 +595,7 @@ class InStream extends Obj {
   pipe(out, toPipe=null, close=true)
   {
     try {
-      const bufSize = Int.__chunk;
+      let bufSize = Int.__chunk;
       const buf = Buf.make(bufSize);
       let total = 0;
       if (toPipe == null) {

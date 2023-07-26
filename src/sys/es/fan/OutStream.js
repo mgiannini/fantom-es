@@ -210,7 +210,7 @@ class OutStream extends Obj {
   printLine(obj="") {
     const s = obj == null ? "null" : ObjUtil.toStr(obj);
     this.writeChars(s, 0, s.length);
-    return this.writeChars('\n', 0, 1);
+    return this.writeChars('\n');
   }
 
   writeObj(obj, options=null) {
