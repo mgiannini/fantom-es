@@ -65,6 +65,7 @@ class LocalFileInStream extends SysInStream {
   #load() {
     this.#start = 0;
     this.#end = node.fs.readSync(this.#fd, this.#buf);
+    return this.#end - this.#start;
   }
 
   avail() {
@@ -116,23 +117,24 @@ class LocalFileInStream extends SysInStream {
     if (this.#pre.length > 0) {
       const len = Math.min(this.#pre.length, n);
       this.#pre = this.#pre.slice(0, -len);
-      n -= len;
       skipped += len;
     }
+    if (skipped == n) return skipped;
 
-    if (this.avail() === 0)
-      this.#load();
-    while (this.avail() > n) {
-      n -= this.avail();
-      skipped += this.avail();
+    if (this.avail() === 0) this.#load();
+
+    while (true) {
+      const a = this.avail();
+      if (a === 0 || skipped == n) break;
+      const rem = n - skipped;
+      if (rem < a) {
+        skipped += rem;
+        this.#start += rem;
+        break;
+      }
+      skipped += a;
       this.#load();
     }
-
-    n = Math.min(this.avail(), n);
-
-    start += n;
-    skipped += n;
-
     return skipped;
   }
 

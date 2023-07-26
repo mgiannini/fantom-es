@@ -162,6 +162,8 @@ class LocalFileOutStream extends SysOutStream {
       throw IOErr.make("Not enough bytes to write");
     try {
       node.fs.writeSync(this.#fd, Buffer.from(buf.__getBytes(buf.pos(), n)));
+      // writing a Buf needs to advance the position
+      buf.seek(buf.pos() + n);
       return this;
     }
     catch (e) {
