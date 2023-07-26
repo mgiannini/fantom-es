@@ -44,7 +44,7 @@ class Version extends Obj {
     }
     if (seg >= 0) segments.add(seg);
 
-    if (!valid || segments.size == 0)
+    if (!valid || segments.size() == 0)
     {
       if (checked)
         throw ParseErr.makeStr("Version", s);
