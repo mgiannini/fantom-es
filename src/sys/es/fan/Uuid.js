@@ -82,8 +82,7 @@ class Uuid extends Obj {
     }
     catch (err) {
       if (!checked) return null;
-      err.trace();
-      throw ParseErr.make("Uuid", s);
+      throw ParseErr.makeStr("Uuid", s, null, err);
     }
   }
 
@@ -103,7 +102,7 @@ class Uuid extends Obj {
       return false;
   }
 
-  hash() { return Str.hash(this.m_value); }
+  hash() { return Str.hash(this.#value); }
 
   compare(that) { return ObjUtil.compare(this.#value, that.#value); }
 
