@@ -33,6 +33,7 @@ class Build : BuildPod
               ]
     srcDirs = [
                `fan/`,
+               `fan/ts/`,
               ]
     // resDirs = [`res/`, `locale/`,]
     docApi  = false
