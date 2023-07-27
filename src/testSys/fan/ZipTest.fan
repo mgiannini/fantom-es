@@ -9,6 +9,7 @@
 **
 ** ZipTest
 **
+@Js
 class ZipTest : Test
 {
 
