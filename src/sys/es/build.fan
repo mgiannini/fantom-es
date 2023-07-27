@@ -141,8 +141,7 @@ class Build : BuildScript
     }
     append(sys + `Sys.js`, out)
     append(sys + `Facets.js`, out)
-    // log.warn("TODO: append MethodFunc.js")
-    // append(sys + `MethodFunc.js`, out)
+    append(sys + `MethodFunc.js`, out)
   }
 
   private Void writeFanx()

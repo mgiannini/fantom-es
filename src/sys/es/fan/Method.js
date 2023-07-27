@@ -21,8 +21,7 @@ class Method extends Slot {
     super(parent, name, flags, facets);
     this.#returns = returns;
     this.#params  = params;
-    // TODO:FIXIT - MethodFunc with native closures?
-    // this.#func    = new fan.sys.MethodFunc(this, returns);
+    this.#func    = new MethodFunc(this, returns);
     this.#name$   = this.name$$(name);
     this.#qname$  = this.parent().qnameJs$() + '.' + this.#name$;
     this.#mask    = (generic != null) ? 0 : Method.#toMask(parent, returns, params);
@@ -31,6 +30,7 @@ class Method extends Slot {
 
   #returns;
   #params;
+  #func;
   #name$;
   #qname$;
   #mask;
@@ -94,12 +94,10 @@ if (func == null) {
 
     return func.apply(instance, vals);
   }
-
   
   returns() { return this.#returns; }
   params() { return this.#params.ro(); }
-  // TODO:FIXIT
-  // func() { return this.#func; }
+  func() { return this.#func; }
 
 //////////////////////////////////////////////////////////////////////////
 // Generics
