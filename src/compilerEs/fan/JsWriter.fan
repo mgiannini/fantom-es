@@ -30,6 +30,7 @@ class JsWriter
   Int col  := 0 { private set }
   private Bool needIndent := false
   private Int indentation := 0
+  @NoDoc Bool trace := false
 
 //////////////////////////////////////////////////////////////////////////
 // JsWriter
@@ -49,6 +50,7 @@ class JsWriter
     str := o.toStr
     if (str.containsChar('\n')) throw Err("cannot w() str with newline: ${str}")
     if (loc != null) sourcemap?.add(str, Loc(loc.file, line, col), loc, name)
+    if (trace) Env.cur.out.print(str)
     out.writeChars(str)
     col += str.size
     return this
@@ -63,6 +65,7 @@ class JsWriter
   ** Write newline and then return this.
   JsWriter nl()
   {
+    if (trace) Env.cur.out.printLine
     out.writeChar('\n')
     ++line
     col = 0

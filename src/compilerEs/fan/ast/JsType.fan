@@ -181,9 +181,15 @@ class JsType : JsNode
     if (allowSet) js.w("it")
     js.wl(") {")
     js.indent
+
+    // closure support
+    getterHasClosure := ClosureFinder((MethodDef?)f.getter).exists
+    setterHasClosure := ClosureFinder((MethodDef?)f.setter).exists
+
     if (!allowSet)
     {
       plugin.curMethod = f.getter
+      if (getterHasClosure) js.wl("const this\$ = ${plugin.thisName};", loc)
       writeBlock(f.getter->code)
       plugin.curMethod = null
     }
@@ -191,11 +197,13 @@ class JsType : JsNode
     {
       js.wl("if (it === undefined) {").indent
       plugin.curMethod = f.getter
+      if (getterHasClosure) js.wl("const this\$ = ${plugin.thisName};", loc)
       writeBlock(f.getter->code)
       plugin.curMethod = null
       js.unindent.wl("}")
       js.wl("else {").indent
       plugin.curMethod = f.setter
+      if (setterHasClosure) js.wl("const this\$ = ${plugin.thisName};", loc)
       writeBlock(f.setter->code)
       plugin.curMethod = null
       js.unindent.wl("}")
@@ -335,7 +343,6 @@ class JsType : JsNode
     }
 
     // closure support
-    // TODO:TEST - need to make sure that code using "this$" works
     hasClosure := ClosureFinder(m).exists
     if (hasClosure) js.wl("const this\$ = ${plugin.thisName};")
 
@@ -440,11 +447,12 @@ internal class SyntheticParam : CParam
 
 internal class ClosureFinder : Visitor
 {
-  new make(Node node) { this.node = node }
-  Node node { private set }
+  new make(Node? node) { this.node = node }
+  Node? node { private set }
   Bool found := false
   Bool exists()
   {
+    if (node == null) return found
     node->walk(this, VisitDepth.expr)
     return found
   }
