@@ -86,10 +86,9 @@ class Slot extends Obj {
   }
 
   static findFunc(qname, checked=true) {
-    // TODO:FIXIT - how does this work with native closures???
     const m = Slot.find(qname, checked);
     if (m == null) return null;
-    return m.#func;
+    return m.func();
   }
 
 //////////////////////////////////////////////////////////////////////////

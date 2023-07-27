@@ -52,7 +52,7 @@ class MethodFunc extends Obj {
         types.push(params.get(i).type());
       this.#type = new FuncType(types, this.#returns);
     }
-    return this.m_type;
+    return this.#type;
   }
 
   call() {
