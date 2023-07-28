@@ -28,11 +28,8 @@ class Build : BuildPod
     depends = ["sys 1.0", "compiler 1.0",]
     srcDirs = [`fan/`,
                `fan/ast/`,
-               `fan/node/`,
-               // `fan/runner/`,
                `fan/util/`,
               ]
-    resDirs = [`res/`]
     docSrc  = true
   }
 }

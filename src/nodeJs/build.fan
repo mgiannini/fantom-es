@@ -30,12 +30,16 @@ class Build : BuildPod
                "compiler 1.0",
                "compilerEs 1.0",
                "fandoc 1.0",
+               "util 1.0",
               ]
     srcDirs = [
                `fan/`,
+               `fan/cmd/`,
                `fan/ts/`,
               ]
-    // resDirs = [`res/`, `locale/`,]
+    resDirs = [
+               `res/`,
+              ]
     docApi  = false
   }
 }
