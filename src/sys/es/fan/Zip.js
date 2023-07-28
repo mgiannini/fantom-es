@@ -19,6 +19,8 @@ class Zip extends Obj {
   }
 
   #file;
+  #yauzlZip;
+
   #in;
   #out;
 
@@ -30,6 +32,7 @@ class Zip extends Obj {
   {
     const zip = new Zip();
     zip.#file = file;
+    zip.#yauzlZip = yauzl.open(file.osPath());
     return zip;
   }
 
@@ -56,13 +59,22 @@ class Zip extends Obj {
     return this.#file || null;
   }
 
+  #contents;
   contents()
   {
-    if (!this.#file) return null;
+    if (!this.#yauzlZip) return null;
+    if (this.#contents) return this.#contents;
 
     const map = Map.make(Uri.type$, File.type$);
 
-    // Load zip file
+    // Get each entry
+    let entry;
+    while (!!(entry = this.#yauzlZip.getEntry())) {
+      map.add(Uri.fromStr("/" + entry.fileName), ZipEntryFile.make(entry, this.#yauzlZip));
+    }
+
+    this.#contents = map.ro();
+    return this.#contents;
   }
 
 //////////////////////////////////////////////////////////////////////////
