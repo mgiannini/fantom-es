@@ -154,14 +154,23 @@ class Zip extends Obj {
 // Other methods
 //////////////////////////////////////////////////////////////////////////
 
-  /**
-   * Close this zip file for reading and writing.  If this zip
-   * file is reading or writing an stream, then the underlying
-   * stream is also closed.  This method is guaranteed to never
-   * throw an IOErr.  Return true if the close was successful or
-   * false if the an error occurred.
-   */
-  // close(): boolean
+  close() {
+    try {
+      if (this.#yauzlZip) {
+        this.#yauzlZip.close();
+      }
+      if (this.#in) {
+        this.#in.close();
+      }
+      if (this.#out) {
+        this.#out.close();
+      }
+
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
   /**
    * Static utility to unzip a zip file to the given directory.
    * Raise exception if there is any failures.  Return number of
