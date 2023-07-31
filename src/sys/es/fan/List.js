@@ -55,6 +55,24 @@ class List extends Obj {
   __values() { return this.#values; }
 
 //////////////////////////////////////////////////////////////////////////
+// Iterator
+//////////////////////////////////////////////////////////////////////////
+
+  [Symbol.iterator]() {
+    let i = 0;
+    return {
+      next: () => {
+        if (i < this.#size) {
+          const result = {value: this.#values[i], done: false};
+          ++i;
+          return result;
+        }
+        return {done: true}
+      }
+    }
+  }
+
+//////////////////////////////////////////////////////////////////////////
 // Identity
 //////////////////////////////////////////////////////////////////////////
 
@@ -469,7 +487,6 @@ push(obj) {
     }
     return acc;
   }
-
 
   exclude(f) {
     const acc = List.make(this.#of);
