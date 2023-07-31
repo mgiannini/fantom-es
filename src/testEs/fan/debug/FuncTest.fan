@@ -1,4 +1,5 @@
 
+/*
 @Js class FuncTest : Test
 {
   Void test()
@@ -17,3 +18,4 @@
 
   Void fireSelect() { cbSelect?.call(this) }
 }
+*/

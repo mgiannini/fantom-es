@@ -133,7 +133,7 @@ class JsExpr : JsNode
     writeType(x.val)
   }
 
-  private Void writeType(CType t, Loc? loc := this.loc)
+  protected Void writeType(CType t, Loc? loc := this.loc)
   {
     if (t.isList || t.isMap || t.isFunc)
     {
@@ -461,7 +461,6 @@ if (plugin.curMethod == null) throw Err("curMethod is null")
     isJs := sigTypes.all { !it.isForeign && checkJsSafety(it, loc) }
     if (isJs)
     {
-      js.w("sys.Func.r\$(")
       js.w("${methodParams(ce.doCall.params)}", loc).wl(" => {")
       js.indent
       old := plugin.thisName
@@ -469,9 +468,7 @@ if (plugin.curMethod == null) throw Err("curMethod is null")
       writeBlock(ce.doCall.code)
       plugin.thisName = old
       js.unindent
-      js.w("}, ")
-      writeType(ce.doCall.returnType)
-      js.w(")")
+      js.w("}")
     }
     else
     {
@@ -689,8 +686,16 @@ internal class JsCallExpr : JsExpr
       writeExpr(arg)
     }
 
+    if (ce.args.last is ClosureExpr && typedFuncs.contains(name))
+    {
+      ClosureExpr ce := ce.args.last
+      js.w(", ")
+      writeType(ce.doCall.returnType)
+    }
+
     if (ce.isDynamic) js.w("])")
   }
+  private static const Str[] typedFuncs := ["map", "mapNotNull", "flatMap", "groupBy"]
 }
 
 **************************************************************************

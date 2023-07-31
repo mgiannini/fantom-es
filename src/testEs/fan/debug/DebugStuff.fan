@@ -1,3 +1,13 @@
+@Js class TestClos : Test
+{
+  Void test()
+  {
+    arr := [1,2,3]
+    strs := arr.map |i->Str| { "str${i}" }
+    verifyEq(["str1", "str2", "str3"], strs)
+  }
+}
+
 // @Js class Consty
 // {
 //   const Int x := 0
