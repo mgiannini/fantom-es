@@ -59,7 +59,6 @@ class File extends Obj {
     return f;
   }
 
-  // TODO : what would the difference be?
   static os(osPath) {
     if (!Env.__isNode())
       throw Err.make("Must be running on Node JS to create a local file.");
@@ -142,7 +141,7 @@ class File extends Obj {
   // Returns whether the file is *internally* a directory, rather than just using the uri
   __isDirectory() { this.#throwNotSupported("isDirectory"); }
 
-  exists() { return true; }
+  exists() { return false; }
   size() { this.#throwNotSupported("size"); }
 
   isEmpty() {

@@ -70,7 +70,7 @@ class Zip extends Obj {
     // Get each entry
     let entry;
     while (!!(entry = this.#yauzlZip.getEntry())) {
-      map.add(Uri.fromStr("/" + entry.fileName), ZipEntryFile.make(entry, this.#yauzlZip));
+      map.add(Uri.fromStr("/" + entry.fileName), ZipEntryFile.makeFromFile(entry, this));
     }
 
     this.#contents = map.ro();
@@ -89,7 +89,8 @@ class Zip extends Obj {
    */
   readNext()
   {
-    if (!this.#in) return null;
+    if (!this.#in)
+      throw UnsupportedErr.make("Not reading from an input stream");
 
     // return the File
     return null;
