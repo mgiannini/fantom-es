@@ -472,152 +472,146 @@ class YauzlZipFile {
     }
     return entry;
   }
-  // openReadStream(entry, options, callback) {
-  //   var self = this;
-  //   // parameter validation
-  //   var relativeStart = 0;
-  //   var relativeEnd = entry.compressedSize;
-  //   if (callback == null) {
-  //     callback = options;
-  //     options = {};
-  //   } else {
-  //     // validate options that the caller has no excuse to get wrong
-  //     if (options.decrypt != null) {
-  //       if (!entry.isEncrypted()) {
-  //         throw new Error("options.decrypt can only be specified for encrypted entries");
-  //       }
-  //       if (options.decrypt !== false) throw new Error("invalid options.decrypt value: " + options.decrypt);
-  //       if (entry.isCompressed()) {
-  //         if (options.decompress !== false) throw new Error("entry is encrypted and compressed, and options.decompress !== false");
-  //       }
-  //     }
-  //     if (options.decompress != null) {
-  //       if (!entry.isCompressed()) {
-  //         throw new Error("options.decompress can only be specified for compressed entries");
-  //       }
-  //       if (!(options.decompress === false || options.decompress === true)) {
-  //         throw new Error("invalid options.decompress value: " + options.decompress);
-  //       }
-  //     }
-  //     if (options.start != null || options.end != null) {
-  //       if (entry.isCompressed() && options.decompress !== false) {
-  //         throw new Error("start/end range not allowed for compressed entry without options.decompress === false");
-  //       }
-  //       if (entry.isEncrypted() && options.decrypt !== false) {
-  //         throw new Error("start/end range not allowed for encrypted entry without options.decrypt === false");
-  //       }
-  //     }
-  //     if (options.start != null) {
-  //       relativeStart = options.start;
-  //       if (relativeStart < 0) throw new Error("options.start < 0");
-  //       if (relativeStart > entry.compressedSize) throw new Error("options.start > entry.compressedSize");
-  //     }
-  //     if (options.end != null) {
-  //       relativeEnd = options.end;
-  //       if (relativeEnd < 0) throw new Error("options.end < 0");
-  //       if (relativeEnd > entry.compressedSize) throw new Error("options.end > entry.compressedSize");
-  //       if (relativeEnd < relativeStart) throw new Error("options.end < options.start");
-  //     }
-  //   }
-  //   // any further errors can either be caused by the zipfile,
-  //   // or were introduced in a minor version of yauzl,
-  //   // so should be passed to the client rather than thrown.
-  //   if (!self.isOpen) return callback(new Error("closed"));
-  //   if (entry.isEncrypted()) {
-  //     if (options.decrypt !== false) return callback(new Error("entry is encrypted, and options.decrypt !== false"));
-  //   }
-  //   // make sure we don't lose the fd before we open the actual read stream
-  //   self.reader.ref();
-  //   var buffer = newBuffer(30);
-  //   readAndAssertNoEof(self.reader, buffer, 0, buffer.length, entry.relativeOffsetOfLocalHeader, function (err) {
-  //     try {
-  //       if (err) return callback(err);
-  //       // 0 - Local file header signature = 0x04034b50
-  //       var signature = buffer.readUInt32LE(0);
-  //       if (signature !== 0x04034b50) {
-  //         return callback(new Error("invalid local file header signature: 0x" + signature.toString(16)));
-  //       }
-  //       // all this should be redundant
-  //       // 4 - Version needed to extract (minimum)
-  //       // 6 - General purpose bit flag
-  //       // 8 - Compression method
-  //       // 10 - File last modification time
-  //       // 12 - File last modification date
-  //       // 14 - CRC-32
-  //       // 18 - Compressed size
-  //       // 22 - Uncompressed size
-  //       // 26 - File name length (n)
-  //       var fileNameLength = buffer.readUInt16LE(26);
-  //       // 28 - Extra field length (m)
-  //       var extraFieldLength = buffer.readUInt16LE(28);
-  //       // 30 - File name
-  //       // 30+n - Extra field
-  //       var localFileHeaderEnd = entry.relativeOffsetOfLocalHeader + buffer.length + fileNameLength + extraFieldLength;
-  //       var decompress;
-  //       if (entry.compressionMethod === 0) {
-  //         // 0 - The file is stored (no compression)
-  //         decompress = false;
-  //       } else if (entry.compressionMethod === 8) {
-  //         // 8 - The file is Deflated
-  //         decompress = options.decompress != null ? options.decompress : true;
-  //       } else {
-  //         return callback(new Error("unsupported compression method: " + entry.compressionMethod));
-  //       }
-  //       var fileDataStart = localFileHeaderEnd;
-  //       var fileDataEnd = fileDataStart + entry.compressedSize;
-  //       if (entry.compressedSize !== 0) {
-  //         // bounds check now, because the read streams will probably not complain loud enough.
-  //         // since we're dealing with an unsigned offset plus an unsigned size,
-  //         // we only have 1 thing to check for.
-  //         if (fileDataEnd > self.fileSize) {
-  //           return callback(new Error("file data overflows file bounds: " +
-  //             fileDataStart + " + " + entry.compressedSize + " > " + self.fileSize));
-  //         }
-  //       }
-  //       var readStream = self.reader.createReadStream({
-  //         start: fileDataStart + relativeStart,
-  //         end: fileDataStart + relativeEnd,
-  //       });
-  //       var endpointStream = readStream;
-  //       if (decompress) {
-  //         var destroyed = false;
-  //         var inflateFilter = zlib.createInflateRaw();
-  //         readStream.on("error", function (err) {
-  //           // setImmediate here because errors can be emitted during the first call to pipe()
-  //           setImmediate(function () {
-  //             if (!destroyed) inflateFilter.emit("error", err);
-  //           });
-  //         });
-  //         readStream.pipe(inflateFilter);
+  getInStream(entry, options) {
+    // parameter validation
+    let relativeStart = 0;
+    let relativeEnd = entry.compressedSize;
 
-  //         if (self.validateEntrySizes) {
-  //           endpointStream = new AssertByteCountStream(entry.uncompressedSize);
-  //           inflateFilter.on("error", function (err) {
-  //             // forward zlib errors to the client-visible stream
-  //             setImmediate(function () {
-  //               if (!destroyed) endpointStream.emit("error", err);
-  //             });
-  //           });
-  //           inflateFilter.pipe(endpointStream);
-  //         } else {
-  //           // the zlib filter is the client-visible stream
-  //           endpointStream = inflateFilter;
-  //         }
-  //         // this is part of yauzl's API, so implement this function on the client-visible stream
-  //         endpointStream.destroy = function () {
-  //           destroyed = true;
-  //           if (inflateFilter !== endpointStream) inflateFilter.unpipe(endpointStream);
-  //           readStream.unpipe(inflateFilter);
-  //           // TODO: the inflateFilter may cause a memory leak. see Issue #27.
-  //           readStream.destroy();
-  //         };
-  //       }
-  //       callback(null, endpointStream);
-  //     } finally {
-  //       self.reader.unref();
-  //     }
-  //   });
-  // }
+    // validate options that the caller has no excuse to get wrong
+    if (options.decrypt != null) {
+      if (!entry.isEncrypted()) {
+        throw new Error("options.decrypt can only be specified for encrypted entries");
+      }
+      if (options.decrypt !== false) throw new Error("invalid options.decrypt value: " + options.decrypt);
+      if (entry.isCompressed()) {
+        if (options.decompress !== false) throw new Error("entry is encrypted and compressed, and options.decompress !== false");
+      }
+    }
+    if (options.decompress != null) {
+      if (!entry.isCompressed()) {
+        throw new Error("options.decompress can only be specified for compressed entries");
+      }
+      if (!(options.decompress === false || options.decompress === true)) {
+        throw new Error("invalid options.decompress value: " + options.decompress);
+      }
+    }
+    if (options.start != null || options.end != null) {
+      if (entry.isCompressed() && options.decompress !== false) {
+        throw new Error("start/end range not allowed for compressed entry without options.decompress === false");
+      }
+      if (entry.isEncrypted() && options.decrypt !== false) {
+        throw new Error("start/end range not allowed for encrypted entry without options.decrypt === false");
+      }
+    }
+    if (options.start != null) {
+      relativeStart = options.start;
+      if (relativeStart < 0) throw new Error("options.start < 0");
+      if (relativeStart > entry.compressedSize) throw new Error("options.start > entry.compressedSize");
+    }
+    if (options.end != null) {
+      relativeEnd = options.end;
+      if (relativeEnd < 0) throw new Error("options.end < 0");
+      if (relativeEnd > entry.compressedSize) throw new Error("options.end > entry.compressedSize");
+      if (relativeEnd < relativeStart) throw new Error("options.end < options.start");
+    }
+    // any further errors can either be caused by the zipfile,
+    // or were introduced in a minor version of yauzl
+    if (!this.isOpen) throw new Error("closed");
+    if (entry.isEncrypted()) {
+      if (options.decrypt !== false) throw new Error("entry is encrypted, and options.decrypt !== false");
+    }
+    // make sure we don't lose the fd before we open the actual read stream
+    this.reader.ref();
+    const buffer = Buffer.allocUnsafe(30);
+    try {
+      yauzl.readAndAssertNoEof(this.reader, buffer, 0, buffer.length, entry.relativeOffsetOfLocalHeader);
+
+      // 0 - Local file header signature = 0x04034b50
+      const signature = buffer.readUInt32LE(0);
+      if (signature !== 0x04034b50) {
+        throw new Error("invalid local file header signature: 0x" + signature.toString(16));
+      }
+      // all this should be redundant
+      // 4 - Version needed to extract (minimum)
+      // 6 - General purpose bit flag
+      // 8 - Compression method
+      // 10 - File last modification time
+      // 12 - File last modification date
+      // 14 - CRC-32
+      // 18 - Compressed size
+      // 22 - Uncompressed size
+      // 26 - File name length (n)
+      const fileNameLength = buffer.readUInt16LE(26);
+      // 28 - Extra field length (m)
+      const extraFieldLength = buffer.readUInt16LE(28);
+      // 30 - File name
+      // 30+n - Extra field
+      const localFileHeaderEnd = entry.relativeOffsetOfLocalHeader + buffer.length + fileNameLength + extraFieldLength;
+      let decompress;
+      if (entry.compressionMethod === 0) {
+        // 0 - The file is stored (no compression)
+        decompress = false;
+      } else if (entry.compressionMethod === 8) {
+        // 8 - The file is Deflated
+        decompress = options.decompress != null ? options.decompress : true;
+      } else {
+        throw new Error("unsupported compression method: " + entry.compressionMethod);
+      }
+      const fileDataStart = localFileHeaderEnd;
+      const fileDataEnd = fileDataStart + entry.compressedSize;
+      if (entry.compressedSize !== 0) {
+        // bounds check now, because the read streams will probably not complain loud enough.
+        // since we're dealing with an unsigned offset plus an unsigned size,
+        // we only have 1 thing to check for.
+        if (fileDataEnd > this.fileSize) {
+          throw new Error("file data overflows file bounds: " +
+            fileDataStart + " + " + entry.compressedSize + " > " + this.fileSize);
+        }
+      }
+
+      const readStream = this.reader.createReadStream({
+        start: fileDataStart + relativeStart,
+        end: fileDataStart + relativeEnd,
+      });
+      let endpointStream = readStream;
+      if (decompress) {
+        let destroyed = false;
+        const inflateFilter = zlib.createInflateRaw();
+        readStream.on("error", function (err) {
+          // setImmediate here because errors can be emitted during the first call to pipe()
+          setImmediate(function () {
+            if (!destroyed) inflateFilter.emit("error", err);
+          });
+        });
+        readStream.pipe(inflateFilter);
+
+        if (this.validateEntrySizes) {
+          endpointStream = new AssertByteCountStream(entry.uncompressedSize);
+          inflateFilter.on("error", function (err) {
+            // forward zlib errors to the client-visible stream
+            setImmediate(function () {
+              if (!destroyed) endpointStream.emit("error", err);
+            });
+          });
+          inflateFilter.pipe(endpointStream);
+        } else {
+          // the zlib filter is the client-visible stream
+          endpointStream = inflateFilter;
+        }
+        // this is part of yauzl's API, so implement this function on the client-visible stream
+        endpointStream.destroy = function () {
+          destroyed = true;
+          if (inflateFilter !== endpointStream) inflateFilter.unpipe(endpointStream);
+          readStream.unpipe(inflateFilter);
+          // TODO: the inflateFilter may cause a memory leak. see Issue #27.
+          readStream.destroy();
+        };
+      }
+      return endpointStream;
+    } finally {
+      this.reader.unref();
+    }
+  }
   throwErrorAndAutoClose(err) {
     if (this.autoClose) this.close();
     throw err;
