@@ -376,7 +376,7 @@ class NodeRunner
 
   private Void writeNode()
   {
-    modules := ["os", "path", "fs", "crypto", "url"]
+    modules := ["os", "path", "fs", "crypto", "url", "zlib"]
     out := ms.file("node").out
     modules.each |m, i| { ms.writeInclude(out, m) }
     ms.writeExports(out, modules).flush.close

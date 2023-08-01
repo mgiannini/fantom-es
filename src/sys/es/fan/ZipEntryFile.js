@@ -106,4 +106,16 @@ class ZipEntryFile extends File {
     return super.in$(bufferSize);
   }
 
+//////////////////////////////////////////////////////////////////////////
+// Not writing
+//////////////////////////////////////////////////////////////////////////
+
+  create() { this.#throwIO("create") }
+  delete$() { this.#throwIO("delete") }
+  deleteOnExit() { this.#throwIO("deleteOnExit") }
+  moveTo() { this.#throwIO("moveTo") }
+  out() { this.#throwIO("out") }
+
+  #throwIO(name) { throw IOErr.make(`Cannot call '${name}'; zip entries are readonly.`) }
+
 }

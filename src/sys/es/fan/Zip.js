@@ -30,6 +30,11 @@ class Zip extends Obj {
 
   static open(file)
   {
+    if (!file.exists() || file.osPath() === null)
+      throw IOErr.make("File must exist on the local filesystem");
+    if (file.isDir())
+      throw IOErr.make("Cannot unzip a directory");
+
     const zip = new Zip();
     zip.#file = file;
     zip.#yauzlZip = yauzl.open(file.osPath());
@@ -141,6 +146,13 @@ class Zip extends Obj {
    * ```
    */
   // writeNext(path: Uri, modifyTime?: DateTime, opts?: Map<string, JsObj | null> | null): OutStream
+  writeNext(path, modifyTime=DateTime.now(), opts=null)
+  {
+    if (!this.#out)
+      throw UnsupportedErr.make("Not writing to an output stream");
+
+    // get the outstream
+  }
   /**
    * Finish writing the contents of this zip file, but leave the
    * underlying OutStream open.  This method is guaranteed to
@@ -149,7 +161,13 @@ class Zip extends Obj {
    * UnsupportedErr if zip is not not writing to an output
    * stream.
    */
-  // finish(): boolean
+  finish()
+  {
+    if (!this.#out)
+      throw UnsupportedErr.make("Not writing to an output stream");
+    
+    // do the things
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Other methods

@@ -58,7 +58,7 @@ class ZipInStream extends InStream {
     if (this.avail() == 0) return null;
     if (this.#pre.length > 0) return this.#pre.pop();
 
-    const r = this.__buf.readUInt32LE(this.__bufPos);
+    const r = this.__buf.readUInt8(this.__bufPos);
     this.__bufPos++;
     return r;
   }
@@ -140,10 +140,15 @@ class InflateInStream extends ZipInStream {
     if (this.__bufPos >= this.__avail) {
       this.__bufPos = 0;
       this.#rawAvail = this.__readInto(this.#rawBuf);
-      this.__buf = node.zlib.inflateRawSync(
-                    this.#rawBuf.subarray(0, this.#rawAvail),
-                    { chunkSize: this.__bufSize });
-      this.__avail = this.__buf.length;
+      if (this.#rawAvail == 0) {
+        this.__buf = Buffer.allocUnsafe(0);
+        this.__avail = 0;
+      } else {
+        this.__buf = node.zlib.inflateRawSync(
+                      this.#rawBuf.subarray(0, this.#rawAvail),
+                      { chunkSize: this.__bufSize });
+        this.__avail = this.__buf.length;
+      }
     }
   }
 
