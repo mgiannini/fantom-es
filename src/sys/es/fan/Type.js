@@ -258,8 +258,6 @@ class Type extends Obj {
 
   // addMethod
   am$(name, flags, returns, params, facets) {
-  //TODO:REMOVE
-  // console.log(`am\$ ${name}`);
     const r = fanx_TypeParser.load(returns);
     const m = new Method(this, name, flags, r, params, facets);
     this.#slotsInfo.push(m);
@@ -268,8 +266,6 @@ class Type extends Obj {
 
   // addField
   af$(name, flags, of, facets) {
-  // TODO:REMOVE
-  // console.log(`af\$ ${name}`);
     const t = fanx_TypeParser.load(of);
     const f = new Field(this, name, flags, t, facets);
     this.#slotsInfo.push(f);

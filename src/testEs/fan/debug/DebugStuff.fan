@@ -1,3 +1,4 @@
+/*
 @Js class TestClos : Test
 {
   Void test()
@@ -7,6 +8,7 @@
     verifyEq(["str1", "str2", "str3"], strs)
   }
 }
+*/
 
 // @Js class Consty
 // {

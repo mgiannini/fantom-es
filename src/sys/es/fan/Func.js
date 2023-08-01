@@ -9,7 +9,9 @@
 //
 
 /**
- * Func
+ * Func - A Func when compiled to JS is actually a native closure/function.
+ * The purpose of this class is to provide compiler support for instances
+ * where Method.func() is used to obtain a Func and then subsequently called.
  */
 class Func extends Obj {
 
@@ -17,53 +19,50 @@ class Func extends Obj {
 // Constructor
 //////////////////////////////////////////////////////////////////////////
 
-// TODO:FIXIT a lot to fix in here
   constructor(params, ret, func) {
     super();
-    // this.#params = params;
-    // this.#ret = ret;
-    // this.#func = func;
-    // this.#type = new FuncType()
   }
-
-  #params;
-  #ret;
-  #type;
-  #func;
-
-  // TODO:FIXIT other constructors
 
 //////////////////////////////////////////////////////////////////////////
 // Identity 
 //////////////////////////////////////////////////////////////////////////
 
-  typeof$() { return this.#type; }
+  // typeof$() { return this.#type; }
 
-  toImmutable() {
-    if (this.isImmutable()) return this;
-    throw NotImmutableErr.make("Func");
-  }
+  // toImmutable() {
+  //   if (this.isImmutable()) return this;
+  //   throw NotImmutableErr.make("Func");
+  // }
 
 //////////////////////////////////////////////////////////////////////////
 // Methods
 //////////////////////////////////////////////////////////////////////////
 
-  params() { return this.#params; }
-  arity() { return this.#params.size(); }
-  returns() { return this.#ret; }
-  method() { return null; }
+  static call(f, ...args) { return f.__method.call(...args); }
+  static callOn(f, obj, args) { return f.__method.callOn(obj, args); }
+  static callList(f, args) { return f.__method.callList(args); }
 
-  call() { return this.#func.apply(null, arguments); }
-  callList(args) { return this.#func.apply(null, args.__values()); }
-  callOn(obj, args) { return this.#func.apply(obj, args.__values()); }
+  static params(f) { 
+    let mparams = f.__method.params();
+    let fparams = mparams;
+    if ((f.__method.flags$() & (FConst.Static | FConst.Ctor)) == 0) {
+      const temp = [];
+      temp[0] = new Param("this", f.__method.parent(), 0);
+      fparams = List.make(Param.type$, temp.concat(mparams.__values()));
+    }
+    return fparams.ro();
+  }
+  static arity(f) { return this.params(f).size(); }
+  static returns(f) { return f.__method.returns(); }
+  static method(f) { return f.__method; }
 
   //TODO:bind() - never implemented?
 
-  enterCtor(obj) {}
-  exitCtor() {}
-  checkInCtor(obj) {}
+  // enterCtor(obj) {}
+  // exitCtor() {}
+  // checkInCtor(obj) {}
 
-  toStr() { return "sys::Func"; }
+  static toStr(f) { return "sys::Func"; }
   
   // TODO:FIXIT
   // retype(t) {
@@ -77,11 +76,5 @@ class Func extends Obj {
   //   else
   //     throw ArgErr.make(`Not a Func type ${t}`);
   // }
-
-//////////////////////////////////////////////////////////////////////////
-// Compiler Support
-//////////////////////////////////////////////////////////////////////////
-
-  static r$(func, type) { func.__returns = type; return func; }
 
 }

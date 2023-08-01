@@ -21,7 +21,6 @@ class Method extends Slot {
     super(parent, name, flags, facets);
     this.#returns = returns;
     this.#params  = params;
-    this.#func    = new MethodFunc(this, returns);
     this.#name$   = this.name$$(name);
     this.#qname$  = this.parent().qnameJs$() + '.' + this.#name$;
     this.#mask    = (generic != null) ? 0 : Method.#toMask(parent, returns, params);
@@ -30,7 +29,6 @@ class Method extends Slot {
 
   #returns;
   #params;
-  #func;
   #name$;
   #qname$;
   #mask;
@@ -96,8 +94,19 @@ if (func == null) {
   }
   
   returns() { return this.#returns; }
+
   params() { return this.#params.ro(); }
-  func() { return this.#func; }
+
+  func() {
+    let func = null;
+    const ns = Type.$registry[this.parent().pod().name$()];
+    const cls = ns[this.parent().name$()];
+    func = cls[this.#name$];
+    if (func == null) func = cls.prototype[this.#name$];
+    if (func == null) throw Err.make(`No method found: ${this.name$()}`);
+    func["__method"] = this;
+    return func;
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Generics

@@ -547,6 +547,7 @@ internal class JsCallExpr : JsExpr
       this.parent   = ce.method.parent
       this.isCtor   = ce.method.isCtor
       this.isObj    = ce.method.parent.qname == "sys::Obj"
+      this.isFunc   = ce.method.parent.qname == "sys::Func"
       this.isPrim   = isPrimitive(ce.method.parent)
       this.isStatic = ce.method.isStatic
     }
@@ -561,10 +562,7 @@ internal class JsCallExpr : JsExpr
       this.targetType = ce.target.ctype == null ? this.parent : ce.target.ctype
       resolved := resolveType(ce.target.ctype)
       funcType := c.ns.resolveType("sys::Func")
-// // TODO:FIXIT remove these two lines
-// isFunc = resolved is FuncType
-// if (isFunc && !resolved.fits(funcType)) throw Err("not fitting!")
-      isFunc = resolved.fits(funcType)
+      isClos = resolved.fits(funcType)
     }
 
     // force these methods to route thru ObjUtil if not a super.xxx expr
@@ -574,10 +572,11 @@ internal class JsCallExpr : JsExpr
   CallExpr ce { private set }
   Str name                            // js method name
   Bool isObj        := false          // is target sys::Obj
+  Bool isFunc       := false          // is target sys::Func
   Bool isPrim       := false          // is target a primitive type (Int,Bool,etc.)
   Bool isCtor       := false          // is this a ctor call
   Bool isStatic     := false          // is this a static method
-  Bool isFunc       := false          // is this a Func/Closure call
+  Bool isClos       := false          // is this a Func/Closure call
   CType? parent     := null           // method parent type
   CType? targetType := null           // call target type
   Str? safeVar      := null           // var that target expr is held in for safe-nav
@@ -623,7 +622,7 @@ internal class JsCallExpr : JsExpr
       }
       js.w(")")
     }
-    else if (isPrim)
+    else if (isPrim || isFunc)
     {
       js.w("${qnameToJs(targetType)}.${name}(", loc)
       if (isStatic) writeArgs
@@ -648,7 +647,7 @@ internal class JsCallExpr : JsExpr
     {
       writeTarget
       // if native closure, we invoke the func directly (don't do Func.call())
-      if (isFunc) js.w("(")
+      if (isClos) js.w("(")
       else js.w(".${name}(", loc)
       writeArgs
       js.w(")")
