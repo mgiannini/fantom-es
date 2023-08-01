@@ -70,7 +70,7 @@ class Zip extends Obj {
     // Get each entry
     let entry;
     while (!!(entry = this.#yauzlZip.getEntry())) {
-      map.add(Uri.fromStr("/" + entry.fileName), ZipEntryFile.makeFromFile(entry, this));
+      map.add(Uri.fromStr("/" + entry.fileName), ZipEntryFile.makeFromFile(entry, this.#yauzlZip, this));
     }
 
     this.#contents = map.ro();

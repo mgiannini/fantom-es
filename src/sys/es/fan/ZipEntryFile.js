@@ -23,10 +23,13 @@ class ZipEntryFile extends File {
   #entry;
   #zip;
 
-  static makeFromFile(yauzlEntry, zip) {
+  #yauzlZip;
+
+  static makeFromFile(yauzlEntry, yauzlZip, zip) {
     const instance = new ZipEntryFile(Uri.fromStr("/" + yauzlEntry.fileName));
     instance.#isFileBacked = true;
     instance.#entry = yauzlEntry;
+    instance.#yauzlZip = yauzlZip;
     instance.#zip = zip;
     return instance;
   }
@@ -97,8 +100,10 @@ class ZipEntryFile extends File {
 // Reading
 //////////////////////////////////////////////////////////////////////////
 
-  in(bufferSize) {
-    //
+  in$(bufferSize=4096) {
+    if (this.#isFileBacked)
+      return this.#yauzlZip.getInStream(this.#entry, {}, bufferSize);
+    return super.in$(bufferSize);
   }
 
 }
