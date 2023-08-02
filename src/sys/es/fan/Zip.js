@@ -18,9 +18,9 @@ class Zip extends Obj {
       throw UnsupportedErr.make("Zip is only available in a node environment.")
   }
 
-  #file;
   #yauzlZip;
 
+  #file;
   #in;
   #out;
 
@@ -45,6 +45,7 @@ class Zip extends Obj {
   {
     const zip = new Zip();
     zip.#in = in$;
+    zip.#yauzlZip = yauzl.fromStream(in$);
     return zip;
   }
 
@@ -67,7 +68,7 @@ class Zip extends Obj {
   #contents;
   contents()
   {
-    if (!this.#yauzlZip) return null;
+    if (!this.#file) return null;
     if (this.#contents) return this.#contents;
 
     const map = Map.make(Uri.type$, File.type$);
@@ -86,19 +87,19 @@ class Zip extends Obj {
 // InStream reading-only
 //////////////////////////////////////////////////////////////////////////
 
-  /**
-   * Read the next entry in the zip.  Use the File's input stream
-   * to read the file contents.  Some file meta-data such as size
-   * may not be available. Return null if at end of zip file. 
-   * Throw UnsupportedErr if not reading from an input stream.
-   */
+  #lastFile;
   readNext()
   {
     if (!this.#in)
       throw UnsupportedErr.make("Not reading from an input stream");
+    if (this.#lastFile) {
+      this.#lastFile.__in().skip(this.#lastFile.__in().remaining());
+      this.#lastFile.__in().close();
+    }
 
-    // return the File
-    return null;
+    const entry = this.#yauzlZip.getEntryFromStream();
+    if (!entry) return null;
+    return (this.#lastFile = ZipEntryFile.makeFromStream(entry, this.#yauzlZip));
   }
   /**
    * Call the specified function for every entry in the zip. Use

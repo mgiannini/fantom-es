@@ -33,27 +33,30 @@ class ZipInStream extends InStream {
   #reader;
   #pos;
   #max;
+  #isClosed = false;
 
   #pre = [];
   __bufPos = 0;
-  __avail = 0;
+  __availInBuf = 0;
   __bufSize;
   __buf;
 
   __readInto(buf) {
-    const r = this.#reader.read(buf, 0, Math.min(this.__bufSize, this.#max - this.#pos), this.#pos);
+    const r = this.#reader.read(buf, 0, Math.min(this.__bufSize, this.remaining()), this.#pos);
     this.#pos += r;
     return r;
   }
 
   __load() {
-    if (this.__bufPos >= this.__avail) {
+    if (this.__bufPos >= this.__availInBuf) {
       this.__bufPos = 0;
-      this.__avail = this.__readInto(this.__buf);
+      this.__availInBuf = this.__readInto(this.__buf);
     }
   }
 
   read() {
+    if (this.#isClosed) throw IOErr.make("Cannot read from closed stream");
+
     this.__load();
     if (this.avail() == 0) return null;
     if (this.#pre.length > 0) return this.#pre.pop();
@@ -74,6 +77,7 @@ class ZipInStream extends InStream {
       n--;
       read++;
     }
+    out.close();
     return read == 0 ? null : read;
   }
 
@@ -83,6 +87,7 @@ class ZipInStream extends InStream {
   }
 
   skip(n) {
+    if (this.#isClosed) throw IOErr.make("Cannot skip in closed stream");
     let skipped = 0;
 
     if (this.#pre.length > 0) {
@@ -91,11 +96,11 @@ class ZipInStream extends InStream {
       skipped += len;
     }
     if (this.#reader.posMatters) {
-      const s = Math.max(0, n - skipped - this.avail());
+      const s = Math.min(this.remaining() - skipped, Math.max(0, n - skipped - this.avail()));
       this.#pos += s;
       skipped += s;
     }
-    if (skipped == n) return skipped;
+    if (skipped == n || this.#pos == this.#max) return skipped;
 
     if (this.avail() === 0) this.__load();
 
@@ -114,8 +119,21 @@ class ZipInStream extends InStream {
     return skipped;
   }
 
+  close() {
+    this.#isClosed = true;
+  }
+
+//////////////////////////////////////////////////////////////////////////
+// Info
+//////////////////////////////////////////////////////////////////////////
+
   avail() {
-    return this.#pre.length + (this.__avail - this.__bufPos);
+    return this.#pre.length + (this.__availInBuf - this.__bufPos);
+  }
+
+  /** The number of bytes left in the stream. */
+  remaining() {
+    return this.#max - this.#pos;
   }
 
 }
@@ -137,17 +155,17 @@ class InflateInStream extends ZipInStream {
   #rawAvail = 0;
 
   __load() {
-    if (this.__bufPos >= this.__avail) {
+    if (this.__bufPos >= this.__availInBuf) {
       this.__bufPos = 0;
       this.#rawAvail = this.__readInto(this.#rawBuf);
       if (this.#rawAvail == 0) {
         this.__buf = Buffer.allocUnsafe(0);
-        this.__avail = 0;
+        this.__availInBuf = 0;
       } else {
         this.__buf = node.zlib.inflateRawSync(
                       this.#rawBuf.subarray(0, this.#rawAvail),
                       { chunkSize: this.__bufSize });
-        this.__avail = this.__buf.length;
+        this.__availInBuf = this.__buf.length;
       }
     }
   }

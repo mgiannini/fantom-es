@@ -19,18 +19,28 @@ class ZipEntryFile extends File {
     super(uri);
   }
 
-  #isFileBacked = false;
+  #isFileBacked;
   #entry;
+  #yauzlZip;
+ 
   #zip;
 
-  #yauzlZip;
-
-  static makeFromFile(yauzlEntry, yauzlZip, zip) {
-    const instance = new ZipEntryFile(Uri.fromStr("/" + yauzlEntry.fileName));
+  // Entry is parsed from central directory
+  static makeFromFile(centralEntry, yauzlZip, zip) {
+    const instance = new ZipEntryFile(Uri.fromStr("/" + centralEntry.fileName));
     instance.#isFileBacked = true;
-    instance.#entry = yauzlEntry;
+    instance.#entry = centralEntry;
     instance.#yauzlZip = yauzlZip;
     instance.#zip = zip;
+    return instance;
+  }
+
+  // Entry is parsed from local file header
+  static makeFromStream(localEntry, yauzlZip) {
+    const instance = new ZipEntryFile(Uri.fromStr("/" + localEntry.fileName));
+    instance.#isFileBacked = false;
+    instance.#entry = localEntry;
+    instance.#yauzlZip = yauzlZip;
     return instance;
   }
 
@@ -102,8 +112,16 @@ class ZipEntryFile extends File {
 
   in$(bufferSize=4096) {
     if (this.#isFileBacked)
-      return this.#yauzlZip.getInStream(this.#entry, {}, bufferSize);
-    return super.in$(bufferSize);
+      return (this.#in = this.#yauzlZip.getInStream(this.#entry, {}, bufferSize));
+    else {
+      if (this.#in) throw IOErr.make("In stream already created");
+      return (this.#in = this.#yauzlZip.getInStreamFromStream(this.#entry, {}, bufferSize));
+    }
+  }
+
+  #in;
+  __in(bufferSize=4096) {
+    return this.#in || this.in$(bufferSize);
   }
 
 //////////////////////////////////////////////////////////////////////////

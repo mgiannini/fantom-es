@@ -153,13 +153,18 @@ class yauzl {
     throw new Error("end of central directory record signature not found");
   }
 
+  static fromStream(in$) {
+    const reader = new YauzlStreamReader(in$);
+    return new YauzlZipFile(reader);
+  }
+
   static readAndAssertNoEof(reader, buffer, offset, length, position, errCallback, self) {
     if (length === 0) return;
 
     const bytesRead = reader.read(buffer, offset, length, position);
     if (bytesRead < length) {
       const e = new Error("unexpected EOF");
-      if (errCallback) errCallback.call(self, e);
+      if (errCallback) return errCallback.call(self, e);
       else throw e;
     }
   }
@@ -193,11 +198,11 @@ class yauzl {
     const day = date & 0x1f; // 1-31
     const month = (date >> 5 & 0xf) - 1; // 1-12, 0-11
     const year = (date >> 9 & 0x7f) + 1980; // 0-128, 1980-2108
-  
+
     const second = (time & 0x1f) * 2; // 0-29, 0-58 (even numbers)
     const minute = time >> 5 & 0x3f; // 0-59
     const hour = time >> 11 & 0x1f; // 0-23
-  
+
     return DateTime.make(year, month, day, hour, minute, second);
   }
 }
@@ -406,6 +411,166 @@ class YauzlZipFile {
     }
     return entry;
   }
+  getEntryFromStream() {
+    // Find local header
+    let buffer = Buffer.alloc(30);
+
+    if (yauzl.readAndAssertNoEof(this.reader, buffer, 0, buffer.length, 0, (err) => { return !!err; }))
+      return null;
+    while(buffer.readUInt32LE(0) !== 0x04034b50) {
+      let i = 0;
+      for(; i < buffer.length-3; i++) {
+        if (buffer.readUInt32LE(i) === 0x04034b50) break;
+      }
+      buffer.copyWithin(0, i);
+      if (yauzl.readAndAssertNoEof(this.reader, buffer, i, buffer.length - i, 0, (err) => { return !!err; }))
+        return null;
+    }
+
+    const entry = new YauzlEntry();
+
+    // all this should be redundant
+    // 4 - Version needed to extract (minimum)
+    entry.versionNeededToExtract = buffer.readUInt16LE(4);
+    // 6 - General purpose bit flag
+    entry.generalPurposeBitFlag = buffer.readUInt16LE(6);
+    // 8 - Compression method
+    entry.compressionMethod = buffer.readUInt16LE(8);
+    // 10 - File last modification time
+    entry.lastModFileTime = buffer.readUInt16LE(10);
+    // 12 - File last modification date
+    entry.lastModFileDate = buffer.readUInt16LE(12);
+    // 14 - CRC-32
+    entry.crc32 = buffer.readUInt32LE(14);
+    // 18 - Compressed size
+    entry.compressedSize = buffer.readUInt32LE(18);
+    // 22 - Uncompressed size
+    entry.uncompressedSize = buffer.readUInt32LE(22);
+    // 26 - File name length (n)
+    entry.fileNameLength = buffer.readUInt16LE(26);
+    // 28 - Extra field length (m)
+    entry.extraFieldLength = buffer.readUInt16LE(28);
+
+    if (entry.generalPurposeBitFlag & 0x40) throw new Error("strong encryption is not supported");
+
+    buffer = Buffer.allocUnsafe(entry.fileNameLength + entry.extraFieldLength);
+    if (yauzl.readAndAssertNoEof(this.reader, buffer, 0, buffer.length, this.readEntryCursor, (err) => { return !!err }))
+      return null;
+
+    // 30 - File name
+    const isUtf8 = (entry.generalPurposeBitFlag & 0x800) !== 0;
+    entry.fileName = this.decodeStrings ? yauzl.decodeBuffer(buffer, 0, entry.fileNameLength, isUtf8)
+      : buffer.subarray(0, entry.fileNameLength);
+
+    // 30+n - Extra field
+    const extraFieldBuffer = buffer.subarray(entry.fileNameLength);
+    entry.extraFields = [];
+    let i = 0;
+    while (i < extraFieldBuffer.length - 3) {
+      const headerId = extraFieldBuffer.readUInt16LE(i + 0);
+      const dataSize = extraFieldBuffer.readUInt16LE(i + 2);
+      const dataStart = i + 4;
+      const dataEnd = dataStart + dataSize;
+      if (dataEnd > extraFieldBuffer.length) throw new Error("extra field length exceeds extra field buffer size");
+      const dataBuffer = Buffer.allocUnsafe(dataSize);
+      extraFieldBuffer.copy(dataBuffer, 0, dataStart, dataEnd);
+      entry.extraFields.push({
+        id: headerId,
+        data: dataBuffer,
+      });
+      i = dataEnd;
+    }
+
+    if (entry.uncompressedSize === 0xffffffff ||
+        entry.compressedSize === 0xffffffff) {
+      // ZIP64 format
+      // find the Zip64 Extended Information Extra Field
+      let zip64EiefBuffer = null;
+      for (i = 0; i < entry.extraFields.length; i++) {
+        const extraField = entry.extraFields[i];
+        if (extraField.id === 0x0001) {
+          zip64EiefBuffer = extraField.data;
+          break;
+        }
+      }
+      if (zip64EiefBuffer == null) {
+        throw new Error("expected zip64 extended information extra field");
+      }
+      let index = 0;
+      // 0 - Original Size          8 bytes
+      if (entry.uncompressedSize === 0xffffffff) {
+        if (index + 8 > zip64EiefBuffer.length) {
+          throw new Error("zip64 extended information extra field does not include uncompressed size");
+        }
+        entry.uncompressedSize = yauzl.readUInt64LE(zip64EiefBuffer, index);
+        index += 8;
+      }
+      // 8 - Compressed Size        8 bytes
+      if (entry.compressedSize === 0xffffffff) {
+        if (index + 8 > zip64EiefBuffer.length) {
+          throw new Error("zip64 extended information extra field does not include compressed size");
+        }
+        entry.compressedSize = yauzl.readUInt64LE(zip64EiefBuffer, index);
+        index += 8;
+      }
+      // 16 - Relative Header Offset 8 bytes
+      // 24 - Disk Start Number      4 bytes
+    }
+
+    // check for Info-ZIP Unicode Path Extra Field (0x7075)
+    // see https://github.com/thejoshwolfe/yauzl/issues/33
+    if (this.decodeStrings) {
+      for (i = 0; i < entry.extraFields.length; i++) {
+        const extraField = entry.extraFields[i];
+        if (extraField.id === 0x7075) {
+          if (extraField.data.length < 6) {
+            // too short to be meaningful
+            continue;
+          }
+          // Version       1 byte      version of this extra field, currently 1
+          if (extraField.data.readUInt8(0) !== 1) {
+            // > Changes may not be backward compatible so this extra
+            // > field should not be used if the version is not recognized.
+            continue;
+          }
+          // NameCRC32     4 bytes     File Name Field CRC32 Checksum
+          const oldNameCrc32 = extraField.data.readUInt32LE(1);
+          if (unsigned(buffer.subarray(0, entry.fileNameLength)) !== oldNameCrc32) {
+            // > If the CRC check fails, this UTF-8 Path Extra Field should be
+            // > ignored and the File Name field in the header should be used instead.
+            continue;
+          }
+          // UnicodeName   Variable    UTF-8 version of the entry File Name
+          entry.fileName = yauzl.decodeBuffer(extraField.data, 5, extraField.data.length, true);
+          break;
+        }
+      }
+    }
+
+    // validate file size
+    if (this.validateEntrySizes && entry.compressionMethod === 0) {
+      let expectedCompressedSize = entry.uncompressedSize;
+      if (entry.isEncrypted()) {
+        // traditional encryption prefixes the file data with a header
+        expectedCompressedSize += 12;
+      }
+      if (entry.compressedSize !== expectedCompressedSize) {
+        const msg = "compressed/uncompressed size mismatch for stored file: " + entry.compressedSize + " != " + entry.uncompressedSize;
+        throw new Error(msg);
+      }
+    }
+
+    if (this.decodeStrings) {
+      if (!this.strictFileNames) {
+        // allow backslash
+        entry.fileName = entry.fileName.replace(/\\/g, "/");
+      }
+      const errorMessage = this.validateFileName(entry.fileName);
+      if (errorMessage != null) throw new Error(errorMessage);
+    }
+
+    return entry;
+  }
   getInStream(entry, options, bufferSize) {
     // parameter validation
     let relativeStart = 0;
@@ -547,6 +712,23 @@ class YauzlZipFile {
     // }
     // return endpointStream;
   }
+  getInStreamFromStream(entry, options, bufferSize) {
+    let decompress;
+    if (entry.compressionMethod === 0) {
+      // 0 - The file is stored (no compression)
+      decompress = false;
+    } else if (entry.compressionMethod === 8) {
+      // 8 - The file is Deflated
+      decompress = options.decompress != null ? options.decompress : true;
+    } else {
+      throw new Error("unsupported compression method: " + entry.compressionMethod);
+    }
+
+    if (decompress)
+      return new InflateInStream(this.reader, 0, entry.compressedSize, bufferSize);
+    else
+      return new ZipInStream(this.reader, 0, entry.compressedSize, bufferSize);
+  }
   throwErrorAndAutoClose(err) {
     if (this.autoClose) this.close();
     throw err;
@@ -615,4 +797,22 @@ class YauzlFileReader {
   close() {
     node.fs.closeSync(this.#fd);
   }
+}
+
+class YauzlStreamReader {
+  constructor(in$) {
+    this.#in = in$;
+  }
+
+  #in;
+  posMatters = false;
+
+  read(buffer, offset, length) {
+    const fanBuf = MemBuf.makeCapacity(length);
+    const n = this.#in.readBuf(fanBuf, length);
+    Buffer.from(fanBuf.__unsafeArray()).copy(buffer);
+    return n;
+  }
+
+  close() {}
 }
