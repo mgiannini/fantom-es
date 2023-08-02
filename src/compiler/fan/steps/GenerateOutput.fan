@@ -47,7 +47,7 @@ class GenerateOutput : CompilerStep
 
       case CompilerOutputMode.js:
         output.js = compiler.js
-        output.es = compiler.es
+        output.es = compiler.cjs
 
       default:
         throw err("Unknown output type: '$output.mode'", null)

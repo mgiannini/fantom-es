@@ -43,52 +43,77 @@ class JsPod : JsNode
 
   override Void write()
   {
-    writeImports
+    writeRequire
     writeTypes
     writeTypeInfo
     writeProps
-    // TODO:FIXIT
-    // write closures?
-    // write static init?
     writeNatives
     writeExports
+    js.wl("}).call(this);")
   }
 
-  private Void writeImports()
+  private Void writeRequire()
   {
+    js.wl("// cjs require begin")
+    js.wl("(function () {")
+
+    """const __require = (m) => {
+         if (typeof require === 'undefined') return this[m];
+         try { return require(`\${m}.js`); } catch (e) { /* ignore */ }
+       }""".splitLines.each |line| { js.wl(line) }
+
+    js.wl("const fan = __require('fan');")
+    js.wl("const sys = fan ? fan.sys : __require('sys');")
+
     // special handling for dom
-    if (pod.name == "dom")
-    {
-      js.wl("import * as es6 from './es6.js'")
-    }
+    if (pod.name == "dom") js.wl("const es6 = __require('es6');")
 
     pod.depends.each |depend|
     {
+      if (depend.name == "sys") return
       // NOTE if we change sys to fan we need to update JNode.qnameToJs
       // js.wl("import * as ${depend.name} from './${depend.name}.js';")
-      if (Pod.find(depend.name).file(`/esm/${depend.name}.js`, false) != null)
-        js.wl("import * as ${depend.name} from './${depend.name}.js';")
-      else
-      {
-        // TODO: FIXIT - non-js dependencies that will only be there in node env
-        // but not the browser. Maybe the browser should return empty export in
-        // this case? or we could put a comment on the same line that we
-        // could search for and strip out before serving the js in the browser.
-        // js.wl("let ${depend.name};")
-        // await import('./esm/testSys.js').then(obj => testSys = obj).catch(err => {});
-        // js.wl("await import('./${depend.name}.js').then(obj => ${depend.name}=obj).catch(err => {});")
-
-        js.wl("import * as ${depend.name} from './${depend.name}.js';")
-      }
-
-
-      // if (depend.name == "sys")
-      //   js.wl("import * as fan from './sys.js';")
-      // else
-      //   js.wl("import * as ${depend.name} from './${depend.name}.js")
+      js.wl("const ${depend.name} = __require('${depend.name}');")
     }
-    js.nl
+
+    js.wl("// cjs require end")
   }
+
+  // private Void writeImports()
+  // {
+  //   // special handling for dom
+  //   if (pod.name == "dom")
+  //   {
+  //     js.wl("import * as es6 from './es6.js'")
+  //   }
+
+  //   pod.depends.each |depend|
+  //   {
+  //     // NOTE if we change sys to fan we need to update JNode.qnameToJs
+  //     // js.wl("import * as ${depend.name} from './${depend.name}.js';")
+  //     if (Pod.find(depend.name).file(`/esm/${depend.name}.js`, false) != null)
+  //       js.wl("import * as ${depend.name} from './${depend.name}.js';")
+  //     else
+  //     {
+  //       // TODO: FIXIT - non-js dependencies that will only be there in node env
+  //       // but not the browser. Maybe the browser should return empty export in
+  //       // this case? or we could put a comment on the same line that we
+  //       // could search for and strip out before serving the js in the browser.
+  //       // js.wl("let ${depend.name};")
+  //       // await import('./esm/testSys.js').then(obj => testSys = obj).catch(err => {});
+  //       // js.wl("await import('./${depend.name}.js').then(obj => ${depend.name}=obj).catch(err => {});")
+
+  //       js.wl("import * as ${depend.name} from './${depend.name}.js';")
+  //     }
+
+
+  //     // if (depend.name == "sys")
+  //     //   js.wl("import * as fan from './sys.js';")
+  //     // else
+  //     //   js.wl("import * as ${depend.name} from './${depend.name}.js")
+  //   }
+  //   js.nl
+  // }
 
   private Void writeTypes()
   {
@@ -218,13 +243,25 @@ class JsPod : JsNode
 
   private Void writeExports()
   {
-    js.wl("export {")
     // only export public types
-    types.findAll { it.def.isPublic }.each |t| {
-      js.wl("${t.name},")
-      if (this.peers[t.name]) js.wl("${t.peer.name}Peer,")
-    }
-    js.wl("};")
+    js.wl("// cjs exports begin")
+    js.wl("const ${pod.name} = {").indent
+    types.findAll { it.def.isPublic }.each |t| { js.wl("${t.name},") }
+    js.unindent.wl("};")
+    js.wl("if (typeof exports !== 'undefined') module.exports = ${pod.name};")
+    js.wl("else this.${pod.name} = ${pod.name};")
+    js.wl("// cjs exports end")
   }
+
+  // private Void writeExports()
+  // {
+  //   js.wl("export {")
+  //   // only export public types
+  //   types.findAll { it.def.isPublic }.each |t| {
+  //     js.wl("${t.name},")
+  //     if (this.peers[t.name]) js.wl("${t.peer.name}Peer,")
+  //   }
+  //   js.wl("};")
+  // }
 
 }

@@ -28,14 +28,14 @@ abstract const class ModuleSystem
     nodeDir.plus(`package.json`).out.writeChars(str).flush.close
   }
   abstract OutStream writeExports(OutStream out, Str[] exports)
-  OutStream writeInclude(OutStream out, Str module)
+  OutStream writeInclude(OutStream out, Str module, Str baseDir := "")
   {
-    p   := module
+    p   := "${baseDir}${module}"
     uri := module.toUri
     if (uri.ext != null)
     {
       module = uri.basename
-      p = "./${uri.basename}.${ext}"
+      p = "./${baseDir.toUri}${uri.basename}.${ext}"//basePath.plus(`${uri.basename}.${ext}`)
     }
     return doWriteInclude(out, module, p)
   }
@@ -64,7 +64,9 @@ const class CommonJs : ModuleSystem
   }
   protected override OutStream doWriteInclude(OutStream out, Str module, Str path)
   {
-    out.printLine("const ${module} = require('${path}');")
+    // we assume the module is always in the Node.js path so we ignore
+    // any path and just require the name of the module
+    out.printLine("const ${module} = require('${path.toUri.name}');")
   }
 }
 

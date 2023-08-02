@@ -28,6 +28,7 @@ internal class EmitUtil
   private Pod[] depends := [Pod.find("sys")]
   private File? scriptJs := null
   private ModuleSystem ms() { cmd.ms }
+  private Bool isCjs() { ms.moduleType == "cjs" }
 
 //////////////////////////////////////////////////////////////////////////
 // Configure Dependencies
@@ -45,6 +46,17 @@ internal class EmitUtil
   {
     this.scriptJs = scriptJs
     return this
+  }
+
+//////////////////////////////////////////////////////////////////////////
+// Util
+//////////////////////////////////////////////////////////////////////////
+
+  private File? podJsFile(Pod pod, Str name := pod.name)
+  {
+    ext    := isCjs ? "js" : "mjs"
+    script := "${name}.${ext}"
+    return pod.file(`/js/$script`, false)
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -71,11 +83,11 @@ internal class EmitUtil
     // TODO: indexed-props?
   }
 
-  ** Write 'es6.js'
+  ** Write 'es6.js' (grab it from sys.js)
   Void writeEs6()
   {
     out := ms.file("es6").out
-    JsAliases(ms).write(out)
+    podJsFile(Pod.find("sys"), "es6").in.pipe(out)
     out.flush.close
   }
 
@@ -95,21 +107,18 @@ internal class EmitUtil
 
     this.depends.each |pod|
     {
-      script := "${pod.name}.js"
-      file   := pod.file(`/${ms.moduleType}/$script`, false)
+      file   := podJsFile(pod)
       target := ms.file(pod.name)
       if (file != null)
       {
-        if (pod.name == "sys")
-        {
-          out := target.out
-          // this is currently being written by sys/es/build.fan
-          // ms.writeInclude(out, "es6.ext")
-          ms.writeInclude(out, "node.ext")
-          file.in.pipe(out)
-          out.flush.close
-        }
-        else file.copyTo(target, copyOpts)
+        file.copyTo(target, copyOpts)
+        // if (pod.name == "sys")
+        // {
+        //   out := target.out
+        //   file.in.pipe(out)
+        //   out.flush.close
+        // }
+        // else file.copyTo(target, copyOpts)
       }
     }
   }
@@ -148,23 +157,26 @@ internal class EmitUtil
 
   ** Get a Str with all the include statements for the configured
   ** dependencies that is targetted for the current module system
-  ** TODO:FIXIT - we actually only support ESM right now
+  ** This method assumes the script importing the modules is in
+  ** the parent directory.
   Str includeStatements()
   {
-    buf := StrBuf()
+    baseDir := "./${ms.moduleDir.name}/"
+    buf     := Buf()
     this.depends.each |pod|
     {
-      buf.add("import * as ${pod.name} from './${ms.moduleType}/${pod.name}.js';\n")
       if ("sys" == pod.name)
       {
-        buf.add("import './${ms.moduleType}/fan_mime.js';\n")
+        // need explicit js ext because node has built-in lib named sys
+        ms.writeInclude(buf.out, "sys.ext", baseDir)
+        ms.writeInclude(buf.out, "fan_mime.ext", baseDir)
       }
+      else ms.writeInclude(buf.out, "${pod.name}.ext", baseDir)
     }
-
-    if (scriptJs != null)
-      buf.add("import * as ${scriptJs.basename} from './${ms.moduleType}/${scriptJs.name}';\n")
-
-    return buf.toStr
+    if (scriptJs != null) throw Err("TODO: script js")
+    // if (scriptJs != null)
+    //   buf.add("import * as ${scriptJs.basename} from './${ms.moduleType}/${scriptJs.name}';\n")
+    return buf.flip.readAllStr
   }
 
   ** Get the JS code to configure the Env home, work and temp directories.
@@ -175,25 +187,5 @@ internal class EmitUtil
     buf.add("  sys.Env.cur().__workDir = sys.File.os(${Env.cur.workDir.pathStr.toCode});\n")
     buf.add("  sys.Env.cur().__tempDir = sys.File.os(${Env.cur.tempDir.pathStr.toCode});\n")
     return buf.toStr
-  }
-}
-
-**************************************************************************
-** JsAliases
-**************************************************************************
-
-class JsAliases
-{
-  new make(ModuleSystem ms) { this.ms = ms }
-  private ModuleSystem ms
-  Void write(OutStream out)
-  {
-    out.printLine("const JsDate = Date;")
-    out.printLine("const JsMap = Map;")
-    out.printLine("const JsWeakMap = WeakMap;")
-    out.printLine("const JsMutationObserver = typeof MutationObserver !== 'undefined' ? MutationObserver : null;")
-    out.printLine("const JsEvent = (typeof Event !== 'undefined') ? Event : null;")
-    out.printLine("const JsResizeObserver = (typeof ResizeObserver !== 'undefined') ? ResizeObserver : null;")
-    ms.writeExports(out, ["JsDate", "JsMap", "JsWeakMap", "JsMutationObserver", "JsEvent", "JsResizeObserver"])
   }
 }

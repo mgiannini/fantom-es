@@ -88,6 +88,9 @@ class Build : BuildScript
   private File scriptFile() { build.scriptFile }
   private BuildLog log() { build.log }
 
+  private Bool isCjs() { format == "cjs" }
+  private Bool isEsm() { format == "esm" }
+
 //////////////////////////////////////////////////////////////////////////
 // Compile
 //////////////////////////////////////////////////////////////////////////
@@ -108,7 +111,10 @@ class Build : BuildScript
       writePodMeta
       writeBoot
       writeExports
-      finish
+
+      writeEs6
+
+      jar
     }
     finally { log.unindent }
   }
@@ -117,9 +123,25 @@ class Build : BuildScript
   {
     tempDir.delete
     tempDir.create
-    // for now always use js ext regardless of format
-    this.out = tempDir.createFile("${format}/sys.js").out
-    out.printLine("import * as es6 from './es6.js';")
+    ext := isEsm ? "mjs" : "js"
+    this.out = tempDir.createFile("js/sys.${ext}").out
+    if (isEsm)
+    {
+      out.printLine("import * as es6 from './es6.js';")
+      out.printLine("import * as node from './node.js';")
+    }
+    else
+    {
+      out.printLine(
+        """(function () {
+            const __require = (m) => {
+              if (typeof require === 'undefined') return this[m];
+              try { return require(`\${m}.js`); } catch (e) { /* ignore */ }
+            }
+            const es6 = __require('es6')
+            const node = __require('node')
+           """)
+    }
   }
 
   private Void resolveSysTypes()
@@ -293,18 +315,62 @@ class Build : BuildScript
     switch (format)
     {
       case "esm": sb.add("export {\n")
-      case "cjs": sb.add("module.exports = {\n")
+      case "cjs": sb.add("const sys = {\n")
       default: throw UnsupportedErr("${format}")
     }
     exports.each |t,i| { sb.add("${t},\n") }
     out.printLine(sb.add("};").toStr)
-  }
 
-  private Void finish()
-  {
+    if (isCjs)
+    {
+      out.printLine(
+        """if (typeof exports !== 'undefined') module.exports = sys;
+           else this.sys = sys;
+           }).call(this);
+           """)
+    }
+
     out.flush.close
     this.out = null
+  }
 
+  private Void writeEs6()
+  {
+    ext := isEsm ? "mjs" : "js"
+    this.out = tempDir.createFile("js/es6.${ext}").out
+
+    if (isCjs) out.printLine("(function () {")
+
+    exports := "{JsDate,JsMap,JsWeakMap,JsMutationObserver,JsEvent,JsResizeObserver,};"
+
+    out.printLine(
+      """const JsDate = Date;
+         const JsMap = Map;
+         const JsWeakMap = WeakMap;
+         const JsMutationObserver = typeof MutationObserver !== 'undefined' ? MutationObserver : null;
+         const JsEvent = (typeof Event !== 'undefined') ? Event : null;
+         const JsResizeObserver = (typeof ResizeObserver !== 'undefined') ? ResizeObserver : null;
+         // const es6 = {JsDate,JsMap,JsWeakMap,JsMutationObserver,JsEvent,JsResizeObserver,};
+         """)
+
+
+    if (isCjs)
+    {
+      out.printLine(
+        """const es6 = ${exports}
+           if (typeof exports !== 'undefined') module.exports = es6;
+           else this.es6 = es6;
+           }).call(this);
+           """)
+    }
+    else out.printLine("export ${exports};")
+
+    out.flush.close
+    this.out = null
+  }
+
+  private Void jar()
+  {
     // close sys.pod FPod.zip to release lock so we can rejar that file
     types.first.pod->zip->close
 

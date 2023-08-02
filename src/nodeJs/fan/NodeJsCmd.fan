@@ -56,6 +56,9 @@ abstract class NodeJsCmd : AbstractMain
   @Opt { help = "Root directory for staging Node.js environment"; aliases = ["d"] }
   virtual File dir := Env.cur.tempDir.plus(`nodeJs/`)
 
+  @Opt { help = "Emit CommonJs" }
+  Bool cjs := false
+
 //////////////////////////////////////////////////////////////////////////
 // NodeJs
 //////////////////////////////////////////////////////////////////////////
@@ -76,8 +79,7 @@ abstract class NodeJsCmd : AbstractMain
   ** Get the module system environment
   once ModuleSystem ms()
   {
-    // TODO: option to choose CommonJs?
-    Esm(this.dir)
+    return this.cjs ? CommonJs(this.dir) : Esm(this.dir)
   }
 
   ** Get the JS emit utility

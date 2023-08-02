@@ -443,8 +443,8 @@ abstract class BuildPod : BuildScript
       c.frontend
       esmDir := Env.cur.homeDir.plus(`lib/es/esm/`)
       Env.cur.homeDir.plus(`lib/js/node_modules/${podName}.js`).out.writeChars(c.js).flush.close
-      if (c.es != null)
-        esmDir.plus(`${podName}.js`).out.writeChars(c.es).flush.close
+      if (c.esm != null)
+        esmDir.plus(`${podName}.js`).out.writeChars(c.esm).flush.close
       if (c.tsDecl != null)
         esmDir.plus(`${podName}.d.ts`).out.writeChars(c.tsDecl).flush.close
     }

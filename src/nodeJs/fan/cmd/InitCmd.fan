@@ -34,8 +34,7 @@ internal class InitCmd : NodeJsCmd
   {
     out := ms.file("fan").out
     ["sys", "fan_mime", "fan_units"].each |m| { ms.writeInclude(out, "${m}.ext") }
-
-    out.printLine("export { sys };").flush.close
+    ms.writeExports(out, ["sys"]).flush.close
   }
 
   ** Write 'sys.t.ds'

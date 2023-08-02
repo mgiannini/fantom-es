@@ -79,7 +79,7 @@ internal class RunCmd : NodeJsCmd
     emit.withDepends(compiler.depends.map { Pod.find(it.name) })
 
     // return generated js
-    return compiler.es.toBuf.toFile(`${tempPod}.js`)
+    return compiler.cjs.toBuf.toFile(`${tempPod}.js`)
   }
 }
 
