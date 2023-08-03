@@ -3,6 +3,9 @@
 {
   Void testMethodFunc()
   {
+    f := |Str s->Void| { echo(s) }
+    f("foo")
+    g("bar")
     func := #staticJudge.func
     verifyEq(func.call("Dredd"), "Dredd")
     verifyEq(func.callOn(null, ["Hershey"]), "Hershey")
@@ -19,6 +22,8 @@
     //echo("typeof -> ${func.typeof}")
     //echo("toStr  -> ${func}")
   }
+
+  |Str s->Void| g := |Str s->Void| { echo(s) }
 
   Str judge(Str who) { who }
   static Str staticJudge(Str who) { who }

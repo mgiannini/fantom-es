@@ -1,3 +1,5 @@
+const __require = (typeof require !== 'undefined') ? require : null;
+
 //{{include}}
 
 try {

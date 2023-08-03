@@ -20,20 +20,32 @@ class Main : AbstractMain
   @Opt { help = "apply sample css" }
   Bool css := false
 
-  @Opt { help = "use es javascript" }
-  Bool es := false
+  @Opt { help = "javascript mode to use (js, es)" }
+  Str mode := "js"
 
   override Int run()
   {
     // set javascript mode for file packing
-    FilePack.es.val = this.es
+    FilePack.mode.val = checkMode
 
     wisp := WispService
     {
       it.httpPort = this.port
-      it.root = DomkitTestMod { it.useSampleCss=css; it.es = this.es }
+      it.root = DomkitTestMod { it.useSampleCss=css; it.mode = this.mode }
     }
     return runServices([wisp])
+  }
+
+  private Str checkMode()
+  {
+    switch (this.mode)
+    {
+      case "js":
+      case "es":
+        return this.mode
+      default:
+        throw ArgErr.make("Invalid mode: ${mode}")
+    }
   }
 }
 
@@ -47,19 +59,20 @@ const class DomkitTestMod : WebMod
     this.jsPack  = FilePack(appJsFiles)
     this.cssPack = FilePack(FilePack.toAppCssFiles(pods))
 
-    map := [Str:FilePack][:] { ordered = true }
-    appJsFiles.each |js| { map[js.name] = FilePack([js]) }
-    this.jsToPackRef.val = map.toImmutable
+    // map := [Str:FilePack][:] { ordered = true }
+    // appJsFiles.each |js| { map[js.name] = FilePack([js]) }
+    // this.jsToPackRef.val = map.toImmutable
   }
 
   const Log log := Log.get("filepack")
 
-  const Bool es := false
+  const Str mode
+  private Bool isEs() { mode == "es" }
 
   const Bool useSampleCss := false
 
-  [Str:FilePack] jsToPack() { jsToPackRef.val }
-  private const AtomicRef jsToPackRef := AtomicRef()
+  // [Str:FilePack] jsToPack() { jsToPackRef.val }
+  // private const AtomicRef jsToPackRef := AtomicRef()
 
   const FilePack jsPack
 
@@ -76,18 +89,6 @@ const class DomkitTestMod : WebMod
       case "app.css":  return cssPack.onService
       case "pod":      return onPod
       case "form":     return onForm
-    }
-    if (es)
-    {
-      pack := jsToPack[n]
-      if (pack == null && n.toUri.ext == "js")
-      {
-        // serve empty file for module imports that don't have browser js
-        map := jsToPack.dup
-        map[n] = pack = FilePack([Buf().toFile(`${n}`)])
-        jsToPackRef.val = map.toImmutable
-      }
-      if (pack != null) return pack.onService
     }
     res.sendErr(404)
   }
@@ -123,7 +124,7 @@ const class DomkitTestMod : WebMod
     env := Str:Str[:]
     env["main"] = "testDomkit::DomkitTest"
     env["ui.test.qname"] = type.qname
-    if (es) env["es"] = "true"
+    if (isEs) env["es"] = "true"
 
     res.headers["Content-Type"] = "text/html; charset=utf-8"
     out := res.out
@@ -133,7 +134,7 @@ const class DomkitTestMod : WebMod
       .title.w("Domkit Test").titleEnd
       .initJs(env)
       .includeCss(`/app.css`)
-      // .includeJs(`/app.js`)
+      .includeJs(`/app.js`)
       .style.w(
        "html { height: 100%; }
         body {
@@ -149,16 +150,6 @@ const class DomkitTestMod : WebMod
       .styleEnd
 
       if (useSampleCss) out.style.w(sampleCss).styleEnd
-
-
-    if (es)
-    {
-      jsToPack.keys.each |js|
-      {
-        out.tag("script", "type='module' src='/${js.toXml}'").tagEnd("script").nl
-      }
-    }
-    else out.includeJs(`/app.js`)
 
     out.headEnd
 

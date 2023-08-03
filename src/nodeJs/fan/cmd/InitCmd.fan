@@ -33,8 +33,10 @@ internal class InitCmd : NodeJsCmd
   private Void writeFanJs()
   {
     out := ms.file("fan").out
+    ms.writeBeginModule(out)
     ["sys", "fan_mime", "fan_units"].each |m| { ms.writeInclude(out, "${m}.ext") }
-    ms.writeExports(out, ["sys"]).flush.close
+    ms.writeExports(out, ["sys"])
+    ms.writeEndModule(out).flush.close
   }
 
   ** Write 'sys.t.ds'

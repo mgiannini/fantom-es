@@ -225,10 +225,11 @@ class WebOutStream : OutStream
   This initJs(Str:Str env)
   {
     es := env["es"] != null
-    if (es)
-      w("<script type='module'>").nl
-    else
-      w("<script type='text/javascript'>").nl
+    w("<script type='text/javascript'>").nl
+    // if (es)
+    //   w("<script type='module'>").nl
+    // else
+    //   w("<script type='text/javascript'>").nl
 
     // init Env.vars to pickup in Env.$ctor
     w("const fan\$env = {").nl
@@ -247,10 +248,11 @@ class WebOutStream : OutStream
     {
       if (es)
       {
-        w("import { Env } from '/sys.js';").nl
-        w("Env.cur().__loadVars(fan\$env);").nl
+        // w("import { Env } from '/sys.js';").nl
+        // w("sys.Env.cur().__loadVars(fan\$env);").nl
         w("window.addEventListener('load', function() {
-             Env.__invokeMain('${main}');
+             sys.Env.cur().__loadVars(fan\$env);
+             sys.Env.__invokeMain('${main}');
            }, false);").nl
       }
       else

@@ -96,8 +96,10 @@ internal class EmitUtil
   {
     modules := ["os", "path", "fs", "crypto", "url"]
     out := ms.file("node").out
+    ms.writeBeginModule(out)
     modules.each |m, i| { ms.writeInclude(out, m) }
-    ms.writeExports(out, modules).flush.close
+    ms.writeExports(out, modules)
+    ms.writeEndModule(out).flush.close
   }
 
   ** Write js from configured pod dependencies

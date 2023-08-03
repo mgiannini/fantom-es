@@ -22,12 +22,16 @@ abstract const class ModuleSystem
   abstract File moduleDir()
   abstract Str ext()
   virtual File file(Str basename) { moduleDir.plus(`${basename}.${ext}`) }
+
   virtual Void writePackageJson([Str:Obj?] json)
   {
     str := Type.find("util::JsonOutStream").method("writeJsonToStr").call(json)
     nodeDir.plus(`package.json`).out.writeChars(str).flush.close
   }
-  abstract OutStream writeExports(OutStream out, Str[] exports)
+
+  virtual This writeBeginModule(OutStream out) { this }
+  virtual OutStream writeEndModule(OutStream out) { out }
+
   OutStream writeInclude(OutStream out, Str module, Str baseDir := "")
   {
     p   := "${baseDir}${module}"
@@ -39,8 +43,9 @@ abstract const class ModuleSystem
     }
     return doWriteInclude(out, module, p)
   }
-
   protected abstract OutStream doWriteInclude(OutStream out, Str module, Str path)
+
+  abstract OutStream writeExports(OutStream out, Str[] exports)
 }
 
 **************************************************************************
@@ -52,21 +57,38 @@ const class CommonJs : ModuleSystem
   new make(File nodeDir) : super(nodeDir)
   {
   }
+  static const Str moduleStart :=
+  """(function () {
+     const __require = (m) => {
+       const name = m.split('.')[0];
+       if (typeof require === 'undefined') return this[name];
+       try { return require(`\${m}`); } catch (e) { /* ignore */ }
+     }
+     """
 
   override const Str moduleType := "cjs"
   override const File moduleDir := nodeDir.plus(`node_modules/`)
   override const Str ext := "js"
-  override OutStream writeExports(OutStream out, Str[] exports)
+  override This writeBeginModule(OutStream out)
   {
-    out.print("module.exports = {")
-    exports.each |export| { out.print("${export},") }
-    return out.printLine("};")
+    out.printLine(CommonJs.moduleStart)
+    return this
+  }
+  override OutStream writeEndModule(OutStream out)
+  {
+    out.printLine("}).call(this);")
   }
   protected override OutStream doWriteInclude(OutStream out, Str module, Str path)
   {
     // we assume the module is always in the Node.js path so we ignore
     // any path and just require the name of the module
-    out.printLine("const ${module} = require('${path.toUri.name}');")
+    out.printLine("const ${module} = __require('${path.toUri.name}');")
+  }
+  override OutStream writeExports(OutStream out, Str[] exports)
+  {
+    out.print("module.exports = {")
+    exports.each |export| { out.print("${export},") }
+    return out.printLine("};")
   }
 }
 

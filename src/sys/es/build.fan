@@ -135,11 +135,12 @@ class Build : BuildScript
       out.printLine(
         """(function () {
             const __require = (m) => {
-              if (typeof require === 'undefined') return this[m];
-              try { return require(`\${m}.js`); } catch (e) { /* ignore */ }
+              const name = m.split('.')[0];
+              if (typeof require === 'undefined') return this[name];
+              try { return require(`\${m}`); } catch (e) { /* ignore */ }
             }
-            const es6 = __require('es6')
-            const node = __require('node')
+            const es6 = __require('es6.js')
+            const node = __require('node.js')
            """)
     }
   }
@@ -350,7 +351,6 @@ class Build : BuildScript
          const JsMutationObserver = typeof MutationObserver !== 'undefined' ? MutationObserver : null;
          const JsEvent = (typeof Event !== 'undefined') ? Event : null;
          const JsResizeObserver = (typeof ResizeObserver !== 'undefined') ? ResizeObserver : null;
-         // const es6 = {JsDate,JsMap,JsWeakMap,JsMutationObserver,JsEvent,JsResizeObserver,};
          """)
 
 

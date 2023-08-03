@@ -60,7 +60,9 @@ const class FilePack : Weblet
 // Identity (NoDoc fields subject to change)
 //////////////////////////////////////////////////////////////////////////
 
-  @NoDoc static const AtomicBool es := AtomicBool(false)
+  // @NoDoc static const AtomicBool es := AtomicBool(false)
+  @NoDoc static const AtomicRef mode := AtomicRef("js")
+  static Bool isEs() { FilePack.mode.val == "es" }
 
   ** The in-memory file contents in GZIP encoding
   @NoDoc const Buf buf
@@ -151,15 +153,15 @@ const class FilePack : Weblet
     pods = Pod.orderByDepends(pods)
     files := toPodJsFiles(pods)
     files.insertAll(1, toEtcJsFiles)
-    if (FilePack.es.val) files.insert(0, toJsFile("JsAliases", `es6.js`))
+    if (FilePack.isEs) files.insert(0, toPodJsFile(Pod.find("sys"), "es6"))
     return files
   }
 
   ** Get the standard pod JavaScript file or null if no JS code.  The
   ** standard location used by the Fantom JS compiler is "/{pod-name}.js"
-  static File? toPodJsFile(Pod pod)
+  static File? toPodJsFile(Pod pod, Str name := pod.name)
   {
-    uri := (FilePack.es.val ? `/esm/` : `/`).plus(`${pod.name}.js`)
+    uri := (FilePack.isEs ? `/js/` : `/`).plus(`${name}.js`)
     return pod.file(uri, false)
   }
 
@@ -184,20 +186,20 @@ const class FilePack : Weblet
   **  - add `toIndexPropsJsFile`
   static File[] toEtcJsFiles()
   {
-    FilePack.es.val
+    FilePack.isEs
       ? [toMimeJsFile, toUnitsJsFile]
       : [toMimeJsFile, toUnitsJsFile, toIndexPropsJsFile]
   }
 
   @NoDoc static Obj moduleSystem()
   {
-    Type.find("compilerEs::Esm").make([Env.cur.tempDir.plus(`file_pack/`)])
+    Type.find("compilerEs::CommonJs").make([Env.cur.tempDir.plus(`file_pack/`)])
   }
 
   private static File toJsFile(Str cname, Uri fname)
   {
     buf := Buf(4096)
-    c := FilePack.es.val
+    c := FilePack.isEs
       ? Type.find("compilerEs::${cname}").make([moduleSystem])
       : Type.find("compilerJs::${cname}").make
     c->write(buf.out)

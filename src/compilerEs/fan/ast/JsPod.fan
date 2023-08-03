@@ -55,25 +55,20 @@ class JsPod : JsNode
   private Void writeRequire()
   {
     js.wl("// cjs require begin")
-    js.wl("(function () {")
+    CommonJs.moduleStart.splitLines.each |line| { js.wl(line) }
 
-    """const __require = (m) => {
-         if (typeof require === 'undefined') return this[m];
-         try { return require(`\${m}.js`); } catch (e) { /* ignore */ }
-       }""".splitLines.each |line| { js.wl(line) }
-
-    js.wl("const fan = __require('fan');")
-    js.wl("const sys = fan ? fan.sys : __require('sys');")
+    js.wl("const fan = __require('fan.js');")
+    js.wl("const sys = fan ? fan.sys : __require('sys.js');")
 
     // special handling for dom
-    if (pod.name == "dom") js.wl("const es6 = __require('es6');")
+    if (pod.name == "dom") js.wl("const es6 = __require('es6.js');")
 
     pod.depends.each |depend|
     {
       if (depend.name == "sys") return
       // NOTE if we change sys to fan we need to update JNode.qnameToJs
       // js.wl("import * as ${depend.name} from './${depend.name}.js';")
-      js.wl("const ${depend.name} = __require('${depend.name}');")
+      js.wl("const ${depend.name} = __require('${depend.name}.js');")
     }
 
     js.wl("// cjs require end")
@@ -246,7 +241,10 @@ class JsPod : JsNode
     // only export public types
     js.wl("// cjs exports begin")
     js.wl("const ${pod.name} = {").indent
-    types.findAll { it.def.isPublic }.each |t| { js.wl("${t.name},") }
+    types.findAll { it.def.isPublic }.each |t| {
+      js.wl("${t.name},")
+      if (this.peers[t.name]) js.wl("${t.peer.name}Peer,")
+    }
     js.unindent.wl("};")
     js.wl("if (typeof exports !== 'undefined') module.exports = ${pod.name};")
     js.wl("else this.${pod.name} = ${pod.name};")

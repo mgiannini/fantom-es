@@ -38,7 +38,10 @@ class Func extends Obj {
 // Methods
 //////////////////////////////////////////////////////////////////////////
 
-  static call(f, ...args) { return f.__method.call(...args); }
+  static call(f, ...args) { 
+    if (f.__method) return f.__method.call(...args); 
+    return f(...args);
+  }
   static callOn(f, obj, args) { return f.__method.callOn(obj, args); }
   static callList(f, args) { return f.__method.callList(args); }
 

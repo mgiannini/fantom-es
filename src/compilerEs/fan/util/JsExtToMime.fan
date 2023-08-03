@@ -17,6 +17,7 @@ class JsExtToMime
 
   Void write(OutStream out)
   {
+    ms.writeBeginModule(out)
     ms.writeInclude(out, "sys.ext")
 
     props := Env.cur.findFile(`etc/sys/ext2mime.props`).readProps
@@ -25,5 +26,6 @@ class JsExtToMime
     {
       out.printLine("c(${ext.toCode},${mime.toCode});")
     }
+    ms.writeEndModule(out)
   }
 }

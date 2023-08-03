@@ -18,6 +18,7 @@ class JsUnitDatabase
 
   Void write(OutStream out)
   {
+    ms.writeBeginModule(out)
     ms.writeInclude(out, "sys.ext")
 
     // open etc/sys/units.txt
@@ -61,6 +62,7 @@ class JsUnitDatabase
 
     // finish up
     out.printLine("sys.Unit.__quantities(qn);")
+    ms.writeEndModule(out)
   }
 }
 
