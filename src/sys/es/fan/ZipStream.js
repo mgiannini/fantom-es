@@ -17,13 +17,14 @@ class ZipInStream extends InStream {
 // Construction
 //////////////////////////////////////////////////////////////////////////
 
-  constructor(reader, pos, len, bufferSize) {
+  constructor(reader, pos, len, bufferSize, entry) {
     super(null);
     this.#reader = reader;
     this.#pos = pos || 0;
     this.#max = this.#pos + len;
     this.__bufSize = bufferSize || 1;
     this.__buf = Buffer.allocUnsafe(this.__bufSize);
+    this.#entry = entry;
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -41,7 +42,46 @@ class ZipInStream extends InStream {
   __bufSize;
   __buf;
 
+  #entry;
+  #nextBuf;
+  #availInNextBuf = 0;
+
   __readInto(buf) {
+    if (this.#max === Infinity) {
+      if (!this.#nextBuf) {
+        this.#nextBuf = Buffer.allocUnsafe(this.__bufSize);
+        this.#availInNextBuf = this.#reader.read(this.#nextBuf, 0, this.__bufSize, this.#pos);
+        this.#pos += this.#availInNextBuf;
+      }
+
+      const r1 = this.#availInNextBuf;
+      this.#nextBuf.copy(buf, 0, 0, r1);
+      this.#availInNextBuf = this.#reader.read(this.#nextBuf, 0, this.__bufSize, this.#pos);
+
+      // scan for data descriptor
+      const totalBuf = Buffer.concat([buf.subarray(0, r1), this.#nextBuf.subarray(0, Math.min(15, this.#availInNextBuf))]);
+      for(let i = 0; i < totalBuf.length - 15; i++) {
+        if (totalBuf.readUInt32LE(i) === 0x08074b50) {
+          // found it!
+          this.#max = this.#pos - r1 + i;
+          this.#pos = this.#max;
+          if (this.#entry) {
+            // write crc32, sizes into entry
+            this.#entry.crc32 = totalBuf.readUInt32LE(i+4);
+            this.#entry.compressedSize = totalBuf.readUInt32LE(i+8);
+            this.#entry.uncompressedSize = totalBuf.readUInt32LE(i+12);
+            this.#entry.foundDataDescriptor = true;
+          }
+          this.#reader.unreadBuf(Buffer.concat([buf.subarray(i+16), this.#nextBuf.subarray(0, this.#availInNextBuf)]));
+          return r1;
+        }
+      }
+
+      // no data descriptor in sight
+      this.#pos += this.#availInNextBuf;
+      return r1;
+    }
+
     const r = this.#reader.read(buf, 0, Math.min(this.__bufSize, this.remaining()), this.#pos);
     this.#pos += r;
     return r;
@@ -144,8 +184,8 @@ class ZipInStream extends InStream {
 
 class InflateInStream extends ZipInStream {
 
-  constructor(reader, pos, len, bufferSize) {
-    super(reader, pos, len, bufferSize);
+  constructor(reader, pos, len, bufferSize, entry) {
+    super(reader, pos, len, bufferSize, entry);
     this.__bufSize = Math.max(bufferSize || 1, 64);
     this.#rawBuf = Buffer.allocUnsafe(this.__bufSize);
     reader.posMatters = false;

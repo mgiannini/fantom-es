@@ -60,6 +60,10 @@ class ZipEntryFile extends File {
   }
 
   size() {
+    if ((this.#entry.generalPurposeBitFlag & 0x8) &&
+         !this.#isFileBacked &&
+         !this.#entry.foundDataDescriptor)
+      return null;
     return this.#entry.uncompressedSize;
   }
 

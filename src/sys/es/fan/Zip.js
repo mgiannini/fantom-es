@@ -112,7 +112,8 @@ class Zip extends Obj {
     if (!this.#in)
       throw UnsupportedErr.make("Not reading from an input stream");
 
-    // do the callback
+    for(let f = this.readNext(); f != null; f = this.readNext())
+      c(f);
   }
 
 //////////////////////////////////////////////////////////////////////////

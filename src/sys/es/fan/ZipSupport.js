@@ -203,7 +203,7 @@ class yauzl {
     const minute = time >> 5 & 0x3f; // 0-59
     const hour = time >> 11 & 0x1f; // 0-23
 
-    return DateTime.make(year, month, day, hour, minute, second);
+    return DateTime.make(year, Month.vals().get(month), day, hour, minute, second);
   }
 }
 
@@ -724,10 +724,14 @@ class YauzlZipFile {
       throw new Error("unsupported compression method: " + entry.compressionMethod);
     }
 
+    let size = entry.compressedSize;
+    if (entry.generalPurposeBitFlag & 0x8)
+      size = Infinity;
+
     if (decompress)
-      return new InflateInStream(this.reader, 0, entry.compressedSize, bufferSize);
+      return new InflateInStream(this.reader, 0, size, bufferSize, entry);
     else
-      return new ZipInStream(this.reader, 0, entry.compressedSize, bufferSize);
+      return new ZipInStream(this.reader, 0, size, bufferSize, entry);
   }
   throwErrorAndAutoClose(err) {
     if (this.autoClose) this.close();
@@ -771,6 +775,8 @@ class YauzlEntry {
   extraFields;
   fileComment;
 
+  foundDataDescriptor = false;
+
   getLastModDate() {
     return dosDateTimeToDate(this.lastModFileDate, this.lastModFileTime);
   }
@@ -794,6 +800,8 @@ class YauzlFileReader {
     return node.fs.readSync(this.#fd, buffer, offset, length, position);
   }
 
+  unreadBuf() {}
+
   close() {
     node.fs.closeSync(this.#fd);
   }
@@ -805,13 +813,32 @@ class YauzlStreamReader {
   }
 
   #in;
+  #pre;
   posMatters = false;
 
   read(buffer, offset, length) {
-    const fanBuf = MemBuf.makeCapacity(length);
-    const n = this.#in.readBuf(fanBuf, length);
-    Buffer.from(fanBuf.__unsafeArray()).copy(buffer);
-    return n;
+    let c1 = 0;
+    if (this.#pre) {
+      c1 = this.#pre.copy(buffer, offset, 0, Math.min(this.#pre.length, length));
+      offset += c1;
+      length -= c1;
+      if (c1 == this.#pre.length)
+        this.#pre = undefined;
+      else
+        this.#pre = this.#pre.subarray(c1);
+    }
+
+    let c2 = 0;
+    if (length > 0) {
+      const fanBuf = MemBuf.makeCapacity(length);
+      c2 = this.#in.readBuf(fanBuf, length) || 0;
+      Buffer.from(fanBuf.__unsafeArray()).copy(buffer, offset);
+    }
+    return c1 + c2;
+  }
+
+  unreadBuf(buf) {
+    this.#pre = buf;
   }
 
   close() {}
