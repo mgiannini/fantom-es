@@ -1,4 +1,116 @@
 /*
+=== buffer-crc32 ===
+
+The MIT License
+
+Copyright (c) 2013 Brian J. Brennan
+
+Permission is hereby granted, free of charge, to any person obtaining a copy 
+of this software and associated documentation files (the "Software"), to deal in 
+the Software without restriction, including without limitation the rights to use, 
+copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the 
+Software, and to permit persons to whom the Software is furnished to do so, 
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+class crc32 {
+
+  static CRC_TABLE = [
+    0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
+    0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
+    0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07,
+    0x90bf1d91, 0x1db71064, 0x6ab020f2, 0xf3b97148, 0x84be41de,
+    0x1adad47d, 0x6ddde4eb, 0xf4d4b551, 0x83d385c7, 0x136c9856,
+    0x646ba8c0, 0xfd62f97a, 0x8a65c9ec, 0x14015c4f, 0x63066cd9,
+    0xfa0f3d63, 0x8d080df5, 0x3b6e20c8, 0x4c69105e, 0xd56041e4,
+    0xa2677172, 0x3c03e4d1, 0x4b04d447, 0xd20d85fd, 0xa50ab56b,
+    0x35b5a8fa, 0x42b2986c, 0xdbbbc9d6, 0xacbcf940, 0x32d86ce3,
+    0x45df5c75, 0xdcd60dcf, 0xabd13d59, 0x26d930ac, 0x51de003a,
+    0xc8d75180, 0xbfd06116, 0x21b4f4b5, 0x56b3c423, 0xcfba9599,
+    0xb8bda50f, 0x2802b89e, 0x5f058808, 0xc60cd9b2, 0xb10be924,
+    0x2f6f7c87, 0x58684c11, 0xc1611dab, 0xb6662d3d, 0x76dc4190,
+    0x01db7106, 0x98d220bc, 0xefd5102a, 0x71b18589, 0x06b6b51f,
+    0x9fbfe4a5, 0xe8b8d433, 0x7807c9a2, 0x0f00f934, 0x9609a88e,
+    0xe10e9818, 0x7f6a0dbb, 0x086d3d2d, 0x91646c97, 0xe6635c01,
+    0x6b6b51f4, 0x1c6c6162, 0x856530d8, 0xf262004e, 0x6c0695ed,
+    0x1b01a57b, 0x8208f4c1, 0xf50fc457, 0x65b0d9c6, 0x12b7e950,
+    0x8bbeb8ea, 0xfcb9887c, 0x62dd1ddf, 0x15da2d49, 0x8cd37cf3,
+    0xfbd44c65, 0x4db26158, 0x3ab551ce, 0xa3bc0074, 0xd4bb30e2,
+    0x4adfa541, 0x3dd895d7, 0xa4d1c46d, 0xd3d6f4fb, 0x4369e96a,
+    0x346ed9fc, 0xad678846, 0xda60b8d0, 0x44042d73, 0x33031de5,
+    0xaa0a4c5f, 0xdd0d7cc9, 0x5005713c, 0x270241aa, 0xbe0b1010,
+    0xc90c2086, 0x5768b525, 0x206f85b3, 0xb966d409, 0xce61e49f,
+    0x5edef90e, 0x29d9c998, 0xb0d09822, 0xc7d7a8b4, 0x59b33d17,
+    0x2eb40d81, 0xb7bd5c3b, 0xc0ba6cad, 0xedb88320, 0x9abfb3b6,
+    0x03b6e20c, 0x74b1d29a, 0xead54739, 0x9dd277af, 0x04db2615,
+    0x73dc1683, 0xe3630b12, 0x94643b84, 0x0d6d6a3e, 0x7a6a5aa8,
+    0xe40ecf0b, 0x9309ff9d, 0x0a00ae27, 0x7d079eb1, 0xf00f9344,
+    0x8708a3d2, 0x1e01f268, 0x6906c2fe, 0xf762575d, 0x806567cb,
+    0x196c3671, 0x6e6b06e7, 0xfed41b76, 0x89d32be0, 0x10da7a5a,
+    0x67dd4acc, 0xf9b9df6f, 0x8ebeeff9, 0x17b7be43, 0x60b08ed5,
+    0xd6d6a3e8, 0xa1d1937e, 0x38d8c2c4, 0x4fdff252, 0xd1bb67f1,
+    0xa6bc5767, 0x3fb506dd, 0x48b2364b, 0xd80d2bda, 0xaf0a1b4c,
+    0x36034af6, 0x41047a60, 0xdf60efc3, 0xa867df55, 0x316e8eef,
+    0x4669be79, 0xcb61b38c, 0xbc66831a, 0x256fd2a0, 0x5268e236,
+    0xcc0c7795, 0xbb0b4703, 0x220216b9, 0x5505262f, 0xc5ba3bbe,
+    0xb2bd0b28, 0x2bb45a92, 0x5cb36a04, 0xc2d7ffa7, 0xb5d0cf31,
+    0x2cd99e8b, 0x5bdeae1d, 0x9b64c2b0, 0xec63f226, 0x756aa39c,
+    0x026d930a, 0x9c0906a9, 0xeb0e363f, 0x72076785, 0x05005713,
+    0x95bf4a82, 0xe2b87a14, 0x7bb12bae, 0x0cb61b38, 0x92d28e9b,
+    0xe5d5be0d, 0x7cdcefb7, 0x0bdbdf21, 0x86d3d2d4, 0xf1d4e242,
+    0x68ddb3f8, 0x1fda836e, 0x81be16cd, 0xf6b9265b, 0x6fb077e1,
+    0x18b74777, 0x88085ae6, 0xff0f6a70, 0x66063bca, 0x11010b5c,
+    0x8f659eff, 0xf862ae69, 0x616bffd3, 0x166ccf45, 0xa00ae278,
+    0xd70dd2ee, 0x4e048354, 0x3903b3c2, 0xa7672661, 0xd06016f7,
+    0x4969474d, 0x3e6e77db, 0xaed16a4a, 0xd9d65adc, 0x40df0b66,
+    0x37d83bf0, 0xa9bcae53, 0xdebb9ec5, 0x47b2cf7f, 0x30b5ffe9,
+    0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6, 0xbad03605,
+    0xcdd70693, 0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8,
+    0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b,
+    0x2d02ef8d
+  ];
+
+  static #ensureBuffer(input) {
+    if (Buffer.isBuffer(input)) {
+      return input;
+    }
+
+    if (typeof input === "number")
+      return Buffer.alloc(input);
+    else if (typeof input === "string")
+      return Buffer.from(input);
+    else
+      throw new Error("input must be buffer, number, or string, received " +
+                      typeof input);
+  }
+
+  static #crc32(buf, previous) {
+    buf = crc32.#ensureBuffer(buf);
+    if (Buffer.isBuffer(previous)) {
+      previous = previous.readUInt32BE(0);
+    }
+    var crc = ~~previous ^ -1;
+    for (let n = 0; n < buf.length; n++) {
+      crc = CRC_TABLE[(crc ^ buf[n]) & 0xff] ^ (crc >>> 8);
+    }
+    return (crc ^ -1);
+  }
+
+  static unsigned = function () {
+    return crc32.#crc32.apply(null, arguments) >>> 0;
+  };
+}
+
+/*
 === yauzl ===
 
 The MIT License (MIT)
@@ -376,7 +488,7 @@ class YauzlZipFile {
           }
           // NameCRC32     4 bytes     File Name Field CRC32 Checksum
           const oldNameCrc32 = extraField.data.readUInt32LE(1);
-          if (unsigned(buffer.subarray(0, entry.fileNameLength)) !== oldNameCrc32) {
+          if (crc32.unsigned(buffer.subarray(0, entry.fileNameLength)) !== oldNameCrc32) {
             // > If the CRC check fails, this UTF-8 Path Extra Field should be
             // > ignored and the File Name field in the header should be used instead.
             continue;
@@ -535,7 +647,7 @@ class YauzlZipFile {
           }
           // NameCRC32     4 bytes     File Name Field CRC32 Checksum
           const oldNameCrc32 = extraField.data.readUInt32LE(1);
-          if (unsigned(buffer.subarray(0, entry.fileNameLength)) !== oldNameCrc32) {
+          if (crc32.unsigned(buffer.subarray(0, entry.fileNameLength)) !== oldNameCrc32) {
             // > If the CRC check fails, this UTF-8 Path Extra Field should be
             // > ignored and the File Name field in the header should be used instead.
             continue;
@@ -842,4 +954,483 @@ class YauzlStreamReader {
   }
 
   close() {}
+}
+
+/*
+=== yazl ===
+
+The MIT License (MIT)
+
+Copyright (c) 2014 Josh Wolfe
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
+const ZIP64_END_OF_CENTRAL_DIRECTORY_RECORD_SIZE = 56;
+const ZIP64_END_OF_CENTRAL_DIRECTORY_LOCATOR_SIZE = 20;
+const END_OF_CENTRAL_DIRECTORY_RECORD_SIZE = 22;
+const LOCAL_FILE_HEADER_FIXED_SIZE = 30;
+const VERSION_NEEDED_TO_EXTRACT_UTF8 = 20;
+const VERSION_NEEDED_TO_EXTRACT_ZIP64 = 45;
+// 3 = unix. 63 = spec version 6.3
+const VERSION_MADE_BY = (3 << 8) | 63;
+const FILE_NAME_IS_UTF8 = 1 << 11;
+const UNKNOWN_CRC32_AND_FILE_SIZES = 1 << 3;
+const DATA_DESCRIPTOR_SIZE = 16;
+const ZIP64_DATA_DESCRIPTOR_SIZE = 24;
+const CENTRAL_DIRECTORY_RECORD_FIXED_SIZE = 46;
+const ZIP64_EXTENDED_INFORMATION_EXTRA_FIELD_SIZE = 28;
+const EMPTY_BUFFER = Buffer.allocUnsafe(0);
+
+class yazl {
+  static validateMetadataPath(metadataPath) {
+    if (metadataPath === "") throw new Error("empty metadataPath");
+    metadataPath = metadataPath.replace(/\\/g, "/");
+    if (/^[a-zA-Z]:/.test(metadataPath) || /^(\/)/.test(metadataPath)) throw new Error("absolute path: " + metadataPath);
+    if (metadataPath.split("/").indexOf("..") !== -1) throw new Error("invalid relative path: " + metadataPath);
+  }
+  static writeUInt64LE(buffer, n, offset) {
+    // can't use bitshift here, because JavaScript only allows bitshifting on 32-bit integers.
+    var high = Math.floor(n / 0x100000000);
+    var low = n % 0x100000000;
+    buffer.writeUInt32LE(low, offset);
+    buffer.writeUInt32LE(high, offset + 4);
+  }
+  static dateToDosDateTime(jsDate) {
+    let date = 0;
+    date |= jsDate.getDate() & 0x1f; // 1-31
+    date |= ((jsDate.getMonth() + 1) & 0xf) << 5; // 0-11, 1-12
+    date |= ((jsDate.getFullYear() - 1980) & 0x7f) << 9; // 0-128, 1980-2108
+  
+    let time = 0;
+    time |= Math.floor(jsDate.getSeconds() / 2); // 0-59, 0-29 (lose odd numbers)
+    time |= (jsDate.getMinutes() & 0x3f) << 5; // 0-59
+    time |= (jsDate.getHours() & 0x1f) << 11; // 0-23
+  
+    return {date: date, time: time};
+  }
+
+  static #cp437 = '\u0000☺☻♥♦♣♠•◘○◙♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼ !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~⌂ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ ';
+  static #reverseCp437;
+  static encodeCp437(string) {
+    if (/^[\x20-\x7e]*$/.test(string)) {
+      // CP437, ASCII, and UTF-8 overlap in this range.
+      return bufferFrom(string, "utf-8");
+    }
+  
+    // This is the slow path.
+    if (!yazl.#reverseCp437) {
+      // cache this once
+      reverseCp437 = {};
+      for (var i = 0; i < yazl.#cp437.length; i++) {
+        reverseCp437[cp437[i]] = i;
+      }
+    }
+  
+    var result = bufferAlloc(string.length);
+    for (var i = 0; i < string.length; i++) {
+      var b = reverseCp437[string[i]];
+      if (b == null) throw new Error("character not encodable in CP437: " + JSON.stringify(string[i]));
+      result[i] = b;
+    }
+  
+    return result;
+  }
+}
+
+class YazlZipFile {
+  constructor(out) {
+    this.out = out;
+    this.entries = [];
+    this.outputStreamCursor = 0;
+    this.ended = false; // .end() sets this
+    this.forceZip64Eocd = false; // configurable in .end()
+  }
+
+  addEntryAt(metadataPath, options) {
+    metadataPath = validateMetadataPath(metadataPath);
+    if (options == null) options = {};
+    const entry = new YazlEntry(metadataPath, options);
+    this.entries.push(entry);
+
+    if (this.entries.length > 1) {
+      const lastEntry = this.entries[this.entries.length-2];
+      this.#writeToOutputStream(lastEntry.getDataDescriptor());
+    }
+    this.#writeToOutputStream(entry.getLocalFileHeader());
+
+    if (entry.compress)
+      return DeflateOutStream(this, entry, options.level);
+    else
+      return ZipOutStream(this, entry, options.level);
+  }
+
+  #eocdrSignatureBuffer = Buffer.from([0x50, 0x4b, 0x05, 0x06]);
+  end(options) {
+    if (!options) options = {};
+    if (this.ended) return;
+    this.ended = true;
+
+    if (this.entries.length > 0) {
+      const lastEntry = this.entries[this.entries.length-1];
+      this.#writeToOutputStream(lastEntry.getDataDescriptor());
+    }
+
+    this.forceZip64Eocd = !!options.forceZip64Format;
+    // no comment.
+    this.comment = EMPTY_BUFFER;
+    this.#writeEocd();
+  }
+
+  #writeToOutputStream(buf) {
+    this.out.writeBuf(MemBuf.__makeBytes(buf));
+  }
+
+  #writeEocd() {
+    this.offsetOfStartOfCentralDirectory = this.outputStreamCursor;
+    this.entries.forEach(function(entry) {
+      this.#writeToOutputStream(entry.getCentralDirectoryRecord());
+    });
+    this.#writeToOutputStream(this.#getEndOfCentralDirectoryRecord());
+    this.out.close();
+  }
+
+  #getEndOfCentralDirectoryRecord(actuallyJustTellMeHowLongItWouldBe) {
+    let needZip64Format = false;
+    let normalEntriesLength = this.entries.length;
+    if (this.forceZip64Eocd || this.entries.length >= 0xffff) {
+      normalEntriesLength = 0xffff;
+      needZip64Format = true;
+    }
+    const sizeOfCentralDirectory = this.outputStreamCursor - this.offsetOfStartOfCentralDirectory;
+    let normalSizeOfCentralDirectory = sizeOfCentralDirectory;
+    if (this.forceZip64Eocd || sizeOfCentralDirectory >= 0xffffffff) {
+      normalSizeOfCentralDirectory = 0xffffffff;
+      needZip64Format = true;
+    }
+    let normalOffsetOfStartOfCentralDirectory = this.offsetOfStartOfCentralDirectory;
+    if (this.forceZip64Eocd || this.offsetOfStartOfCentralDirectory >= 0xffffffff) {
+      normalOffsetOfStartOfCentralDirectory = 0xffffffff;
+      needZip64Format = true;
+    }
+    if (actuallyJustTellMeHowLongItWouldBe) {
+      if (needZip64Format) {
+        return (
+          ZIP64_END_OF_CENTRAL_DIRECTORY_RECORD_SIZE +
+          ZIP64_END_OF_CENTRAL_DIRECTORY_LOCATOR_SIZE +
+          END_OF_CENTRAL_DIRECTORY_RECORD_SIZE
+        );
+      } else {
+        return END_OF_CENTRAL_DIRECTORY_RECORD_SIZE;
+      }
+    }
+
+    const eocdrBuffer = Buffer.allocUnsafe(END_OF_CENTRAL_DIRECTORY_RECORD_SIZE + this.comment.length);
+    // end of central dir signature                       4 bytes  (0x06054b50)
+    eocdrBuffer.writeUInt32LE(0x06054b50, 0);
+    // number of this disk                                2 bytes
+    eocdrBuffer.writeUInt16LE(0, 4);
+    // number of the disk with the start of the central directory  2 bytes
+    eocdrBuffer.writeUInt16LE(0, 6);
+    // total number of entries in the central directory on this disk  2 bytes
+    eocdrBuffer.writeUInt16LE(normalEntriesLength, 8);
+    // total number of entries in the central directory   2 bytes
+    eocdrBuffer.writeUInt16LE(normalEntriesLength, 10);
+    // size of the central directory                      4 bytes
+    eocdrBuffer.writeUInt32LE(normalSizeOfCentralDirectory, 12);
+    // offset of start of central directory with respect to the starting disk number  4 bytes
+    eocdrBuffer.writeUInt32LE(normalOffsetOfStartOfCentralDirectory, 16);
+    // .ZIP file comment length                           2 bytes
+    eocdrBuffer.writeUInt16LE(this.comment.length, 20);
+    // .ZIP file comment                                  (variable size)
+    this.comment.copy(eocdrBuffer, 22);
+  
+    if (!needZip64Format) return eocdrBuffer;
+  
+    // ZIP64 format
+    // ZIP64 End of Central Directory Record
+    const zip64EocdrBuffer = Buffer.allocUnsafe(ZIP64_END_OF_CENTRAL_DIRECTORY_RECORD_SIZE);
+    // zip64 end of central dir signature                                             4 bytes  (0x06064b50)
+    zip64EocdrBuffer.writeUInt32LE(0x06064b50, 0);
+    // size of zip64 end of central directory record                                  8 bytes
+    yazl.writeUInt64LE(zip64EocdrBuffer, ZIP64_END_OF_CENTRAL_DIRECTORY_RECORD_SIZE - 12, 4);
+    // version made by                                                                2 bytes
+    zip64EocdrBuffer.writeUInt16LE(VERSION_MADE_BY, 12);
+    // version needed to extract                                                      2 bytes
+    zip64EocdrBuffer.writeUInt16LE(VERSION_NEEDED_TO_EXTRACT_ZIP64, 14);
+    // number of this disk                                                            4 bytes
+    zip64EocdrBuffer.writeUInt32LE(0, 16);
+    // number of the disk with the start of the central directory                     4 bytes
+    zip64EocdrBuffer.writeUInt32LE(0, 20);
+    // total number of entries in the central directory on this disk                  8 bytes
+    writeUInt64LE(zip64EocdrBuffer, this.entries.length, 24);
+    // total number of entries in the central directory                               8 bytes
+    writeUInt64LE(zip64EocdrBuffer, this.entries.length, 32);
+    // size of the central directory                                                  8 bytes
+    writeUInt64LE(zip64EocdrBuffer, sizeOfCentralDirectory, 40);
+    // offset of start of central directory with respect to the starting disk number  8 bytes
+    writeUInt64LE(zip64EocdrBuffer, this.offsetOfStartOfCentralDirectory, 48);
+    // zip64 extensible data sector                                                   (variable size)
+    // nothing in the zip64 extensible data sector
+  
+  
+    // ZIP64 End of Central Directory Locator
+    const zip64EocdlBuffer = Buffer.allocUnsafe(ZIP64_END_OF_CENTRAL_DIRECTORY_LOCATOR_SIZE);
+    // zip64 end of central dir locator signature                               4 bytes  (0x07064b50)
+    zip64EocdlBuffer.writeUInt32LE(0x07064b50, 0);
+    // number of the disk with the start of the zip64 end of central directory  4 bytes
+    zip64EocdlBuffer.writeUInt32LE(0, 4);
+    // relative offset of the zip64 end of central directory record             8 bytes
+    yazl.writeUInt64LE(zip64EocdlBuffer, this.outputStreamCursor, 8);
+    // total number of disks                                                    4 bytes
+    zip64EocdlBuffer.writeUInt32LE(1, 16);
+  
+  
+    return Buffer.concat([
+      zip64EocdrBuffer,
+      zip64EocdlBuffer,
+      eocdrBuffer,
+    ]);
+  }
+}
+
+class YazlEntry {
+  constructor(metadataPath, options) {
+    this.utf8FileName = Buffer.from(metadataPath);
+    if (this.utf8FileName.length > 0xffff)
+      throw new Error("utf8 file name too long. " + utf8FileName.length + " > " + 0xffff);
+    this.isDirectory = metadataPath.endsWith("/");
+    this.setLastModDate(options.mtime != null ? options.mtime : new Date());
+    if (options.mode != null) {
+      this.setFileAttributesMode(options.mode);
+    } else {
+      this.setFileAttributesMode(isDirectory ? 0o40775 : 0o100664);
+    }
+    if (options.uncompressedSize != null &&
+        options.compressedSize != null &&
+        options.crc32 != null) {
+      this.crcAndFileSizeKnown = true;
+      this.crc32 = options.crc32;
+      this.uncompressedSize = options.uncompressedSize;
+      this.compressedSize = options.compressedSize;
+    } else {
+      // unknown so far
+      this.crcAndFileSizeKnown = false;
+      this.crc32 = null;
+      this.uncompressedSize = null;
+      this.compressedSize = null;
+      if (options.uncompressedSize != null) this.uncompressedSize = options.uncompressedSize;
+    }
+    this.compress = options.compress != null ? !!options.compress : !this.isDirectory;
+    this.forceZip64Format = !!options.forceZip64Format;
+    if (options.fileComment) {
+      if (typeof options.fileComment === "string") {
+        this.fileComment = Buffer.from(options.fileComment, "utf-8");
+      } else {
+        // It should be a Buffer
+        this.fileComment = options.fileComment;
+      }
+      if (this.fileComment.length > 0xffff) throw new Error("fileComment is too large");
+    } else {
+      // no comment.
+      this.fileComment = EMPTY_BUFFER;
+    }
+    if (options.extra && options.extra.length > 0xffffffff)
+      throw new Error("extra field data is too large");
+    this.extra = options.extra || EMPTY_BUFFER;
+  }
+  setLastModDate(date) {
+    const dosDateTime = yazl.dateToDosDateTime(date);
+    this.lastModFileTime = dosDateTime.time;
+    this.lastModFileDate = dosDateTime.date;
+  }
+  setFileAttributesMode(mode) {
+    if ((mode & 0xffff) !== mode) throw new Error("invalid mode. expected: 0 <= " + mode + " <= " + 0xffff);
+    // http://unix.stackexchange.com/questions/14705/the-zip-formats-external-file-attribute/14727#14727
+    this.externalFileAttributes = (mode << 16) >>> 0;
+  }
+  useZip64Format() {
+    return (
+      (this.forceZip64Format) ||
+      (this.uncompressedSize != null && this.uncompressedSize > 0xfffffffe) ||
+      (this.compressedSize != null && this.compressedSize > 0xfffffffe) ||
+      (this.relativeOffsetOfLocalHeader != null && this.relativeOffsetOfLocalHeader > 0xfffffffe)
+    );
+  }
+  getLocalFileHeader() {
+    let crc32 = 0;
+    let compressedSize = 0;
+    let uncompressedSize = 0;
+    if (this.crcAndFileSizeKnown) {
+      crc32 = this.crc32;
+      compressedSize = this.compressedSize;
+      uncompressedSize = this.uncompressedSize;
+    }
+
+    const fixedSizeStuff = Buffer.allocUnsafe(LOCAL_FILE_HEADER_FIXED_SIZE);
+    let generalPurposeBitFlag = FILE_NAME_IS_UTF8;
+    if (!this.crcAndFileSizeKnown) generalPurposeBitFlag |= UNKNOWN_CRC32_AND_FILE_SIZES;
+
+    // local file header signature     4 bytes  (0x04034b50)
+    fixedSizeStuff.writeUInt32LE(0x04034b50, 0);
+    // version needed to extract       2 bytes
+    fixedSizeStuff.writeUInt16LE(VERSION_NEEDED_TO_EXTRACT_UTF8, 4);
+    // general purpose bit flag        2 bytes
+    fixedSizeStuff.writeUInt16LE(generalPurposeBitFlag, 6);
+    // compression method              2 bytes
+    fixedSizeStuff.writeUInt16LE(this.getCompressionMethod(), 8);
+    // last mod file time              2 bytes
+    fixedSizeStuff.writeUInt16LE(this.lastModFileTime, 10);
+    // last mod file date              2 bytes
+    fixedSizeStuff.writeUInt16LE(this.lastModFileDate, 12);
+    // crc-32                          4 bytes
+    fixedSizeStuff.writeUInt32LE(crc32, 14);
+    // compressed size                 4 bytes
+    fixedSizeStuff.writeUInt32LE(compressedSize, 18);
+    // uncompressed size               4 bytes
+    fixedSizeStuff.writeUInt32LE(uncompressedSize, 22);
+    // file name length                2 bytes
+    fixedSizeStuff.writeUInt16LE(this.utf8FileName.length, 26);
+    // extra field length              2 bytes
+    fixedSizeStuff.writeUInt16LE(this.extra.length, 28);
+    return Buffer.concat([
+      fixedSizeStuff,
+      // file name (variable size)
+      this.utf8FileName,
+      // extra field (variable size)
+      this.extra
+    ]);
+  }
+  getDataDescriptor() {
+    if (this.crcAndFileSizeKnown) {
+      // the Mac Archive Utility requires this not be present unless we set general purpose bit 3
+      return EMPTY_BUFFER;
+    }
+    if (!this.useZip64Format()) {
+      const buffer = Buffer.allocUnsafe(DATA_DESCRIPTOR_SIZE);
+      // optional signature (required according to Archive Utility)
+      buffer.writeUInt32LE(0x08074b50, 0);
+      // crc-32                          4 bytes
+      buffer.writeUInt32LE(this.crc32, 4);
+      // compressed size                 4 bytes
+      buffer.writeUInt32LE(this.compressedSize, 8);
+      // uncompressed size               4 bytes
+      buffer.writeUInt32LE(this.uncompressedSize, 12);
+      return buffer;
+    } else {
+      // ZIP64 format
+      const buffer = Buffer.allocUnsafe(ZIP64_DATA_DESCRIPTOR_SIZE);
+      // optional signature (unknown if anyone cares about this)
+      buffer.writeUInt32LE(0x08074b50, 0);
+      // crc-32                          4 bytes
+      buffer.writeUInt32LE(this.crc32, 4);
+      // compressed size                 8 bytes
+      yazl.writeUInt64LE(buffer, this.compressedSize, 8);
+      // uncompressed size               8 bytes
+      yazl.writeUInt64LE(buffer, this.uncompressedSize, 16);
+      return buffer;
+    }
+  }
+  getCentralDirectoryRecord() {
+    const fixedSizeStuff = Buffer.allocUnsafe(CENTRAL_DIRECTORY_RECORD_FIXED_SIZE);
+    let generalPurposeBitFlag = FILE_NAME_IS_UTF8;
+    if (!this.crcAndFileSizeKnown) generalPurposeBitFlag |= UNKNOWN_CRC32_AND_FILE_SIZES;
+
+    let normalCompressedSize = this.compressedSize;
+    let normalUncompressedSize = this.uncompressedSize;
+    let normalRelativeOffsetOfLocalHeader = this.relativeOffsetOfLocalHeader;
+    let versionNeededToExtract;
+    let zeiefBuffer;
+    if (this.useZip64Format()) {
+      normalCompressedSize = 0xffffffff;
+      normalUncompressedSize = 0xffffffff;
+      normalRelativeOffsetOfLocalHeader = 0xffffffff;
+      versionNeededToExtract = VERSION_NEEDED_TO_EXTRACT_ZIP64;
+
+      // ZIP64 extended information extra field
+      zeiefBuffer = Buffer.allocUnsafe(ZIP64_EXTENDED_INFORMATION_EXTRA_FIELD_SIZE);
+      // 0x0001                  2 bytes    Tag for this "extra" block type
+      zeiefBuffer.writeUInt16LE(0x0001, 0);
+      // Size                    2 bytes    Size of this "extra" block
+      zeiefBuffer.writeUInt16LE(ZIP64_EXTENDED_INFORMATION_EXTRA_FIELD_SIZE - 4, 2);
+      // Original Size           8 bytes    Original uncompressed file size
+      yazl.writeUInt64LE(zeiefBuffer, this.uncompressedSize, 4);
+      // Compressed Size         8 bytes    Size of compressed data
+      yazl.writeUInt64LE(zeiefBuffer, this.compressedSize, 12);
+      // Relative Header Offset  8 bytes    Offset of local header record
+      yazl.writeUInt64LE(zeiefBuffer, this.relativeOffsetOfLocalHeader, 20);
+      // Disk Start Number       4 bytes    Number of the disk on which this file starts
+      // (omit)
+    } else {
+      versionNeededToExtract = VERSION_NEEDED_TO_EXTRACT_UTF8;
+      zeiefBuffer = EMPTY_BUFFER;
+    }
+
+    // central file header signature   4 bytes  (0x02014b50)
+    fixedSizeStuff.writeUInt32LE(0x02014b50, 0);
+    // version made by                 2 bytes
+    fixedSizeStuff.writeUInt16LE(VERSION_MADE_BY, 4);
+    // version needed to extract       2 bytes
+    fixedSizeStuff.writeUInt16LE(versionNeededToExtract, 6);
+    // general purpose bit flag        2 bytes
+    fixedSizeStuff.writeUInt16LE(generalPurposeBitFlag, 8);
+    // compression method              2 bytes
+    fixedSizeStuff.writeUInt16LE(this.getCompressionMethod(), 10);
+    // last mod file time              2 bytes
+    fixedSizeStuff.writeUInt16LE(this.lastModFileTime, 12);
+    // last mod file date              2 bytes
+    fixedSizeStuff.writeUInt16LE(this.lastModFileDate, 14);
+    // crc-32                          4 bytes
+    fixedSizeStuff.writeUInt32LE(this.crc32, 16);
+    // compressed size                 4 bytes
+    fixedSizeStuff.writeUInt32LE(normalCompressedSize, 20);
+    // uncompressed size               4 bytes
+    fixedSizeStuff.writeUInt32LE(normalUncompressedSize, 24);
+    // file name length                2 bytes
+    fixedSizeStuff.writeUInt16LE(this.utf8FileName.length, 28);
+    // extra field length              2 bytes
+    fixedSizeStuff.writeUInt16LE(zeiefBuffer.length + this.extra.length, 30);
+    // file comment length             2 bytes
+    fixedSizeStuff.writeUInt16LE(this.fileComment.length, 32);
+    // disk number start               2 bytes
+    fixedSizeStuff.writeUInt16LE(0, 34);
+    // internal file attributes        2 bytes
+    fixedSizeStuff.writeUInt16LE(0, 36);
+    // external file attributes        4 bytes
+    fixedSizeStuff.writeUInt32LE(this.externalFileAttributes, 38);
+    // relative offset of local header 4 bytes
+    fixedSizeStuff.writeUInt32LE(normalRelativeOffsetOfLocalHeader, 42);
+
+    return Buffer.concat([
+      fixedSizeStuff,
+      // file name (variable size)
+      this.utf8FileName,
+      // extra field (variable size)
+      zeiefBuffer,
+      this.extra,
+      // file comment (variable size)
+      this.fileComment,
+    ]);
+  }
+  getCompressionMethod() {
+    const NO_COMPRESSION = 0;
+    const DEFLATE_COMPRESSION = 8;
+    return this.compress ? DEFLATE_COMPRESSION : NO_COMPRESSION;
+  }
 }

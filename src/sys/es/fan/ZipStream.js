@@ -21,6 +21,7 @@ class ZipInStream extends InStream {
     super(null);
     this.#reader = reader;
     this.#pos = pos || 0;
+    this.#start = this.#pos;
     this.#max = this.#pos + len;
     this.__bufSize = bufferSize || 1;
     this.__buf = Buffer.allocUnsafe(this.__bufSize);
@@ -32,6 +33,7 @@ class ZipInStream extends InStream {
 //////////////////////////////////////////////////////////////////////////
 
   #reader;
+  #start;
   #pos;
   #max;
   #isClosed = false;
@@ -59,20 +61,34 @@ class ZipInStream extends InStream {
       this.#availInNextBuf = this.#reader.read(this.#nextBuf, 0, this.__bufSize, this.#pos);
 
       // scan for data descriptor
-      const totalBuf = Buffer.concat([buf.subarray(0, r1), this.#nextBuf.subarray(0, Math.min(15, this.#availInNextBuf))]);
-      for(let i = 0; i < totalBuf.length - 15; i++) {
+      const totalBuf = Buffer.concat([buf.subarray(0, r1), this.#nextBuf.subarray(0, Math.min(23, this.#availInNextBuf))]);
+      for(let i = 0; i < totalBuf.length - 23; i++) {
         if (totalBuf.readUInt32LE(i) === 0x08074b50) {
+          const compressedNormal = totalBuf.readUInt32LE(i+8);
+          const compressed64 = yauzl.readUInt64LE(totalBuf, i+8);
+          const compressedActual = this.#pos - r1 + i - this.#start;
+          if (compressedActual != compressedNormal && compressedActual != compressed64)
+            break;
+
           // found it!
           this.#max = this.#pos - r1 + i;
           this.#pos = this.#max;
+          const useZip64 = compressedActual === compressed64;
           if (this.#entry) {
             // write crc32, sizes into entry
             this.#entry.crc32 = totalBuf.readUInt32LE(i+4);
-            this.#entry.compressedSize = totalBuf.readUInt32LE(i+8);
-            this.#entry.uncompressedSize = totalBuf.readUInt32LE(i+12);
+            if (useZip64) {
+              // zip64
+              this.#entry.compressedSize = compressed64;
+              this.#entry.uncompressedSize = yauzl.readUInt64LE(totalBuf, i+16);
+            }
+            else {
+              this.#entry.compressedSize = compressedNormal;
+              this.#entry.uncompressedSize = totalBuf.readUInt32LE(i+12);
+            }
             this.#entry.foundDataDescriptor = true;
           }
-          this.#reader.unreadBuf(Buffer.concat([buf.subarray(i+16), this.#nextBuf.subarray(0, this.#availInNextBuf)]));
+          this.#reader.unreadBuf(Buffer.concat([buf.subarray(useZip64 ? i+24 : i+16), this.#nextBuf.subarray(0, this.#availInNextBuf)]));
           return r1;
         }
       }
@@ -135,7 +151,7 @@ class ZipInStream extends InStream {
       this.#pre = this.#pre.slice(0, -len);
       skipped += len;
     }
-    if (this.#reader.posMatters) {
+    if (this.#reader.posMatters && this.#max !== Infinity) {
       const s = Math.min(this.remaining() - skipped, Math.max(0, n - skipped - this.avail()));
       this.#pos += s;
       skipped += s;
@@ -211,3 +227,11 @@ class InflateInStream extends ZipInStream {
   }
 
 }
+
+/*************************************************************************
+ * ZipOutStream
+ ************************************************************************/
+
+/*************************************************************************
+ * DeflateOutStream
+ ************************************************************************/

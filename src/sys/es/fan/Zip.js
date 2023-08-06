@@ -19,6 +19,7 @@ class Zip extends Obj {
   }
 
   #yauzlZip;
+  #yazlZip;
 
   #file;
   #in;
@@ -53,6 +54,7 @@ class Zip extends Obj {
   {
     const zip = new Zip();
     zip.#out = out;
+    zip.#yazlZip = new YazlZipFile(out);
     return zip;
   }
 
@@ -120,55 +122,47 @@ class Zip extends Obj {
 // OutStream writing-only
 //////////////////////////////////////////////////////////////////////////
 
-  /**
-   * Append a new file to the end of this zip file and return an
-   * OutStream which may be used to write the file contents.  The
-   * Uri must not contain a query or fragment; it may optionally
-   * start with a slash.  Closing the OutStream will close only
-   * this file entry - use Zip.close() when finished writing the
-   * entire zip file.  Throw UnsupportedErr if zip is not writing
-   * to an output stream.
-   * 
-   * Next entry options:
-   * - comment: Str entry comment
-   * - crc: Int CRC-32 of the uncompressed data
-   * - extra: Buf for extra bytes data field
-   * - level: Int between 9 (best compression) to 0 (no
-   *   compression)
-   * - compressedSize: Int for compressed size of data
-   * - uncompressedSize: Int for uncompressed size of data
-   * 
-   * NOTE: setting level to 0 sets method to STORE, else to DEFLATED.
-   * 
-   * Examples:
-   * ```
-   * out := zip.writeNext(`/docs/test.txt`)
-   * out.writeLine("test")
-   * out.close
-   * ```
-   */
-  // writeNext(path: Uri, modifyTime?: DateTime, opts?: Map<string, JsObj | null> | null): OutStream
   writeNext(path, modifyTime=DateTime.now(), opts=null)
   {
     if (!this.#out)
       throw UnsupportedErr.make("Not writing to an output stream");
+    if (path.frag() != null)
+      throw ArgErr.make("Path must not contain fragment: " + path);
+    if (path.queryStr() != null)
+      throw ArgErr.make("Path must not contain query: " + path);
+    if (this.#finished)
+      throw IOErr.make("Already finished writing the zip contents");
+    
+    let pathStr = path.toStr();
+    if (pathStr.startsWith("/")) pathStr = pathStr.slice(1);
 
     // get the outstream
+    return this.#yazlZip.addEntryAt(pathStr, {
+      mtime: modifyTime.toJs(),
+      compressed: opts ? (opts.get("level") || 0) > 0 : null,
+      level: opts ? opts.get("level") : null,
+      crc32: opts ? opts.get("crc") : null,
+      compressedSize: opts ? opts.get("compressedSize") : null,
+      uncompressedSize: opts ? opts.get("uncompressedSize") : null,
+      fileComment: opts ? opts.get("comment") : null,
+      extra: opts ? opts.get("extra") : null,
+    });
   }
-  /**
-   * Finish writing the contents of this zip file, but leave the
-   * underlying OutStream open.  This method is guaranteed to
-   * never throw an IOErr. Return true if the stream was finished
-   * successfully or false if the an error occurred.  Throw
-   * UnsupportedErr if zip is not not writing to an output
-   * stream.
-   */
+
+  #finished;
   finish()
   {
     if (!this.#out)
       throw UnsupportedErr.make("Not writing to an output stream");
     
-    // do the things
+    if (this.#finished)
+      return false;
+    try {
+      this.#yazlZip.end();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
 //////////////////////////////////////////////////////////////////////////
