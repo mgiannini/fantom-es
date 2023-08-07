@@ -181,8 +181,6 @@ abstract class BuildPod : BuildScript
     {
       case "compilerJs":
       case "compilerEs":
-      case "fwt":
-      case "webfwt":
       case "testCompiler":
         return
     }
