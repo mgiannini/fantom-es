@@ -95,7 +95,7 @@ class Zip extends Obj {
     if (!this.#in)
       throw UnsupportedErr.make("Not reading from an input stream");
     if (this.#lastFile) {
-      this.#lastFile.__in().skip(this.#lastFile.__in().remaining());
+      this.#lastFile.__in().skip(this.#lastFile.__in().remaining(), true);
       this.#lastFile.__in().close();
     }
 
@@ -103,12 +103,7 @@ class Zip extends Obj {
     if (!entry) return null;
     return (this.#lastFile = ZipEntryFile.makeFromStream(entry, this.#yauzlZip));
   }
-  /**
-   * Call the specified function for every entry in the zip. Use
-   * the File's input stream to read the file contents.  Some
-   * file meta-data such as size may not be available. Throw
-   * UnsupportedErr if not reading from an input stream.
-   */
+
   readEach(c)
   {
     if (!this.#in)
@@ -178,6 +173,8 @@ class Zip extends Obj {
         this.#in.close();
       }
       if (this.#out) {
+        if (!this.#finished)
+          this.finish();
         this.#out.close();
       }
 

@@ -89,7 +89,7 @@ class ZipInStream extends InStream {
             this.#entry.foundDataDescriptor = true;
           }
           this.#reader.unreadBuf(Buffer.concat([buf.subarray(useZip64 ? i+24 : i+16), this.#nextBuf.subarray(0, this.#availInNextBuf)]));
-          return r1;
+          return i;
         }
       }
 
@@ -142,8 +142,8 @@ class ZipInStream extends InStream {
     return this;
   }
 
-  skip(n) {
-    if (this.#isClosed) throw IOErr.make("Cannot skip in closed stream");
+  skip(n, override) {
+    if (this.#isClosed && !override) throw IOErr.make("Cannot skip in closed stream");
     let skipped = 0;
 
     if (this.#pre.length > 0) {
@@ -163,7 +163,7 @@ class ZipInStream extends InStream {
     while (true) {
       const a = this.avail();
       if (a === 0 || skipped == n) break;
-      const rem = n - skipped;
+      const rem = Math.min(n - skipped, this.remaining());
       if (rem < a) {
         skipped += rem;
         this.__bufPos += rem;
@@ -232,6 +232,139 @@ class InflateInStream extends ZipInStream {
  * ZipOutStream
  ************************************************************************/
 
+class ZipOutStream extends OutStream {
+  constructor(yazlZip, entry) {
+    super(yazlZip.out);
+    this.#yazlZip = yazlZip;
+    this.#entry = entry;
+  }
+
+  #yazlZip;
+  #entry;
+  #isClosed = false;
+
+  close() {
+    this.#isClosed = true;
+    return true;
+  }
+
+  write(b) {
+    if (this.#isClosed)
+      throw IOErr.make("stream is closed");
+
+    this.#yazlZip.outputStreamCursor++;
+    if (!this.#entry.crcAndFileSizeKnown) {
+      this.#entry.crc32 = crc32.unsigned(b, this.#entry.crc32);
+      this.#entry.uncompressedSize++;
+      this.#entry.compressedSize++;
+    }
+
+    this.#yazlZip.out.write(b);
+    return this;
+  }
+
+  writeBuf(buf, n=buf.remaining()) {
+    if (this.#isClosed)
+      throw IOErr.make("stream is closed");
+    if (buf.remaining() < n)
+      throw IOErr.make("not enough bytes in buf");
+
+    this.#yazlZip.outputStreamCursor += n;
+    if (!this.#entry.crcAndFileSizeKnown) {
+      this.#entry.crc32 = crc32.unsigned(buf.__getBytes(buf.pos(), n), this.#entry.crc32);
+      this.#entry.uncompressedSize += n;
+      this.#entry.compressedSize += n;
+    }
+
+    this.#yazlZip.out.writeBuf(buf, n);
+    return this;
+  }
+}
+
 /*************************************************************************
  * DeflateOutStream
  ************************************************************************/
+
+class DeflateOutStream extends OutStream {
+  constructor(yazlZip, entry, level) {
+    super(yazlZip.out);
+    this.#yazlZip = yazlZip;
+    this.#entry = entry;
+    this.#level = level;
+  }
+
+  #yazlZip;
+  #entry;
+  #level;
+  #isClosed = false;
+
+  #buf = Buffer.allocUnsafe(16 * 1024); // default zlib chunk size
+  #availInBuf = 0;
+
+  close() {
+    this.#isClosed = true;
+    this.#buf = undefined;
+    this.#availInBuf = 0;
+    this.flush();
+    return true;
+  }
+
+  flush() {
+    this.#writeDeflated();
+    this.#yazlZip.out.flush();
+  }
+
+  write(b) {
+    if (this.#isClosed)
+      throw IOErr.make("stream is closed");
+
+    if (this.#availInBuf == this.#buf.length)
+      this.#writeDeflated();
+    this.#buf.writeUInt8(b, this.#availInBuf);
+    this.#availInBuf++;
+    return this;
+  }
+
+  writeBuf(buf, n=buf.remaining()) {
+    if (this.#isClosed)
+      throw IOErr.make("stream is closed");
+    if (buf.remaining() < n)
+      throw IOErr.make("not enough bytes in buf");
+
+    if (this.#availInBuf == this.#buf.length)
+      this.#writeDeflated();
+    if (this.#availInBuf + n <= this.#buf.length) {
+      Buffer.from(buf.__getBytes(buf.pos(), n)).copy(this.#buf, this.#availInBuf);
+      this.#availInBuf += n;
+    }
+    else {
+      const totalBuf = Buffer.concat([
+        this.#buf.subarray(0, this.#availInBuf),
+        buf.__getBytes(buf.pos(), n)
+      ]);
+      this.#availInBuf += n;
+      this.#writeDeflated(totalBuf);
+    }
+    return this;
+  }
+
+  #writeDeflated(buf=this.#buf) {
+    if (this.#availInBuf > 0) {
+      const inputBuf = buf.subarray(0, this.#availInBuf);
+      const outputBuf = zlib.deflateRawSync(inputBuf, {
+        level: this.#level || undefined
+      });
+      const n = outputBuf.length;
+
+      this.#yazlZip.outputStreamCursor += n;
+      if (!this.#entry.crcAndFileSizeKnown) {
+        this.#entry.crc32 = crc32.unsigned(inputBuf, this.#entry.crc32);
+        this.#entry.uncompressedSize += inputBuf.length;
+        this.#entry.compressedSize += n;
+      }
+
+      this.#yazlZip.out.writeBuf(MemBuf.__makeBytes(outputBuf), n);
+      this.#availInBuf = 0;
+    }
+  }
+}

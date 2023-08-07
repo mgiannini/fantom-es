@@ -80,17 +80,12 @@ class crc32 {
   ];
 
   static #ensureBuffer(input) {
-    if (Buffer.isBuffer(input)) {
+    if (Buffer.isBuffer(input))
       return input;
-    }
-
-    if (typeof input === "number")
-      return Buffer.alloc(input);
-    else if (typeof input === "string")
-      return Buffer.from(input);
+    else if (typeof input === 'number')
+      return Buffer.from([input]);
     else
-      throw new Error("input must be buffer, number, or string, received " +
-                      typeof input);
+      return Buffer.from(input);
   }
 
   static #crc32(buf, previous) {
@@ -100,7 +95,7 @@ class crc32 {
     }
     var crc = ~~previous ^ -1;
     for (let n = 0; n < buf.length; n++) {
-      crc = CRC_TABLE[(crc ^ buf[n]) & 0xff] ^ (crc >>> 8);
+      crc = crc32.CRC_TABLE[(crc ^ buf[n]) & 0xff] ^ (crc >>> 8);
     }
     return (crc ^ -1);
   }
@@ -533,6 +528,7 @@ class YauzlZipFile {
       let i = 0;
       for(; i < buffer.length-3; i++) {
         if (buffer.readUInt32LE(i) === 0x04034b50) break;
+        if (buffer.readUInt32LE(i) === 0x02014b50) return null; // central directory
       }
       buffer.copyWithin(0, i);
       if (yauzl.readAndAssertNoEof(this.reader, buffer, i, buffer.length - i, 0, (err) => { return !!err; }))
@@ -1004,11 +1000,12 @@ class yazl {
     metadataPath = metadataPath.replace(/\\/g, "/");
     if (/^[a-zA-Z]:/.test(metadataPath) || /^(\/)/.test(metadataPath)) throw new Error("absolute path: " + metadataPath);
     if (metadataPath.split("/").indexOf("..") !== -1) throw new Error("invalid relative path: " + metadataPath);
+    return metadataPath;
   }
   static writeUInt64LE(buffer, n, offset) {
     // can't use bitshift here, because JavaScript only allows bitshifting on 32-bit integers.
-    var high = Math.floor(n / 0x100000000);
-    var low = n % 0x100000000;
+    const high = Math.floor(n / 0x100000000);
+    const low = n % 0x100000000;
     buffer.writeUInt32LE(low, offset);
     buffer.writeUInt32LE(high, offset + 4);
   }
@@ -1063,22 +1060,25 @@ class YazlZipFile {
     this.forceZip64Eocd = false; // configurable in .end()
   }
 
+  #lastOut;
   addEntryAt(metadataPath, options) {
-    metadataPath = validateMetadataPath(metadataPath);
+    metadataPath = yazl.validateMetadataPath(metadataPath);
     if (options == null) options = {};
     const entry = new YazlEntry(metadataPath, options);
     this.entries.push(entry);
 
-    if (this.entries.length > 1) {
+    if (this.#lastOut) {
+      this.#lastOut.close();
       const lastEntry = this.entries[this.entries.length-2];
       this.#writeToOutputStream(lastEntry.getDataDescriptor());
     }
     this.#writeToOutputStream(entry.getLocalFileHeader());
 
     if (entry.compress)
-      return DeflateOutStream(this, entry, options.level);
+      this.#lastOut = new DeflateOutStream(this, entry, options.level);
     else
-      return ZipOutStream(this, entry, options.level);
+      this.#lastOut = new ZipOutStream(this, entry);
+    return this.#lastOut;
   }
 
   #eocdrSignatureBuffer = Buffer.from([0x50, 0x4b, 0x05, 0x06]);
@@ -1087,7 +1087,8 @@ class YazlZipFile {
     if (this.ended) return;
     this.ended = true;
 
-    if (this.entries.length > 0) {
+    if (this.#lastOut) {
+      this.#lastOut.close();
       const lastEntry = this.entries[this.entries.length-1];
       this.#writeToOutputStream(lastEntry.getDataDescriptor());
     }
@@ -1100,6 +1101,7 @@ class YazlZipFile {
 
   #writeToOutputStream(buf) {
     this.out.writeBuf(MemBuf.__makeBytes(buf));
+    this.outputStreamCursor += buf.length;
   }
 
   #writeEocd() {
@@ -1216,11 +1218,11 @@ class YazlEntry {
     if (this.utf8FileName.length > 0xffff)
       throw new Error("utf8 file name too long. " + utf8FileName.length + " > " + 0xffff);
     this.isDirectory = metadataPath.endsWith("/");
-    this.setLastModDate(options.mtime != null ? options.mtime : new Date());
+    this.setLastModDate(options.mtime);
     if (options.mode != null) {
       this.setFileAttributesMode(options.mode);
     } else {
-      this.setFileAttributesMode(isDirectory ? 0o40775 : 0o100664);
+      this.setFileAttributesMode(this.isDirectory ? 0o40775 : 0o100664);
     }
     if (options.uncompressedSize != null &&
         options.compressedSize != null &&
