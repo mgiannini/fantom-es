@@ -779,46 +779,6 @@ class YauzlZipFile {
       return new InflateInStream(this.reader, fileDataStart, entry.compressedSize, bufferSize);
     else
       return new ZipInStream(this.reader, fileDataStart, entry.compressedSize, bufferSize);
-
-    // const readStream = this.reader.createReadStream({
-    //   start: fileDataStart + relativeStart,
-    //   end: fileDataStart + relativeEnd,
-    // });
-    // let endpointStream = readStream;
-    // if (decompress) {
-    //   let destroyed = false;
-    //   const inflateFilter = zlib.createInflateRaw();
-    //   readStream.on("error", function (err) {
-    //     // setImmediate here because errors can be emitted during the first call to pipe()
-    //     setImmediate(function () {
-    //       if (!destroyed) inflateFilter.emit("error", err);
-    //     });
-    //   });
-    //   readStream.pipe(inflateFilter);
-
-    //   if (this.validateEntrySizes) {
-    //     endpointStream = new AssertByteCountStream(entry.uncompressedSize);
-    //     inflateFilter.on("error", function (err) {
-    //       // forward zlib errors to the client-visible stream
-    //       setImmediate(function () {
-    //         if (!destroyed) endpointStream.emit("error", err);
-    //       });
-    //     });
-    //     inflateFilter.pipe(endpointStream);
-    //   } else {
-    //     // the zlib filter is the client-visible stream
-    //     endpointStream = inflateFilter;
-    //   }
-    //   // this is part of yauzl's API, so implement this function on the client-visible stream
-    //   endpointStream.destroy = function () {
-    //     destroyed = true;
-    //     if (inflateFilter !== endpointStream) inflateFilter.unpipe(endpointStream);
-    //     readStream.unpipe(inflateFilter);
-    //     // TODO: the inflateFilter may cause a memory leak. see Issue #27.
-    //     readStream.destroy();
-    //   };
-    // }
-    // return endpointStream;
   }
   getInStreamFromStream(entry, options, bufferSize) {
     let decompress;
@@ -1072,10 +1032,11 @@ class YazlZipFile {
       const lastEntry = this.entries[this.entries.length-2];
       this.#writeToOutputStream(lastEntry.getDataDescriptor());
     }
+    entry.relativeOffsetOfLocalHeader = this.outputStreamCursor;
     this.#writeToOutputStream(entry.getLocalFileHeader());
 
     if (entry.compress)
-      this.#lastOut = new DeflateOutStream(this, entry, options.level);
+      this.#lastOut = new DeflateOutStream(this.out, node.zlib.deflateRawSync, options.level, this, entry);
     else
       this.#lastOut = new ZipOutStream(this, entry);
     return this.#lastOut;
@@ -1106,9 +1067,10 @@ class YazlZipFile {
 
   #writeEocd() {
     this.offsetOfStartOfCentralDirectory = this.outputStreamCursor;
-    this.entries.forEach(function(entry) {
+    for(let i = 0; i < this.entries.length; i++) {
+      const entry = this.entries[i];
       this.#writeToOutputStream(entry.getCentralDirectoryRecord());
-    });
+    }
     this.#writeToOutputStream(this.#getEndOfCentralDirectoryRecord());
     this.out.close();
   }
@@ -1427,7 +1389,7 @@ class YazlEntry {
       zeiefBuffer,
       this.extra,
       // file comment (variable size)
-      this.fileComment,
+      this.fileComment
     ]);
   }
   getCompressionMethod() {

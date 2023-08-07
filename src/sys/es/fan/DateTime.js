@@ -561,7 +561,7 @@ class DateTime extends Obj {
 
   toJs() {
     const ms = (this.#ticks / DateTime.#nsPerMilli) + 946684800000;
-    return new Date(ms);
+    return new es6.JsDate(ms);
   }
 
   static fromJs(jsdate, tz=TimeZone.cur()) {

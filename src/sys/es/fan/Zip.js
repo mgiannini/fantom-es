@@ -183,35 +183,53 @@ class Zip extends Obj {
       return false;
     }
   }
-  /**
-   * Static utility to unzip a zip file to the given directory.
-   * Raise exception if there is any failures.  Return number of
-   * files unzipped on success.
-   */
-  // static unzipInto(zip: File, dir: File): number
-  /**
-   * Construct a new GZIP output stream which wraps the given
-   * output stream.
-   */
-  // static gzipOutStream(out: OutStream): OutStream
-  /**
-   * Construct a new GZIP input stream which wraps the given
-   * input stream.
-   */
-  // static gzipInStream(in$: InStream): InStream
 
-  // static deflateOutStream(out, opts = null)
-  // {
+  static unzipInto(zip, dir) {
+    if (!dir.isDir()) throw ArgErr.make("Not dir: " + dir);
+    let z;
+    try
+    {
+      let count = 0;
+      z = Zip.open(zip);
+      const contents = z.contents();
+      contents.each((entry) => {
+        const relUri = entry.uri().toStr().substring(1);
+        const dest = dir.plus(Uri.fromStr(relUri));
+        dest.create();
+        if (entry.isDir()) { return; }
+        const out = dest.out();
+        try {
+          entry.in$().pipe(out);
+        }
+        finally {
+          out.close();
+        }
+        if (entry.modified() != null) dest.modified(entry.modified());
+        count++;
+      });
+      return count;
+    }
+    finally
+    {
+      if (z) z.close();
+    }
+  }
 
-  // }
-  /**
-   * Construct a new deflate input stream which wraps the given
-   * input stream and inflates data written using the "deflate"
-   * compression format.  Options:
-   * - nowrap: Bool false to suppress defalate header and adler
-   *   checksum
-   */
-  // static deflateInStream(in$: InStream, opts?: Map<string, JsObj | null> | null): InStream
+  static gzipOutStream(out) {
+    return DeflateOutStream.makeGzip(out);
+  }
+
+  static gzipInStream(in$) {
+    //
+  }
+
+  static deflateOutStream(out, opts=null) {
+    return DeflateOutStream.makeDeflate(out, opts);
+  }
+
+  static deflateInStream(in$, opts=null) {
+    //
+  }
 
 //////////////////////////////////////////////////////////////////////////
 // Obj

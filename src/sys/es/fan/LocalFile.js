@@ -76,7 +76,7 @@ class LocalFile extends File {
       if (!this.exists()) return null;
       return DateTime.fromJs(node.fs.statSync(this.#node_os_path).mtime);
     }
-    throw UnsupportedErr.make("Node JS cannot set the last-modified time of a local file.");
+    node.fs.utimesSync(this.#node_os_path, it.toJs(), it.toJs());
   }
 
   #checkAccess(C) {

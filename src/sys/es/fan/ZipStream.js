@@ -286,15 +286,43 @@ class ZipOutStream extends OutStream {
  ************************************************************************/
 
 class DeflateOutStream extends OutStream {
-  constructor(yazlZip, entry, level) {
-    super(yazlZip.out);
+
+//////////////////////////////////////////////////////////////////////////
+// Construction
+//////////////////////////////////////////////////////////////////////////
+
+  constructor(out, method, level, yazlZip, entry) {
+    super(out);
+    this.#out = out;
+    this.#method = method;
+    this.#level = level;
     this.#yazlZip = yazlZip;
     this.#entry = entry;
-    this.#level = level;
   }
+
+  static makeDeflate(out, opts=null) {
+    const instance = new DeflateOutStream(out, node.zlib.deflateRawSync);
+    if (opts) {
+      if (opts.get("nowrap") === false)
+        instance.#method = node.zlib.deflateSync;
+      instance.#level = opts.get("level");
+    }
+    return instance;
+  }
+
+  static makeGzip(out) {
+    return new DeflateOutStream(out, node.zlib.gzipSync)
+  }
+
+//////////////////////////////////////////////////////////////////////////
+// Writing
+//////////////////////////////////////////////////////////////////////////
 
   #yazlZip;
   #entry;
+
+  #out;
+  #method;
   #level;
   #isClosed = false;
 
@@ -305,12 +333,14 @@ class DeflateOutStream extends OutStream {
     this.#isClosed = true;
     this.flush();
     this.#buf = undefined;
+    if (!this.#yazlZip)
+      this.#out.close();
     return true;
   }
 
   flush() {
     this.#writeDeflated();
-    this.#yazlZip.out.flush();
+    this.#out.flush();
   }
 
   write(b) {
@@ -350,19 +380,21 @@ class DeflateOutStream extends OutStream {
   #writeDeflated(buf=this.#buf) {
     if (this.#availInBuf > 0) {
       const inputBuf = buf.subarray(0, this.#availInBuf);
-      const outputBuf = node.zlib.deflateRawSync(inputBuf, {
+      const outputBuf = this.#method(inputBuf, {
         level: this.#level || undefined
       });
       const n = outputBuf.length;
 
-      this.#yazlZip.outputStreamCursor += n;
-      if (!this.#entry.crcAndFileSizeKnown) {
-        this.#entry.crc32 = crc32.unsigned(inputBuf, this.#entry.crc32);
-        this.#entry.uncompressedSize += inputBuf.length;
-        this.#entry.compressedSize += n;
+      if (this.#yazlZip) {
+        this.#yazlZip.outputStreamCursor += n;
+        if (!this.#entry.crcAndFileSizeKnown) {
+          this.#entry.crc32 = crc32.unsigned(inputBuf, this.#entry.crc32);
+          this.#entry.uncompressedSize += inputBuf.length;
+          this.#entry.compressedSize += n;
+        }
       }
 
-      this.#yazlZip.out.writeBuf(MemBuf.__makeBytes(outputBuf), n);
+      this.#out.writeBuf(MemBuf.__makeBytes(outputBuf), n);
       this.#availInBuf = 0;
     }
   }
