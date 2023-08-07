@@ -303,9 +303,8 @@ class DeflateOutStream extends OutStream {
 
   close() {
     this.#isClosed = true;
-    this.#buf = undefined;
-    this.#availInBuf = 0;
     this.flush();
+    this.#buf = undefined;
     return true;
   }
 
@@ -351,7 +350,7 @@ class DeflateOutStream extends OutStream {
   #writeDeflated(buf=this.#buf) {
     if (this.#availInBuf > 0) {
       const inputBuf = buf.subarray(0, this.#availInBuf);
-      const outputBuf = zlib.deflateRawSync(inputBuf, {
+      const outputBuf = node.zlib.deflateRawSync(inputBuf, {
         level: this.#level || undefined
       });
       const n = outputBuf.length;
