@@ -417,7 +417,7 @@ class Str extends Obj {
     return true;
   }
 
-  static isSpace = function(self) {
+  static isSpace(self) {
     for (let i=0; i<self.length; i++) {
       const ch = self.charCodeAt(i);
       if (ch != 32 && ch != 9 && ch != 10 && ch != 12 && ch != 13)
@@ -521,7 +521,7 @@ class Str extends Obj {
     return buf.flip();
   }
 
-  static toCode = function(self, quote=34, escapeUnicode=false) {
+  static toCode(self, quote=34, escapeUnicode=false) {
     // opening quote
     let s = "";
     let q = 0;
