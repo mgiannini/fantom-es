@@ -220,7 +220,7 @@ class Zip extends Obj {
   }
 
   static gzipInStream(in$) {
-    //
+    return InflateInStream.makeGunzip(in$);
   }
 
   static deflateOutStream(out, opts=null) {
@@ -228,7 +228,7 @@ class Zip extends Obj {
   }
 
   static deflateInStream(in$, opts=null) {
-    //
+    return InflateInStream.makeInflate(in$, opts);
   }
 
 //////////////////////////////////////////////////////////////////////////

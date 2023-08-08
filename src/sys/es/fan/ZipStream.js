@@ -23,8 +23,7 @@ class ZipInStream extends InStream {
     this.#pos = pos || 0;
     this.#start = this.#pos;
     this.#max = this.#pos + len;
-    this.__bufSize = bufferSize || 1;
-    this.__buf = Buffer.allocUnsafe(this.__bufSize);
+    this.#buf = Buffer.allocUnsafe(bufferSize || 64);
     this.#entry = entry;
   }
 
@@ -38,27 +37,27 @@ class ZipInStream extends InStream {
   #max;
   #isClosed = false;
 
+  // Compressed data
   #pre = [];
-  __bufPos = 0;
-  __availInBuf = 0;
-  __bufSize;
-  __buf;
+  #buf;
+  #bufPos = 0;
+  #availInBuf = 0;
 
   #entry;
   #nextBuf;
   #availInNextBuf = 0;
 
-  __readInto(buf) {
+  #readInto(buf) {
     if (this.#max === Infinity) {
       if (!this.#nextBuf) {
-        this.#nextBuf = Buffer.allocUnsafe(this.__bufSize);
-        this.#availInNextBuf = this.#reader.read(this.#nextBuf, 0, this.__bufSize, this.#pos);
+        this.#nextBuf = Buffer.allocUnsafe(this.#buf.length);
+        this.#availInNextBuf = this.#reader.read(this.#nextBuf, 0, this.#buf.length, this.#pos);
         this.#pos += this.#availInNextBuf;
       }
 
       const r1 = this.#availInNextBuf;
       this.#nextBuf.copy(buf, 0, 0, r1);
-      this.#availInNextBuf = this.#reader.read(this.#nextBuf, 0, this.__bufSize, this.#pos);
+      this.#availInNextBuf = this.#reader.read(this.#nextBuf, 0, this.#buf.length, this.#pos);
 
       // scan for data descriptor
       const totalBuf = Buffer.concat([buf.subarray(0, r1), this.#nextBuf.subarray(0, Math.min(23, this.#availInNextBuf))]);
@@ -98,27 +97,27 @@ class ZipInStream extends InStream {
       return r1;
     }
 
-    const r = this.#reader.read(buf, 0, Math.min(this.__bufSize, this.remaining()), this.#pos);
+    const r = this.#reader.read(buf, 0, Math.min(this.#buf.length, this.remaining()), this.#pos);
     this.#pos += r;
     return r;
   }
 
-  __load() {
-    if (this.__bufPos >= this.__availInBuf) {
-      this.__bufPos = 0;
-      this.__availInBuf = this.__readInto(this.__buf);
+  #load() {
+    if (this.#bufPos >= this.#availInBuf) {
+      this.#bufPos = 0;
+      this.#availInBuf = this.#readInto(this.#buf);
     }
   }
 
   read() {
     if (this.#isClosed) throw IOErr.make("Cannot read from closed stream");
 
-    this.__load();
+    this.#load();
     if (this.avail() == 0) return null;
     if (this.#pre.length > 0) return this.#pre.pop();
 
-    const r = this.__buf.readUInt8(this.__bufPos);
-    this.__bufPos++;
+    const r = this.#buf.readUInt8(this.#bufPos);
+    this.#bufPos++;
     return r;
   }
 
@@ -158,7 +157,7 @@ class ZipInStream extends InStream {
     }
     if (skipped == n || this.#pos == this.#max) return skipped;
 
-    if (this.avail() === 0) this.__load();
+    if (this.avail() === 0) this.#load();
 
     while (true) {
       const a = this.avail();
@@ -166,11 +165,11 @@ class ZipInStream extends InStream {
       const rem = Math.min(n - skipped, this.remaining());
       if (rem < a) {
         skipped += rem;
-        this.__bufPos += rem;
+        this.#bufPos += rem;
         break;
       }
       skipped += a;
-      this.__load();
+      this.#load();
     }
     return skipped;
   }
@@ -184,7 +183,7 @@ class ZipInStream extends InStream {
 //////////////////////////////////////////////////////////////////////////
 
   avail() {
-    return this.#pre.length + (this.__availInBuf - this.__bufPos);
+    return this.#pre.length + (this.#availInBuf - this.#bufPos);
   }
 
   /** The number of bytes left in the stream. */
@@ -198,32 +197,125 @@ class ZipInStream extends InStream {
  * InflateInStream
  ************************************************************************/
 
-class InflateInStream extends ZipInStream {
+class InflateInStream extends InStream {
 
-  constructor(reader, pos, len, bufferSize, entry) {
-    super(reader, pos, len, bufferSize, entry);
-    this.__bufSize = Math.max(bufferSize || 1, 64);
-    this.#rawBuf = Buffer.allocUnsafe(this.__bufSize);
-    reader.posMatters = false;
+//////////////////////////////////////////////////////////////////////////
+// Construction
+//////////////////////////////////////////////////////////////////////////
+
+  constructor(in$, method, bufferSize) {
+    super(in$);
+    this.#in = in$;
+    this.#method = method;
+    this.#bufSize = bufferSize;
   }
 
-  #rawBuf;
-  #rawAvail = 0;
-
-  __load() {
-    if (this.__bufPos >= this.__availInBuf) {
-      this.__bufPos = 0;
-      this.#rawAvail = this.__readInto(this.#rawBuf);
-      if (this.#rawAvail == 0) {
-        this.__buf = Buffer.allocUnsafe(0);
-        this.__availInBuf = 0;
-      } else {
-        this.__buf = node.zlib.inflateRawSync(
-                      this.#rawBuf.subarray(0, this.#rawAvail),
-                      { chunkSize: this.__bufSize });
-        this.__availInBuf = this.__buf.length;
-      }
+  static makeInflate(in$, opts=null) {
+    const instance = new InflateInStream(in$, node.zlib.inflateSync, 4096);
+    if (opts) {
+      if (opts.get("nowrap") === true)
+        instance.#method = node.zlib.inflateRawSync;
     }
+    return instance;
+  }
+  
+  static makeGunzip(in$) {
+    return new InflateInStream(in$, node.zlib.gunzipSync, 4096);
+  }
+
+//////////////////////////////////////////////////////////////////////////
+// Reading
+//////////////////////////////////////////////////////////////////////////
+
+  #in;
+  #method;
+  #bufSize; // of raw data
+
+  // Inflated data
+  #pre = [];
+  #buf = EMPTY_BUFFER;
+  #bufPos = 0;
+
+  #load() {
+    const rawBuf = MemBuf.makeCapacity(this.#bufSize);
+    const rawBufLen = this.#in.readBuf(rawBuf, this.#bufSize);
+    this.#bufPos = 0;
+    if (rawBufLen == null) {
+      this.#buf = EMPTY_BUFFER;
+      return;
+    }
+
+    this.#buf = this.#method(rawBuf.__getBytes(0, rawBufLen), {
+      chunkSize: this.#bufSize
+    });
+  }
+
+  read() {
+    if (this.avail() == 0)
+      this.#load();
+    if (this.#buf.length === 0)
+      return null;
+    return this.#buf.readUInt8(this.#bufPos++);
+  }
+
+  readBuf(buf, n) {
+    const out = buf.out();
+    let read = 0;
+    let r;
+    while (n > 0) {
+      r = this.read();
+      if (r === null) break;
+      out.write(r);
+      n--;
+      read++;
+    }
+    out.close();
+    return read == 0 ? null : read;
+  }
+
+  unread(n) { 
+    this.#pre.push(n); 
+    return this;
+  }
+
+  skip(n, skipCompressed) {
+    if (skipCompressed)
+      return this.#in.skip(n, true);
+
+    //same as skipping in a file in stream
+    let skipped = 0;
+
+    if (this.#pre.length > 0) {
+      const len = Math.min(this.#pre.length, n);
+      this.#pre = this.#pre.slice(0, -len);
+      skipped += len;
+    }
+    if (skipped == n) return skipped;
+
+    if (this.avail() === 0) this.#load();
+
+    while (true) {
+      const a = this.avail();
+      if (a === 0 || skipped == n) break;
+      const rem = n - skipped;
+      if (rem < a) {
+        skipped += rem;
+        this.#bufPos += rem;
+        break;
+      }
+      skipped += a;
+      this.#load();
+    }
+    return skipped;
+  }
+
+  avail() {
+    return this.#buf.length - this.#bufPos;
+  }
+
+  remaining() {
+    // remaining compressed bytes, in this case
+    return this.#in.remaining();
   }
 
 }
@@ -301,10 +393,10 @@ class DeflateOutStream extends OutStream {
   }
 
   static makeDeflate(out, opts=null) {
-    const instance = new DeflateOutStream(out, node.zlib.deflateRawSync);
+    const instance = new DeflateOutStream(out, node.zlib.deflateSync);
     if (opts) {
-      if (opts.get("nowrap") === false)
-        instance.#method = node.zlib.deflateSync;
+      if (opts.get("nowrap") === true)
+        instance.#method = node.zlib.deflateRawSync;
       instance.#level = opts.get("level");
     }
     return instance;

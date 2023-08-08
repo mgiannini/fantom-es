@@ -775,10 +775,11 @@ class YauzlZipFile {
     }
 
     // In stream generation
+    const base = new ZipInStream(this.reader, fileDataStart, entry.compressedSize, bufferSize);
     if (decompress)
-      return new InflateInStream(this.reader, fileDataStart, entry.compressedSize, bufferSize);
+      return new InflateInStream(base, node.zlib.inflateRawSync, bufferSize);
     else
-      return new ZipInStream(this.reader, fileDataStart, entry.compressedSize, bufferSize);
+      return base;
   }
   getInStreamFromStream(entry, options, bufferSize) {
     let decompress;
@@ -796,10 +797,11 @@ class YauzlZipFile {
     if (entry.generalPurposeBitFlag & 0x8)
       size = Infinity;
 
+    const base = new ZipInStream(this.reader, 0, size, bufferSize, entry);
     if (decompress)
-      return new InflateInStream(this.reader, 0, size, bufferSize, entry);
+      return new InflateInStream(base, node.zlib.inflateRawSync, bufferSize);
     else
-      return new ZipInStream(this.reader, 0, size, bufferSize, entry);
+      return base;
   }
   throwErrorAndAutoClose(err) {
     if (this.autoClose) this.close();
