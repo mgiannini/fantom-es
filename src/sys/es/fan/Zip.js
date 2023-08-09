@@ -185,15 +185,14 @@ class Zip extends Obj {
     }
   }
 
-  static unzipInto(zip, dir) {
+  static unzipInto(zipFile, dir) {
     if (!dir.isDir()) throw ArgErr.make("Not dir: " + dir);
-    let z;
+    let zip;
     try
     {
       let count = 0;
-      z = Zip.open(zip);
-      const contents = z.contents();
-      contents.each((entry) => {
+
+      function processEntry(entry) {
         const relUri = entry.uri().toStr().substring(1);
         const dest = dir.plus(Uri.fromStr(relUri));
         dest.create();
@@ -207,12 +206,26 @@ class Zip extends Obj {
         }
         if (entry.modified() != null) dest.modified(entry.modified());
         count++;
-      });
+      }
+
+      if (zipFile.osPath() != null) {
+        // unzip w/ random access
+        zip = Zip.open(zipFile);
+        const contents = zip.contents();
+        contents.each(processEntry);
+      }
+      else {
+        // unzip from in stream
+        zip = Zip.read(zipFile.in$());
+        let entry;
+        while ((entry = zip.readNext()) != null)
+          processEntry(entry);
+      }
       return count;
     }
     finally
     {
-      if (z) z.close();
+      if (zip) zip.close();
     }
   }
 
