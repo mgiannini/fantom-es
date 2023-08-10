@@ -102,7 +102,7 @@ abstract class JsNode
   {
     podName := ctype.pod.name
     thisPod := podName == plugin.pod.name
-    js := thisPod ? ctype.name : "${podName}.${ctype.name}"
+    js := thisPod ? ctype.name : "${plugin.podAlias(podName)}.${ctype.name}"
 
     // make it so java FFI calls parse in js runtimes
     // code will parse but fail if actually invoked

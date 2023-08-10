@@ -69,7 +69,7 @@ class JsPod : JsNode
       if (depend.name == "sys") return
       // NOTE if we change sys to fan we need to update JNode.qnameToJs
       // js.wl("import * as ${depend.name} from './${depend.name}.js';")
-      js.wl("const ${depend.name} = __require('${depend.name}.js');")
+      js.wl("const ${plugin.podAlias(depend.name)} = __require('${depend.name}.js');")
     }
 
     js.wl("// cjs require end")

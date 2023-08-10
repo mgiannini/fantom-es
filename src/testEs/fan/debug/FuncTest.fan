@@ -1,8 +1,10 @@
+using concurrent
 
 @Js class MethFuncTest : Test
 {
   Void testMethodFunc()
   {
+    b := AtomicBool(true)
     f := |Str s->Void| { echo(s) }
     f("foo")
     g("bar")

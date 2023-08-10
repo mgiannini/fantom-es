@@ -24,11 +24,13 @@ class CompileEsPlugin : CompilerStep
     this.sourcemap = SourceMap(this)
     this.js = JsWriter(buf.out, sourcemap)
     pod.depends.each |depend| { dependOnNames[depend.name] = true }
+    readJsProps
   }
 
   private StrBuf buf := StrBuf()
   SourceMap sourcemap { private set }
   JsWriter js { private set }
+  private [Str:Str] usingAs := [:]
 
 //////////////////////////////////////////////////////////////////////////
 // Emit State
@@ -43,6 +45,24 @@ class CompileEsPlugin : CompilerStep
 
   [Str:Bool] dependOnNames := [:] { def = false }
 
+//////////////////////////////////////////////////////////////////////////
+// js.props
+//////////////////////////////////////////////////////////////////////////
+
+  private Void readJsProps()
+  {
+    f := compiler.input.baseDir.plus(`js.props`)
+    if (!f.exists) return
+    f.readProps.each |val, key|
+    {
+      if (key.startsWith("using."))
+        this.usingAs[key["using.".size..-1]] = val
+    }
+  }
+
+  ** Get the alias for this pod if one was defined in js.props, otherwise
+  ** return the pod name.
+  Str podAlias(Str podName) { usingAs.get(podName, podName) }
 
 //////////////////////////////////////////////////////////////////////////
 // Pipeline
@@ -96,7 +116,9 @@ try {
 
   private Int requireToImport(StrBuf buf, Str[] lines, Int i)
   {
-    regex := Regex<|^const ([^_].*)? =.*|>
+    // this regex matches statements that require a pod in the cjs
+    // and creates a group for the pod name/alias (1) and the file name (2).
+    regex := Regex<|^const ([^_].*)? =.*__require\('(.*)?.js'\);|>
 
     while (true)
     {
@@ -106,7 +128,8 @@ try {
       {
         pod := m.group(1)
         if (pod == "fantom") { buf.addChar('\n'); continue; }
-        buf.add("import * as ${pod} from './${pod}.js'\n")
+        file := m.group(2)
+        buf.add("import * as ${pod} from './${file}.js'\n")
       }
       else if (line.startsWith("// cjs require end")) { buf.add("${line}\n"); break }
       else buf.addChar('\n')
