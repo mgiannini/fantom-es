@@ -112,7 +112,7 @@ class Build : BuildScript
       writeBoot
       writeExports
 
-      writeEs6
+      writeFanJs
 
       jar
     }
@@ -127,7 +127,6 @@ class Build : BuildScript
     this.out = tempDir.createFile("js/sys.${ext}").out
     if (isEsm)
     {
-      out.printLine("import * as es6 from './es6.js';")
       out.printLine("import * as node from './node.js';")
     }
     else
@@ -139,10 +138,11 @@ class Build : BuildScript
               if (typeof require === 'undefined') return this[name];
               try { return require(`\${m}`); } catch (e) { /* ignore */ }
             }
-            const es6 = __require('es6.js')
+            const fan = __require('fan.js')
             const node = __require('node.js')
            """)
     }
+    out.printLine("const js = (typeof window !== 'undefined') ? window : global;").printLine
   }
 
   private Void resolveSysTypes()
@@ -327,8 +327,8 @@ class Build : BuildScript
     if (isCjs)
     {
       out.printLine(
-        """if (typeof exports !== 'undefined') module.exports = sys;
-           else this.sys = sys;
+        """fan.sys = sys;
+           if (typeof exports !== 'undefined') module.exports = sys;
            }).call(this);
            """)
     }
@@ -337,35 +337,24 @@ class Build : BuildScript
     this.out = null
   }
 
-  private Void writeEs6()
+  private Void writeFanJs()
   {
     ext := isEsm ? "mjs" : "js"
-    this.out = tempDir.createFile("js/es6.${ext}").out
+    this.out = tempDir.createFile("js/fan.${ext}").out
 
     if (isCjs) out.printLine("(function () {")
 
-    exports := "{JsDate,JsMap,JsWeakMap,JsMutationObserver,JsEvent,JsResizeObserver,};"
-
-    out.printLine(
-      """const JsDate = Date;
-         const JsMap = Map;
-         const JsWeakMap = WeakMap;
-         const JsMutationObserver = typeof MutationObserver !== 'undefined' ? MutationObserver : null;
-         const JsEvent = (typeof Event !== 'undefined') ? Event : null;
-         const JsResizeObserver = (typeof ResizeObserver !== 'undefined') ? ResizeObserver : null;
-         """)
-
+    out.printLine("const fan = {};")
 
     if (isCjs)
     {
       out.printLine(
-        """const es6 = ${exports}
-           if (typeof exports !== 'undefined') module.exports = es6;
-           else this.es6 = es6;
+        """if (typeof exports !== 'undefined') module.exports = fan;
+           else this.fan = fan;
            }).call(this);
            """)
     }
-    else out.printLine("export ${exports};")
+    else out.printLine("export {};")
 
     out.flush.close
     this.out = null

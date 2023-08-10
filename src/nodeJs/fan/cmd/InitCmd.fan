@@ -22,17 +22,17 @@ internal class InitCmd : NodeJsCmd
   {
     emit.writePackageJson
     emit.writeNodeModules
-    writeFanJs
+    writeFantomJs
     writeTsDecl
     log.info("Initialized Node.js in: ${this.dir}")
     return 0
   }
 
-  ** Write 'fan.js' which ensures that all the supporting
+  ** Write 'fantom.js' which ensures that all the supporting
   ** sys libraries are run.
-  private Void writeFanJs()
+  private Void writeFantomJs()
   {
-    out := ms.file("fan").out
+    out := ms.file("fantom").out
     ms.writeBeginModule(out)
     ["sys", "fan_mime", "fan_units"].each |m| { ms.writeInclude(out, "${m}.ext") }
     ms.writeExports(out, ["sys"])

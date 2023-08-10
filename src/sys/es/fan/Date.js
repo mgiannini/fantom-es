@@ -191,8 +191,6 @@ class Date extends Obj {
   }
 
   static today(tz=TimeZone.cur()) {
-    // const d = new es6.JsDate();
-    // return new Date(d.getFullYear(), d.getMonth(), d.getDate());
     return DateTime.makeTicks(DateTime.nowTicks(), tz).date();
   }
 

@@ -12,7 +12,7 @@ class MutationObserverPeer extends sys.Obj {
   constructor(self)
   {
     super();
-    this.observer = new es6.JsMutationObserver(function(recs)
+    this.observer = new js.MutationObserver(function(recs)
     {
       const list = MutationObserverPeer.$makeRecList(recs);
       self.callback()(list);

@@ -107,7 +107,7 @@ class Duration extends Obj {
   }
 
   static now() {
-    const ms = new es6.JsDate().getTime();
+    const ms = new js.Date().getTime();
     return Duration.make(ms * Duration.nsPerMilli$);
   }
 

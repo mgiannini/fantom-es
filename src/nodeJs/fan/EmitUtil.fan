@@ -74,7 +74,7 @@ internal class EmitUtil
   // ** Also copies in mime.js, units.js, and indexed-props.js
   Void writeNodeModules()
   {
-    writeEs6
+    writeFanJs
     writeNode
     writeDepends
     writeScriptJs
@@ -82,6 +82,15 @@ internal class EmitUtil
     writeUnitsJs
     // TODO: indexed-props?
   }
+
+  ** Write 'es6.js' (grab it from sys.js)
+  Void writeFanJs()
+  {
+    out := ms.file("fan").out
+    podJsFile(Pod.find("sys"), "fan").in.pipe(out)
+    out.flush.close
+  }
+
 
   ** Write 'es6.js' (grab it from sys.js)
   Void writeEs6()

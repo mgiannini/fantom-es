@@ -39,7 +39,7 @@ abstract const class ModuleSystem
     if (uri.ext != null)
     {
       module = uri.basename
-      p = "./${baseDir.toUri}${uri.basename}.${ext}"//basePath.plus(`${uri.basename}.${ext}`)
+      p = "./${baseDir.toUri}${uri.basename}.${ext}"
     }
     return doWriteInclude(out, module, p)
   }
@@ -61,7 +61,7 @@ const class CommonJs : ModuleSystem
   """(function () {
      const __require = (m) => {
        const name = m.split('.')[0];
-       if (typeof require === 'undefined') return this[name];
+       if (typeof require === 'undefined') return this.fan[name];
        try { return require(`\${m}`); } catch (e) { /* ignore */ }
      }
      """

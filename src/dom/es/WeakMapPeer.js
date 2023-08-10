@@ -9,7 +9,7 @@
 
 class WeakMapPeer extends sys.Obj {
 
-  constructor(self)   { super(); this.map = new es6.JsWeakMap(); }
+  constructor(self)   { super(); this.map = new js.WeakMap(); }
   has(self, key)      { return this.map.has(key); }
   get(self, key)      { return this.map.get(key); }
   set(self, key, val) { this.map.set(key, val); return self; }

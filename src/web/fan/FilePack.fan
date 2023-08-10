@@ -153,7 +153,7 @@ const class FilePack : Weblet
     pods = Pod.orderByDepends(pods)
     files := toPodJsFiles(pods)
     files.insertAll(1, toEtcJsFiles)
-    if (FilePack.isEs) files.insert(0, toPodJsFile(Pod.find("sys"), "es6"))
+    if (FilePack.isEs) files.insert(0, toPodJsFile(Pod.find("sys"), "fan"))
     return files
   }
 

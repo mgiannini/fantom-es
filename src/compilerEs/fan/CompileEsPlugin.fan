@@ -105,7 +105,7 @@ try {
       if (m.matches)
       {
         pod := m.group(1)
-        if (pod == "fan") { buf.addChar('\n'); continue; }
+        if (pod == "fantom") { buf.addChar('\n'); continue; }
         buf.add("import * as ${pod} from './${pod}.js'\n")
       }
       else if (line.startsWith("// cjs require end")) { buf.add("${line}\n"); break }

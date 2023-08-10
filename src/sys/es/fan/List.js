@@ -598,7 +598,7 @@ push(obj) {
   }
 
   unique() {
-    const dups = new es6.JsMap();
+    const dups = new js.Map();
     const acc = List.make(this.#of);
     for (let i=0; i<this.#size; ++i) {
       const v = this.#values[i];

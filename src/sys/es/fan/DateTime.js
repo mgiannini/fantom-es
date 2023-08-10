@@ -85,7 +85,7 @@ class DateTime extends Obj {
   }
 
   static nowTicks() {
-    return (new es6.JsDate().getTime() - DateTime.#diffJs) * DateTime.#nsPerMilli;
+    return (new js.Date().getTime() - DateTime.#diffJs) * DateTime.#nsPerMilli;
   }
 
   static boot() { return DateTime.__boot; }
@@ -561,7 +561,7 @@ class DateTime extends Obj {
 
   toJs() {
     const ms = (this.#ticks / DateTime.#nsPerMilli) + 946684800000;
-    return new es6.JsDate(ms);
+    return new js.Date(ms);
   }
 
   static fromJs(jsdate, tz=TimeZone.cur()) {

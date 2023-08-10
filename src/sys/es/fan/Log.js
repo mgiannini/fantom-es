@@ -21,7 +21,7 @@ class Log extends Obj {
 
   #name;
   #level;
-  static #byName = new es6.JsMap();
+  static #byName = new js.Map();
   static #handlers = [(rec) => { rec.print(); }]
 
   static list() {

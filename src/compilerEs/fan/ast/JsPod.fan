@@ -58,10 +58,11 @@ class JsPod : JsNode
     CommonJs.moduleStart.splitLines.each |line| { js.wl(line) }
 
     js.wl("const fan = __require('fan.js');")
-    js.wl("const sys = fan ? fan.sys : __require('sys.js');")
+    js.wl("const fantom = __require('fantom.js');")
+    js.wl("const sys = fantom ? fantom.sys : __require('sys.js');")
 
     // special handling for dom
-    if (pod.name == "dom") js.wl("const es6 = __require('es6.js');")
+    // if (pod.name == "dom") js.wl("const es6 = __require('es6.js');")
 
     pod.depends.each |depend|
     {
@@ -246,20 +247,9 @@ class JsPod : JsNode
       if (this.peers[t.name]) js.wl("${t.peer.name}Peer,")
     }
     js.unindent.wl("};")
+    js.wl("fan.${pod.name} = ${pod.name};")
     js.wl("if (typeof exports !== 'undefined') module.exports = ${pod.name};")
-    js.wl("else this.${pod.name} = ${pod.name};")
+    // js.wl("else this.${pod.name} = ${pod.name};")
     js.wl("// cjs exports end")
   }
-
-  // private Void writeExports()
-  // {
-  //   js.wl("export {")
-  //   // only export public types
-  //   types.findAll { it.def.isPublic }.each |t| {
-  //     js.wl("${t.name},")
-  //     if (this.peers[t.name]) js.wl("${t.peer.name}Peer,")
-  //   }
-  //   js.wl("};")
-  // }
-
 }
