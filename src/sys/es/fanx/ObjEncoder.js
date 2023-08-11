@@ -126,7 +126,7 @@ fanx_ObjEncoder.prototype.writeComplex = function(type, obj, ser)
     if (first) { this.w('\n').wIndent().w('{').w('\n'); this.level++; first = false; }
 
     // field name =
-    this.wIndent().w(f.name$()).w('=');
+    this.wIndent().w(f.name()).w('=');
 
     // field value
     this.curFieldType = f.type().toNonNullable();

@@ -112,7 +112,7 @@ class TimeZone extends Obj {
 // Methods
 //////////////////////////////////////////////////////////////////////////
 
-  name$() { return this.#name; }
+  name() { return this.#name; }
 
   fullName() { return this.#fullName; }
 

@@ -78,13 +78,13 @@ class Weekday extends Enum {
   localeAbbr() { return this.__abbr(Locale.cur()); }
   __abbr(locale) {
     const pod = Pod.find("sys");
-    return Env.cur().locale(pod, this.#localeAbbrKey, this.name$(), locale);
+    return Env.cur().locale(pod, this.#localeAbbrKey, this.name(), locale);
   }
 
   localeFull() { return this.__full(Locale.cur()); }
   __full(locale) {
     const pod = Pod.find("sys");
-    return Env.cur().locale(pod, this.#localeFullKey, this.name$(), locale);
+    return Env.cur().locale(pod, this.#localeFullKey, this.name(), locale);
   }
 
   static localeStartOfWeek() {

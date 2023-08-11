@@ -38,7 +38,7 @@ class Param extends Obj {
 // Methods
 //////////////////////////////////////////////////////////////////////////
 
-  name$() { return this.#name; }
+  name() { return this.#name; }
   type() { return this.#type; }
   hasDefault() { return this.#hasDefault; }
   

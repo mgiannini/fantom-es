@@ -241,7 +241,7 @@ class Unit extends Obj {
 
   ids() { return this.#ids; }
 
-  name$() { return this.#ids.first(); }
+  name() { return this.#ids.first(); }
 
   symbol() { return this.#ids.last(); }
 

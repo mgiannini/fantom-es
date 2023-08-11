@@ -70,7 +70,7 @@ class Log extends Obj {
 
   toStr() { return this.#name; }
 
-  name$() { return this.#name; }
+  name() { return this.#name; }
 
 //////////////////////////////////////////////////////////////////////////
 // Severity Level

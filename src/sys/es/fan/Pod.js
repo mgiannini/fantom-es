@@ -68,7 +68,7 @@ class Pod extends Obj {
 // Identity
 //////////////////////////////////////////////////////////////////////////
 
-  name$() { return this.#name; }  
+  name() { return this.#name; }  
 
   meta() { return this.#meta; }
   // compiler support for setting pod meta

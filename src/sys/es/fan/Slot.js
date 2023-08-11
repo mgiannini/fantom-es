@@ -97,7 +97,7 @@ class Slot extends Obj {
 
   parent() { return this.#parent; }
   qname() { return this.#qname; }
-  name$() { return this.#name; }
+  name() { return this.#name; }
   isField() { return this instanceof Field; }
   isMethod() { return this instanceof Method; }
 
@@ -153,7 +153,6 @@ class Slot extends Obj {
       case "in":        return "in$";
       case "int":       return "int$";
       case "interface": return "interface$";
-      case "name":      return "name$";
       case "self":      return "self$";
       case "typeof":    return "typeof$";
       case "var":       return "var$";

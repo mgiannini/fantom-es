@@ -37,7 +37,7 @@ class Method extends Slot {
   static GENERIC = 0x01;
   static #toMask(parent, returns, params) {
     // we only use generics in Sys
-    if (parent.pod().name$() != "sys") return 0;
+    if (parent.pod().name() != "sys") return 0;
 
     let p = returns.isGenericParameter() ? 1 : 0;
     for (let i=0; i<params.size(); ++i)
@@ -52,7 +52,6 @@ class Method extends Slot {
 // Internal Access
 //////////////////////////////////////////////////////////////////////////
 
-  // name$() { return this.#name$; }
   qnameJs$() { return this.#qname$; }
 
 //////////////////////////////////////////////////////////////////////////
@@ -61,9 +60,9 @@ class Method extends Slot {
 
   invoke(instance=null, args=null) {
     let func = null;
-    const ns = Type.$registry[this.parent().pod().name$()];
+    const ns = Type.$registry[this.parent().pod().name()];
     if (this.isCtor() || this.isStatic()) {
-      const js = ns != null ? ns[this.parent().name$()] : null;
+      const js = ns != null ? ns[this.parent().name()] : null;
       if (js != null) func = js[this.#name$];
     } 
     else {
@@ -77,7 +76,7 @@ class Method extends Slot {
     // to map into a static call
     if (func == null && instance != null) {
       // Obj maps to ObjUtil
-      let type = this.parent().name$();
+      let type = this.parent().name();
       if (this.parent().qname() === "sys::Obj") func = ObjUtil[this.#name$];
       else func = ns[type][this.#name$];
       vals.splice(0, 0, instance);
@@ -99,11 +98,11 @@ if (func == null) {
 
   func() {
     let func = null;
-    const ns = Type.$registry[this.parent().pod().name$()];
-    const cls = ns[this.parent().name$()];
+    const ns = Type.$registry[this.parent().pod().name()];
+    const cls = ns[this.parent().name()];
     func = cls[this.#name$];
     if (func == null) func = cls.prototype[this.#name$];
-    if (func == null) throw Err.make(`No method found: ${this.name$()}`);
+    if (func == null) throw Err.make(`No method found: ${this.name()}`);
     func["__method"] = this;
     return func;
   }

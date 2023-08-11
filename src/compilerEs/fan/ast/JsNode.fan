@@ -146,7 +146,7 @@ abstract class JsNode
   {
     m := Str:Str[:]
     ["char", "const", "delete", "enum", "export", "float", "import", "in", "int",
-     "interface", "let", "name", "self", "require", "typeof", "var", "with",
+     "interface", "let", "self", "require", "typeof", "var", "with",
     ].each |name| { m[name] = "${name}\$" }
     namePickles = m.toImmutable
   }

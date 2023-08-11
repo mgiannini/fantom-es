@@ -109,7 +109,7 @@ class Charset extends Obj {
     }
   }
 
-  name$() { return this.#name; }
+  name() { return this.#name; }
 
   hash() { return Str.hash(this.#name); }
 
@@ -120,7 +120,7 @@ class Charset extends Obj {
     return false;
   }
 
-  toStr() { return this.name$(); }
+  toStr() { return this.name(); }
 
   static #iso2_i2u(c) {
     switch(c) {

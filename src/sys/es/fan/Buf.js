@@ -71,7 +71,7 @@ class Buf extends Obj {
   }
 
   toStr() {
-    return `${this.typeof$().name$()} (pos=${this.pos()} size=${this.size()})`;
+    return `${this.typeof$().name()} (pos=${this.pos()} size=${this.size()})`;
   }
 
 //////////////////////////////////////////////////////////////////////////

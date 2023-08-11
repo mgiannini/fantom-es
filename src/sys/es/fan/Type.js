@@ -44,8 +44,8 @@ class Type extends Obj {
 
     // add type to registry
     if (jsRef != null) {
-      let ns = Type.$registry[this.#pod.name$()];
-      if (ns == null) Type.$registry[this.#pod.name$()] = ns = {};
+      let ns = Type.$registry[this.#pod.name()];
+      if (ns == null) Type.$registry[this.#pod.name()] = ns = {};
       ns[jsRef.name] = jsRef;
     }
   }
@@ -68,7 +68,7 @@ class Type extends Obj {
 //////////////////////////////////////////////////////////////////////////
 
   pod() { return this.#pod; }
-  name$() { return this.#name; }
+  name() { return this.#name; }
   qname() { return this.#qname; }
   qnameJs$() { return `${this.#pod}.${this.#name}`; }
   signature() { return this.#qname; }
@@ -147,7 +147,7 @@ class Type extends Obj {
   isGenericInstance() { return false; }
 
   isGenericParameter() {
-    return this.#pod.name$() === "sys" && this.#name.length === 1;
+    return this.#pod.name() === "sys" && this.#name.length === 1;
   }
 
   isGeneric() { return this.isGenericType(); }
@@ -467,7 +467,7 @@ class Type extends Obj {
     // skip constructors which aren't mine
     if (slot.isCtor() && slot.parent() != this) return;
 
-    const name = slot.name$();
+    const name = slot.name();
     const dup  = nameToIndex[name];
     if (dup != null) {
       // if the slot is inherited from Obj, then we can
@@ -580,7 +580,7 @@ class NullableType extends Type {
 
   podName() { return this.root.podName(); }
   pod() { return this.root.pod(); }
-  name$() { return this.root.name$(); }
+  name() { return this.root.name(); }
   qname() { return this.root.qname(); }
   signature() { return `${this.root.signature()}?`; }
   flags() { return this.root.flags(); }
@@ -657,7 +657,7 @@ class GenericType extends Type {
         fields.push(slot);
       }
       slots.push(slot);
-      slotsByName[slot.name$()] = slot;
+      slotsByName[slot.name()] = slot;
     }
 
     this.slotList$ = List.make(Slot.type$, slots);
@@ -674,7 +674,7 @@ class GenericType extends Type {
     // create new parameterized version
     t = this.parameterizeType$(t);
     //var pf = new Field(this, f.name, f.flags, f.facets, f.lineNum, t);
-    const pf = new Field(this, f.name$(), f.flags$(), t, f.facets());
+    const pf = new Field(this, f.name(), f.flags$(), t, f.facets());
     //pf.reflect = f.reflect;
     return pf;
   }
@@ -700,7 +700,7 @@ class GenericType extends Type {
       if (p.type().isGenericParameter())
       {
         //params.add(new fan.sys.Param(p.name, parameterize(p.type), p.mask));
-        params.add(new Param(p.name$(), this.parameterizeType$(p.type()), p.hasDefault()));
+        params.add(new Param(p.name(), this.parameterizeType$(p.type()), p.hasDefault()));
       }
       else
       {
@@ -709,7 +709,7 @@ class GenericType extends Type {
     }
 
     //var pm = new Method(this, m.name, m.flags, m.facets, m.lineNum, ret, m.inheritedReturns, params, m);
-    const pm = new Method(this, m.name$(), m.flags$(), ret, params, m.facets(), m)
+    const pm = new Method(this, m.name(), m.flags$(), ret, params, m.facets(), m)
     //pm.reflect = m.reflect;
     return pm;
   }
@@ -991,7 +991,7 @@ class FuncType extends GenericType {
     if (t == Sys.RType) return ret;
 
     // if A-H maps to avail params
-    const name = t.name$().charCodeAt(0) - 65;
+    const name = t.name().charCodeAt(0) - 65;
     if (name < this.pars.length) return this.pars[name];
 
     // otherwise let anything be used

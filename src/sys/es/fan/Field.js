@@ -73,8 +73,8 @@ class Field extends Slot {
 
   get(instance=null) {
     if (this.isStatic()) {
-      const ns = Type.$registry[this.parent().pod().name$()];
-      const js = ns != null ? ns[this.parent().name$()] : null;
+      const ns = Type.$registry[this.parent().pod().name()];
+      const js = ns != null ? ns[this.parent().name()] : null;
       if (js != null) return js[this.#name$]();
       else throw Err.make(`Failed to reflect ${this.qname$()}`);
     }

@@ -129,7 +129,7 @@ class File extends Obj {
   isDir() { return this.#uri.isDir(); }
   path() { return this.#uri.path(); }
   pathStr() { return this.#uri.pathStr(); }
-  name$() { return this.#uri.name$(); }
+  name() { return this.#uri.name(); }
   basename() { return this.#uri.basename(); }
   ext() { return this.#uri.ext(); }
   mimeType() { return this.#uri.mimeType(); }
@@ -383,7 +383,7 @@ class File extends Obj {
   }
 
   #plusNameOf(x) {
-    let name = x.name$();
+    let name = x.name();
     if (x.isDir()) name += "/";
     return this.plus(Uri.fromStr(name));
   }

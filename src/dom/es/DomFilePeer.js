@@ -33,7 +33,7 @@ class DomFilePeer extends sys.Obj {
     return x;
   }
 
-  name$(self)
+  name(self)
   {
     return this.file.name;
   }

@@ -198,7 +198,7 @@ class Env extends Obj {
   index(key) { return this.#index.get(key, Str.type$.emptyList()); }
 
   props(pod, uri, maxAge) {
-    const key = `${pod.name$()}:${uri.toStr()}`;
+    const key = `${pod.name()}:${uri.toStr()}`;
     let map = this.#props.get(key);
     if (map == null) {
       map = Map.make(Str.type$, Str.type$).toImmutable();
@@ -216,7 +216,7 @@ class Env extends Obj {
         key.indexOf(".browser") == -1 &&
         key.indexOf(".icon") == -1 &&
         key.indexOf(".accelerator") == -1 &&
-        pod.name$() != "sys") 
+        pod.name() != "sys") 
     { 
       return pod + "::" + key; 
     }

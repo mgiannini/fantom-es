@@ -296,13 +296,13 @@ class Uri extends Obj {
            this.#userInfo == null && this.#queryStr == null && this.#frag == null;
   }
 
-  name$() {
+  name() {
     if (this.#path.size() == 0) return "";
     return this.#path.last();
   }
 
   basename() {
-    const n   = this.name$();
+    const n   = this.name();
     const dot = n.lastIndexOf('.');
     if (dot < 2) {
       if (dot < 0)   return n;
@@ -313,7 +313,7 @@ class Uri extends Obj {
   }
 
   ext() {
-    const n = this.name$();
+    const n = this.name();
     const dot = n.lastIndexOf('.');
     if (dot < 2) {
       if (dot < 0)   return null;

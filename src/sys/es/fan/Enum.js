@@ -37,7 +37,7 @@ class Enum extends Obj {
     // the compiler marks the value fields with the Enum flag
     const slot = t.slot(name, false);
     if (slot != null && (slot.flags$() & FConst.Enum) != 0) {
-      const v = vals.find((it) => { return it.name$() == name; });
+      const v = vals.find((it) => { return it.name() == name; });
       if (v != null) return v;
     }
     if (!checked) return null;
@@ -58,6 +58,6 @@ class Enum extends Obj {
 
   toStr() { return this.#name; }
   ordinal() { return this.#ordinal; }
-  name$() { return this.#name; }
+  name() { return this.#name; }
 
 }

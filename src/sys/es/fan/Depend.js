@@ -73,7 +73,7 @@ class Depend extends Obj {
 // Methods
 //////////////////////////////////////////////////////////////////////////
 
-  name$() { return this.#name; }
+  name() { return this.#name; }
 
   size() { return this.#constraints.length; }
 
