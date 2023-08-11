@@ -73,6 +73,7 @@ class JsPod : JsNode
     }
 
     js.wl("// cjs require end")
+    js.wl("const js = (typeof window !== 'undefined') ? window : global;")
   }
 
   // private Void writeImports()
