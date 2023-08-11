@@ -160,19 +160,28 @@ class JsType : JsNode
 
     // write synthetic public API for reading/writing the field
 
-    // generate internal setter for use by the compiler
-    if (f.isPrivate) return
+    // private getter/setter
+    priv := "__${accessName}(it) { if (it === undefined) return this.${privName}; else this.${privName} = it; }"
+    if (f.isPrivate)
+    {
+      // generate internal getter/setter for use by compiler/reflection
+      js.wl("// private field reflection only")
+      js.wl(priv, f.loc).nl
+      return
+    }
 
-    // const fields only have a public getter
-    // but we generate a synthetic setter for use by the compiler
+    // special handling for const fields
     if (f.isConst)
     {
+      // generate public getter
       js.wl("${accessName}() { return this.${privName}; }", f.loc).nl
-      js.wl("__${accessName}(it) { this.${privName} = it; }", f.loc).nl
+      // but always generate a synthetic getter/setter for use by the compiler/reflection
+      js.wl(priv, f.loc).nl
       return
     }
 
     // skip fields with no public getter or setter
+    // TODO: I don't think this code path ever gets triggered
     if ((f.getter?.isPrivate ?: true) && (f.setter?.isPrivate ?: true)) return
 
     // use actual field name for public api

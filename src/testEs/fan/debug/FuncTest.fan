@@ -1,5 +1,16 @@
 using concurrent
 
+@Js class PrivTest : Test
+{
+  Void test()
+  {
+    verifyEq(PrivTest()->i, 100)
+  }
+
+  private Int i := 100
+}
+
+/*
 @Js class MethFuncTest : Test
 {
   Void testMethodFunc()
@@ -30,6 +41,7 @@ using concurrent
   Str judge(Str who) { who }
   static Str staticJudge(Str who) { who }
 }
+*/
 /*
 @Js class FuncTest : Test
 {
