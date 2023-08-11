@@ -954,7 +954,7 @@ const DATA_DESCRIPTOR_SIZE = 16;
 const ZIP64_DATA_DESCRIPTOR_SIZE = 24;
 const CENTRAL_DIRECTORY_RECORD_FIXED_SIZE = 46;
 const ZIP64_EXTENDED_INFORMATION_EXTRA_FIELD_SIZE = 28;
-const EMPTY_BUFFER = Buffer.allocUnsafe(0);
+const EMPTY_BUFFER = (typeof Buffer !== 'undefined') ? Buffer.allocUnsafe(0) : new Array();
 
 class yazl {
   static validateMetadataPath(metadataPath) {
