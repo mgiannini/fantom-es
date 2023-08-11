@@ -251,8 +251,8 @@ class WebOutStream : OutStream
         // w("import { Env } from '/sys.js';").nl
         // w("sys.Env.cur().__loadVars(fan\$env);").nl
         w("window.addEventListener('load', function() {
-             sys.Env.cur().__loadVars(fan\$env);
-             sys.Env.__invokeMain('${main}');
+             fan.sys.Env.cur().__loadVars(fan\$env);
+             fan.sys.Env.__invokeMain('${main}');
            }, false);").nl
       }
       else

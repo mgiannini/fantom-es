@@ -61,7 +61,8 @@ const class CommonJs : ModuleSystem
   """(function () {
      const __require = (m) => {
        const name = m.split('.')[0];
-       if (typeof require === 'undefined') return this.fan[name];
+       const fan = this.fan;
+       if (typeof require === 'undefined') return name == "fan" ? fan : fan[name];
        try { return require(`\${m}`); } catch (e) { /* ignore */ }
      }
      """
