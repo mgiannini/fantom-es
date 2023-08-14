@@ -78,6 +78,10 @@ class CompileTsPlugin : CompilerStep
       printDoc(type.doc, 0)
       out.print("export ${abstr}class $type.name$classParams $extends{\n")
 
+      hasItBlockCtor := type.ctors.any |CMethod m->Bool| {
+        m.params.any |CParam p->Bool| { p.paramType.isFunc }
+      }
+
       // Write fields
       fields := type.fields.findAll |field|
       {
@@ -98,6 +102,8 @@ class CompileTsPlugin : CompilerStep
         out.print("  $staticStr$name(): $typeStr\n")
         if (!field.isConst)
           out.print("  $staticStr$name(it: $typeStr): void\n")
+        else if (hasItBlockCtor)
+          out.print("  ${staticStr}__$name(it: $typeStr): void\n")
       }
 
       // Write methods
@@ -124,7 +130,7 @@ class CompileTsPlugin : CompilerStep
         if (!method.isStatic && !method.isCtor && pmap.containsKey(type.signature))
           inputList.insert(0, "self: ${pmap[type.signature]}")
         if (method.isCtor)
-          inputList.add("...__overload: unknown")
+          inputList.add("...args: unknown[]")
         inputs := inputList.join(", ")
 
         output := method.isCtor ? type.name : getJsType(method.returnType, pod, pmap.containsKey(type.signature) ? type : null)
