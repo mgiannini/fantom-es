@@ -60,7 +60,7 @@ const class FilePack : Weblet
 // Identity (NoDoc fields subject to change)
 //////////////////////////////////////////////////////////////////////////
 
-  // @NoDoc static const AtomicBool es := AtomicBool(false)
+  ** Valid values are 'js' or 'es'
   @NoDoc static const AtomicRef mode := AtomicRef("js")
   static Bool isEs() { FilePack.mode.val == "es" }
 
